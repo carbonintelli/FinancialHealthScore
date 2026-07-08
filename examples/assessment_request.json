@@ -1,0 +1,55 @@
+{
+  "financial_data": {
+    "profile": {
+      "msme_id": "msme-demo-001",
+      "business_name": "Shree Ganesh Auto Components Pvt Ltd",
+      "udyam_number": "UDYAM-MH-12-0012345",
+      "gstin": "27AABCS1234F1Z5",
+      "sector": "manufacturing",
+      "employee_count": 85,
+      "years_in_operation": 12,
+      "annual_turnover_inr": 48000000
+    },
+    "accounting": {
+      "revenue_inr": 48000000,
+      "cost_of_goods_inr": 31200000,
+      "operating_expenses_inr": 9600000,
+      "current_assets_inr": 14500000,
+      "current_liabilities_inr": 8200000,
+      "total_debt_inr": 12000000,
+      "equity_inr": 18500000,
+      "net_profit_inr": 4800000,
+      "period_end": "2026-03-31"
+    },
+    "cash_flows": [
+      {"month": "2026-01", "inflows": 4100000, "outflows": 3750000},
+      {"month": "2026-02", "inflows": 3850000, "outflows": 3620000},
+      {"month": "2026-03", "inflows": 4450000, "outflows": 3890000}
+    ],
+    "utility_bills": [
+      {
+        "month": "2026-01",
+        "electricity_kwh": 18500,
+        "electricity_cost_inr": 148000,
+        "fuel_litres": 2200,
+        "fuel_cost_inr": 198000
+      }
+    ],
+    "payment_records": [
+      {
+        "counterparty": "Tata Steel Ltd",
+        "amount_inr": 850000,
+        "due_date": "2026-04-15",
+        "paid_date": "2026-04-14",
+        "status": "on_time"
+      }
+    ],
+    "bank_statement_summary": {
+      "avg_monthly_balance_inr": 3200000,
+      "min_monthly_balance_inr": 1100000,
+      "cheque_bounce_count_12m": 1
+    }
+  },
+  "include_carbon_intelligence": true,
+  "audience": "credit_team"
+}
