@@ -35,7 +35,7 @@
         </div>
         <div style="display:flex;gap:.5rem;flex-wrap:wrap">
           <button class="btn btn-outline" onclick="window.print()">Print</button>
-          <a class="btn btn-primary" id="html-link" target="_blank">Open Full HTML</a>
+          <a class="btn btn-primary" id="html-link" href="#">Open Full HTML</a>
         </div>
       </header>`;
 
@@ -51,8 +51,12 @@
       }
 
       const report = await api(`/api/v1/reports/${assessmentId}`);
-      document.getElementById('html-link').href = `/api/v1/reports/${assessmentId}/html`;
-      document.getElementById('report-frame').src = `/api/v1/reports/${assessmentId}/html`;
+      document.getElementById('html-link').onclick = async (e) => {
+        e.preventDefault();
+        try { await openHtmlReport(assessmentId); } catch (err) { alert(err.message); }
+      };
+      const frameUrl = await fetchHtmlReport(assessmentId);
+      document.getElementById('report-frame').src = frameUrl;
 
       document.getElementById('summary').innerHTML = `
         ${FHS.renderScoreHero({

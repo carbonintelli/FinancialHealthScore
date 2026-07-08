@@ -49,7 +49,8 @@
       }
 
       const report = await api(`/api/v1/reports/${id}`);
-      document.getElementById('report-frame').src = `/api/v1/reports/${id}/html`;
+      const frameUrl = await fetchHtmlReport(id);
+      document.getElementById('report-frame').src = frameUrl;
 
       const improvements = (report.recommended_improvements || []).slice(0, 5);
       document.getElementById('summary').innerHTML = `

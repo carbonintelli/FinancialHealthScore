@@ -82,6 +82,16 @@ Retrieve all credentials: `GET /api/v1/auth/demo-credentials`
 
 The Node server invokes the Python scoring engine via `scoring_bridge.py` for exact 20-dimension parity. Requires Python 3 with `app/` dependencies installed (`pip install -r requirements.txt`).
 
+### Why a Python bridge?
+
+The **20-dimension scoring engine** lives in Python (`app/services/scoring_engine.py`) — roughly 2,400 lines of domain logic covering liquidity ratios, carbon transition risk, peer benchmarks, governance bonuses, and 15+ other dimension scorers. Rather than maintaining two implementations, the Node platform:
+
+1. Sends assessment JSON to `server/scoring_bridge.py` via stdin
+2. The bridge calls `scoring_engine.assess()` and returns JSON on stdout
+3. Node handles auth, persistence, AI agent orchestration, and the web UI
+
+This keeps **one source of truth** for scores while the Node layer owns the multi-stakeholder platform. A full TypeScript port is possible but was intentionally deferred to avoid score drift between runtimes.
+
 Demo MSME baseline: **77.3 / B+** (Shree Ganesh Auto Components Pvt Ltd).
 
 ## Configuration

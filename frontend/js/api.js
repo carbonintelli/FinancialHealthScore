@@ -86,3 +86,27 @@ function riskBadge(level) {
   if (!level) return '—';
   return `<span class="badge badge-${level}">${level}</span>`;
 }
+
+/** Fetch authenticated HTML report and return a blob URL for iframe embedding. */
+async function fetchHtmlReport(assessmentId) {
+  const res = await fetch(`${API_BASE}/api/v1/reports/${assessmentId}/html`, {
+    headers: authHeaders(),
+  });
+  if (res.status === 401) {
+    clearAuth();
+    window.location.href = '/app/index.html';
+    throw new Error('Session expired');
+  }
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error(data.detail || `Failed to load report (${res.status})`);
+  }
+  const html = await res.text();
+  return URL.createObjectURL(new Blob([html], { type: 'text/html' }));
+}
+
+/** Open HTML report in a new tab with auth. */
+async function openHtmlReport(assessmentId) {
+  const url = await fetchHtmlReport(assessmentId);
+  window.open(url, '_blank');
+}

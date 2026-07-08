@@ -29,8 +29,10 @@ export function logOrchestration(orchestrationId: string, assessmentId: string, 
 
 export function getOrchestrationRun(orchestrationId: string) {
   return getDb()
-    .prepare("SELECT output_json, created_at FROM agent_runs WHERE run_id = ? AND agent_type = 'orchestration'")
-    .get(orchestrationId) as { output_json: string; created_at: string } | undefined;
+    .prepare(
+      "SELECT output_json, created_at, assessment_id FROM agent_runs WHERE run_id = ? AND agent_type = 'orchestration'"
+    )
+    .get(orchestrationId) as { output_json: string; created_at: string; assessment_id: string | null } | undefined;
 }
 
 export function listAgentRuns(assessmentId?: string, limit = 50) {

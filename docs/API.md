@@ -93,6 +93,7 @@ See [AGENTIC_ARCHITECTURE.md](./AGENTIC_ARCHITECTURE.md).
 | `GET` | `/api/v1/bank/portfolio` | Bank JWT | MSME list with latest scores |
 | `GET` | `/api/v1/bank/assessments` | Bank JWT | Assessment history |
 | `GET` | `/api/v1/bank/loans` | Bank JWT | Loan applications |
+| `PATCH` | `/api/v1/bank/loans/{loan_id}` | Bank JWT | Approve/reject/review loan |
 
 ## MSME Portal
 
@@ -100,6 +101,8 @@ See [AGENTIC_ARCHITECTURE.md](./AGENTIC_ARCHITECTURE.md).
 |---|---|---|---|
 | `GET` | `/api/v1/msme/dashboard` | MSME JWT | Latest score summary |
 | `GET` | `/api/v1/msme/assessments` | MSME JWT | Assessment history |
+| `GET` | `/api/v1/msme/assessments` | MSME JWT | Assessment history |
+| `GET` | `/api/v1/msme/loans` | MSME JWT | List own loan applications |
 | `POST` | `/api/v1/msme/loans` | MSME JWT | Submit loan application |
 
 ## Government Portal
