@@ -28,6 +28,9 @@ Each dimension produces a score (0–100), risk level, confidence, and evidence-
 - **Risk Teams** — Identify early financial and operational risk signals
 - **Relationship Managers** — Discover green-finance opportunities
 - **Portfolio Analysts** — Improve credit monitoring and portfolio intelligence
+- **MSME Owners** — Self-assessment, improvement guidance, loan applications
+- **Government & SIDBI** — Scheme recommendations and MSME registry oversight
+- **Regulatory Bodies** — RBI, GSTN, MCA compliance review workflows
 
 ## Quick Start (Node.js — recommended)
 
@@ -47,9 +50,10 @@ Legacy Python-only server: `python run.py`
 Server starts at **http://localhost:8080**
 
 - **Platform Login**: http://localhost:8080/app/index.html
-- **API Docs**: http://localhost:8080/docs
+- **API Root**: http://localhost:8080/api
 - **Demo Assessment**: http://localhost:8080/api/v1/assess/demo
 - **Health Check**: http://localhost:8080/api/v1/health
+- **Agent Architecture**: http://localhost:8080/api/v1/agents/architecture
 - **Integrations Status**: http://localhost:8080/api/v1/integrations/status
 
 ### Demo Logins
@@ -100,30 +104,30 @@ Without an API key, the service runs in **demo mode** with realistic mock carbon
 | `/v1/partners/msmes/{id}/transactions/summary` | Cash flow, volatility, payment behaviour |
 | `/v1/partners/msmes/{id}/reports/overview` | Reporting readiness, transition plan status |
 
-## API Endpoints
+## API Endpoints (Node.js v2.1)
 
 | Method | Path | Description |
 |---|---|---|
-| `GET` | `/` | Service info |
-| `GET` | `/api/v1/auth/demo-credentials` | Demo bank & MSME logins |
+| `GET` | `/api` | Service metadata |
+| `GET` | `/api/v1/health` | Health check + agentic orchestration flags |
+| `GET` | `/api/v1/auth/demo-credentials` | Demo logins (all stakeholders) |
 | `POST` | `/api/v1/auth/login` | JWT authentication |
+| `GET` | `/api/v1/agents/architecture` | 27-agent orchestration metadata |
 | `GET` | `/api/v1/bank/dashboard` | Bank portfolio stats (auth) |
-| `POST` | `/api/v1/bank/assess/{msme_id}` | Assess portfolio MSME (auth) |
-| `POST` | `/api/v1/msme/assess/quick` | MSME self-assessment (auth) |
+| `POST` | `/api/v1/bank/assess/{msme_id}` | Assess portfolio MSME + agents (auth) |
+| `POST` | `/api/v1/msme/assess/quick` | MSME self-assessment + agents (auth) |
+| `GET` | `/api/v1/govt/dashboard` | Government MSME registry (auth) |
+| `POST` | `/api/v1/regulatory/review/{msme_id}` | Regulatory compliance review (auth) |
 | `GET` | `/api/v1/reports/{id}` | Detailed JSON credit report (auth) |
 | `GET` | `/api/v1/reports/{id}/html` | Printable HTML report (auth) |
-| `GET` | `/api/v1/health` | Health check |
-| `GET` | `/api/v1/integration` | Carbon Intelligence integration details |
-| `GET` | `/api/v1/integrations/status` | Bureau, tax, legal, OCR integration status |
-| `POST` | `/api/v1/assess` | Full MSME assessment (`auto_enrich: true` by default) |
+| `POST` | `/api/v1/assess` | Full MSME assessment |
 | `GET` | `/api/v1/assess/demo` | Demo with sample data |
+| `GET` | `/api/v1/integrations/status` | Bureau, tax, legal, OCR, AI agent status |
 | `POST` | `/api/v1/integrations/bureau/pull` | CIBIL/CRISIL bureau pull |
 | `POST` | `/api/v1/integrations/tax/verify` | GSTN/ITR tax verification |
-| `POST` | `/api/v1/integrations/legal/search` | e-Courts/MCA litigation search |
-| `GET` | `/api/v1/msme/{id}/carbon` | Carbon Intelligence data |
-| `GET` | `/api/v1/msme/{id}/score` | Score from CI data only |
-| `GET` | `/api/v1/carbon/catalog` | CI integration catalog |
 | `GET` | `/api/v1/policies/catalog` | Government policy catalog by sector |
+
+Full reference: [docs/API.md](docs/API.md). Legacy Python server adds `/docs` OpenAPI UI and additional carbon/legal endpoints.
 
 ### Example: Full Assessment
 
@@ -193,51 +197,49 @@ Women-led MSMEs receive a **governance score bonus** (up to +2.5 points on overa
 ## Project Structure
 
 ```
-├── frontend/                # Bank & MSME web portals
-│   ├── index.html           # Login
+├── server/                  # Node.js platform (primary runtime)
+│   ├── src/
+│   │   ├── index.ts         # Express entry
+│   │   ├── app.ts           # App factory (tests + snapshots)
+│   │   ├── routes/          # Auth + API routes
+│   │   ├── services/agents/ # 27-agent orchestration
+│   │   ├── db/              # SQLite + seed data
+│   │   └── data/            # Government policy catalog
+│   ├── scripts/
+│   │   └── generate-snapshots.ts
+│   ├── scoring_bridge.py    # Python scoring bridge
+│   └── tests/               # Vitest (platform + snapshots)
+├── frontend/                # Multi-stakeholder web portals
+│   ├── index.html           # Login (bank / MSME / govt / regulatory)
 │   ├── bank/                # Bank dashboard, portfolio, loans, reports
-│   └── msme/                # MSME dashboard, assess, loans, reports
-├── app/
-│   ├── auth/                # JWT security & dependencies
-│   ├── db/                  # SQLAlchemy models, seed data
-│   ├── templates/           # HTML report templates
-│   ├── main.py              # FastAPI application
-│   ├── config.py            # Settings and environment
-│   ├── api/routes.py        # REST API endpoints
-│   ├── models/schemas.py    # Pydantic data models
-│   ├── services/
-│   │   ├── carbon_intelligence.py
-│   │   ├── integrations.py       # Bureau, tax, legal, OCR clients
-│   │   ├── enrichment.py         # Auto-enrichment pipeline
-│   │   ├── advanced_scoring.py   # ESG, supply chain, geo, peer
-│   │   └── scoring_engine.py
-│   └── data/
-│       ├── sector_benchmarks.py
-│       ├── geographic_risk.py
-│       └── sample_msme.py
+│   ├── msme/                # MSME dashboard, assess, loans, reports
+│   ├── govt/                # Government scheme portal
+│   └── regulatory/          # Regulatory compliance portal
+├── app/                     # Python scoring engine + legacy FastAPI
+│   ├── services/scoring_engine.py
+│   ├── services/integrations.py
+│   └── api/routes.py
 ├── docs/                    # Architecture, API, scoring, snapshots
-├── scripts/
-│   └── generate_snapshots.py
 ├── tests/
-│   ├── snapshots/           # Golden-file API responses
-│   ├── test_scoring.py
-│   ├── test_advanced.py
-│   ├── test_api_assess.py
-│   ├── test_integrations.py
-│   └── test_snapshots.py
+│   ├── snapshots/           # Golden-file API responses (Node.js)
+│   ├── test_scoring.py      # Python scoring unit tests
+│   └── test_api_assess.py   # Legacy FastAPI tests
 ├── examples/
 ├── requirements.txt
-└── run.py
+└── run.py                   # Legacy Python server
 ```
 
 ## Running Tests
 
 ```bash
-# Full test suite (43 tests)
-pytest -v
+# Node.js platform + snapshot regression (23 tests)
+cd server && npm test
 
-# Regenerate golden-file snapshots after API changes (Node.js platform)
+# Regenerate golden-file snapshots after API changes
 cd server && npm run generate:snapshots && npm test
+
+# Python scoring engine unit tests
+pytest tests/test_scoring.py tests/test_advanced.py -v
 ```
 
 ## License

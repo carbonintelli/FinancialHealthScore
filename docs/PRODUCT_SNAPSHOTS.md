@@ -2,6 +2,13 @@
 
 Golden-file snapshots of API responses for regression testing against the **Node.js platform** (v2.1.0).
 
+Related documentation:
+
+- [ARCHITECTURE.md](./ARCHITECTURE.md) — system design and testing strategy
+- [API.md](./API.md) — full endpoint reference
+- [AGENTIC_ARCHITECTURE.md](./AGENTIC_ARCHITECTURE.md) — 27-agent orchestration
+- [NODE_PLATFORM.md](./NODE_PLATFORM.md) — Node.js server setup and tests
+
 ## Regenerate
 
 ```bash

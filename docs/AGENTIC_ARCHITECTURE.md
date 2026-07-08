@@ -129,7 +129,7 @@ Generates the final credit assessment report:
   "phases": [{ "phase": "dimension_analysis", "agents_run": 20, "duration_ms": 45 }],
   "dimension_agents": [{ "dimension": "tax_compliance", "score": 93.6, "agent_summary": "..." }],
   "risk_synthesis": { "composite_risk_level": "low", "mitigation_priorities": [] },
-  "health_score": { "computed_score": 78.1, "agent_validated_score": 78.1 },
+  "health_score": { "computed_score": 77.3, "agent_validated_score": 77.3 },
   "reporting": { "executive_summary": "...", "credit_decision": "CONDITIONAL APPROVAL" },
   "summary": { "total_agents_run": 27, "top_strengths": [], "top_risks": [] }
 }
@@ -142,6 +142,9 @@ OPENAI_API_KEY=sk-...    # Optional — enables LLM-enhanced agent narratives
 ```
 
 Without OpenAI, all agents use deterministic rule-based intelligence with identical structure.
+
+Golden-file snapshot of full orchestration output: `tests/snapshots/msme_orchestration.json`  
+Regenerate: `cd server && npm run generate:snapshots`
 
 ## File Structure
 
