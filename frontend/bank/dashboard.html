@@ -4,42 +4,42 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Bank Dashboard — Financial Health Score</title>
+  <link rel="icon" href="/app/assets/favicon.svg" type="image/svg+xml" />
   <link rel="stylesheet" href="/app/css/style.css" />
 </head>
 <body>
   <div class="layout">
-    <aside class="sidebar" style="display:flex;flex-direction:column;min-height:100vh">
-      <div class="brand">Financial Health Score</div>
-      <div class="sub">IDBI Bank — MSME Lending</div>
-      <nav>
-        <a href="/app/bank/dashboard.html" class="active">Dashboard</a>
-        <a href="/app/bank/portfolio.html">Portfolio</a>
-        <a href="/app/bank/loans.html">Loan Applications</a>
-        <a href="/docs" target="_blank">API Docs</a>
-      </nav>
-      <div class="user-block">
-        <div id="user-name"></div>
-        <div id="user-role" style="opacity:.8"></div>
-        <button class="btn btn-outline btn-sm" style="margin-top:.75rem;color:#fff;border-color:rgba(255,255,255,.4)" onclick="logout()">Sign Out</button>
-      </div>
-    </aside>
+    <aside class="sidebar"></aside>
     <main class="main">
-      <h1 class="page-title">Bank Dashboard</h1>
+      <div id="page-header"></div>
+      <div id="welcome"></div>
       <div class="stats-grid" id="stats"></div>
+      <div class="card" id="score-overview" style="display:none">
+        <div class="card-header"><h3>Portfolio Health Overview</h3></div>
+        <div id="portfolio-score"></div>
+      </div>
       <div class="card">
-        <h3>Recent Assessments</h3>
-        <div id="assessments-table">Loading…</div>
+        <div class="card-header">
+          <h3>Recent Assessments</h3>
+          <a class="btn btn-sm btn-outline" href="/app/bank/portfolio.html">View Portfolio</a>
+        </div>
+        <div id="assessments-table"><div class="loading-pulse"></div></div>
       </div>
     </main>
   </div>
   <script src="/app/js/api.js"></script>
+  <script src="/app/js/ui.js"></script>
   <script>
     if (!requireAuth()) throw new Error('auth');
     const user = getUser();
-    if (!isBankUser(user)) { redirectByRole(user); }
+    if (!isBankUser(user)) redirectByRole(user);
+    FHS.mountLayout('bank', 'dashboard');
 
-    document.getElementById('user-name').textContent = user.full_name;
-    document.getElementById('user-role').textContent = user.role.replace(/_/g, ' ');
+    document.getElementById('page-header').innerHTML = FHS.renderPageHeader({
+      title: 'Bank Dashboard',
+      subtitle: `${user.organization_name || 'IDBI Bank'} · MSME Lending Intelligence`,
+    });
+    document.getElementById('welcome').innerHTML = FHS.renderWelcomeBanner('bank');
 
     async function load() {
       const [stats, assessments] = await Promise.all([
@@ -47,34 +47,50 @@
         api('/api/v1/bank/assessments'),
       ]);
 
-      document.getElementById('stats').innerHTML = `
-        <div class="stat-card"><div class="label">Portfolio MSMEs</div><div class="value">${stats.portfolio_count}</div></div>
-        <div class="stat-card"><div class="label">Avg Score</div><div class="value">${stats.average_score ?? '—'}</div></div>
-        <div class="stat-card"><div class="label">High Risk</div><div class="value">${stats.high_risk_count}</div></div>
-        <div class="stat-card"><div class="label">Assessments (Month)</div><div class="value">${stats.assessments_this_month}</div></div>
-        <div class="stat-card"><div class="label">Pending Loans</div><div class="value">${stats.pending_loans}</div></div>
-        <div class="stat-card"><div class="label">Approved (INR)</div><div class="value" style="font-size:1.2rem">${formatInr(stats.approved_loans_inr)}</div></div>
-      `;
+      document.getElementById('stats').innerHTML = [
+        FHS.renderStatCard('Portfolio MSMEs', stats.portfolio_count, { icon: 'users' }),
+        FHS.renderStatCard('Avg Score', stats.average_score ?? '—', { icon: 'score', variant: 'success' }),
+        FHS.renderStatCard('High Risk', stats.high_risk_count, { icon: 'risk', variant: stats.high_risk_count > 0 ? 'risk' : '' }),
+        FHS.renderStatCard('Assessments (Month)', stats.assessments_this_month, { icon: 'trend' }),
+        FHS.renderStatCard('Pending Loans', stats.pending_loans, { icon: 'loans' }),
+        FHS.renderStatCard('Approved', formatInr(stats.approved_loans_inr), { icon: 'check' }),
+      ].join('');
+
+      if (stats.average_score != null) {
+        document.getElementById('score-overview').style.display = '';
+        document.getElementById('portfolio-score').innerHTML = FHS.renderScoreHero({
+          score: stats.average_score,
+          grade: stats.average_score >= 80 ? 'A' : stats.average_score >= 70 ? 'B+' : stats.average_score >= 60 ? 'B' : 'C+',
+          riskLevel: stats.high_risk_count > 0 ? 'moderate' : 'low',
+          title: 'Portfolio Average Score',
+          subtitle: `Across ${stats.portfolio_count} MSMEs · ${stats.high_risk_count} flagged high-risk`,
+          ctaHtml: `<a class="btn btn-primary" href="/app/bank/portfolio.html">Manage Portfolio</a>`,
+        });
+      }
 
       if (!assessments.length) {
-        document.getElementById('assessments-table').innerHTML = '<p style="color:var(--muted)">No assessments yet. Run one from the Portfolio page.</p>';
+        document.getElementById('assessments-table').innerHTML = `
+          <div class="empty-state">
+            <p>No assessments yet. Run one from the Portfolio page.</p>
+            <a class="btn btn-primary" href="/app/bank/portfolio.html" style="margin-top:1rem">Go to Portfolio</a>
+          </div>`;
         return;
       }
 
       document.getElementById('assessments-table').innerHTML = `
-        <table>
+        <div class="table-wrap"><table>
           <thead><tr><th>Business</th><th>Score</th><th>Grade</th><th>Risk</th><th>Date</th><th></th></tr></thead>
           <tbody>${assessments.slice(0, 10).map(a => `
             <tr>
-              <td>${a.business_name}</td>
-              <td><strong>${a.overall_score.toFixed(1)}</strong></td>
-              <td>${a.grade}</td>
+              <td><strong>${a.business_name}</strong></td>
+              <td><span class="score-cell">${a.overall_score.toFixed(1)}</span></td>
+              <td><span class="${FHS.gradeClass(a.grade)}">${a.grade}</span></td>
               <td>${riskBadge(a.overall_risk_level)}</td>
               <td>${formatDate(a.created_at)}</td>
               <td><a class="btn btn-sm btn-primary" href="/app/bank/report.html?id=${a.assessment_id}">Report</a></td>
             </tr>
           `).join('')}</tbody>
-        </table>`;
+        </table></div>`;
     }
     load().catch(e => alert(e.message));
   </script>

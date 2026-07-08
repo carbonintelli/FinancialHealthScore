@@ -2,62 +2,74 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Regulatory Dashboard — Financial Health Score</title>
+  <link rel="icon" href="/app/assets/favicon.svg" type="image/svg+xml" />
   <link rel="stylesheet" href="/app/css/style.css" />
 </head>
 <body>
   <div class="layout">
-    <aside class="sidebar" style="display:flex;flex-direction:column;min-height:100vh;background:linear-gradient(180deg,#5c2d0e,#3d1a0a)">
-      <div class="brand">Regulatory Intelligence</div>
-      <div class="sub">RBI · GSTN · MCA</div>
-      <nav>
-        <a href="/app/regulatory/dashboard.html" class="active">Dashboard</a>
-        <a href="/app/regulatory/review.html">Compliance Review</a>
-      </nav>
-      <div class="user-block"><button class="btn btn-outline btn-sm" style="color:#fff;border-color:rgba(255,255,255,.4)" onclick="logout()">Sign Out</button></div>
-    </aside>
+    <aside class="sidebar"></aside>
     <main class="main">
-      <h1 class="page-title">Regulatory Supervision Dashboard</h1>
+      <div id="page-header"></div>
+      <div id="welcome"></div>
       <div class="stats-grid" id="stats"></div>
       <div class="card">
-        <h3>High-Risk MSME Assessments</h3>
-        <div id="flagged">Loading…</div>
+        <div class="card-header"><h3>High-Risk MSME Assessments</h3></div>
+        <div id="flagged"><div class="loading-pulse"></div></div>
       </div>
       <div class="card">
-        <h3>Recent Regulatory Submissions</h3>
-        <div id="submissions">Loading…</div>
+        <div class="card-header"><h3>Recent Regulatory Submissions</h3></div>
+        <div id="submissions"><div class="loading-pulse"></div></div>
       </div>
     </main>
   </div>
   <script src="/app/js/api.js"></script>
+  <script src="/app/js/ui.js"></script>
   <script>
     if (!requireAuth()) throw new Error('auth');
     const user = getUser();
     if (user.organization_type !== 'regulatory') redirectByRole(user);
+    FHS.mountLayout('regulatory', 'dashboard');
+
+    document.getElementById('page-header').innerHTML = FHS.renderPageHeader({
+      title: 'Regulatory Supervision Dashboard',
+      subtitle: 'RBI · GSTN · MCA compliance oversight',
+    });
+    document.getElementById('welcome').innerHTML = FHS.renderWelcomeBanner('regulatory');
 
     api('/api/v1/regulatory/dashboard').then(data => {
-      document.getElementById('stats').innerHTML = `
-        <div class="stat-card"><div class="label">Pending Reviews</div><div class="value">${data.pending_reviews}</div></div>
-        <div class="stat-card"><div class="label">High-Risk MSMEs</div><div class="value">${data.high_risk_assessments?.length ?? 0}</div></div>
-        <div class="stat-card"><div class="label">Submissions</div><div class="value">${data.submissions?.length ?? 0}</div></div>
-      `;
+      document.getElementById('stats').innerHTML = [
+        FHS.renderStatCard('Pending Reviews', data.pending_reviews, { icon: 'review' }),
+        FHS.renderStatCard('High-Risk MSMEs', data.high_risk_assessments?.length ?? 0, { icon: 'risk', variant: 'risk' }),
+        FHS.renderStatCard('Submissions', data.submissions?.length ?? 0, { icon: 'report' }),
+      ].join('');
+
       const flagged = data.high_risk_assessments || [];
       document.getElementById('flagged').innerHTML = flagged.length ? `
-        <table><thead><tr><th>Business</th><th>Score</th><th>Risk</th><th>Date</th><th></th></tr></thead>
-        <tbody>${flagged.map(a => `<tr>
-          <td>${a.business_name}</td>
-          <td>${a.overall_score?.toFixed?.(1)}</td>
-          <td>${riskBadge(a.overall_risk_level)}</td>
-          <td>${formatDate(a.created_at)}</td>
-          <td><a class="btn btn-sm btn-primary" href="/app/regulatory/review.html?msme=${a.msme_id}">Review</a></td>
-        </tr>`).join('')}</tbody></table>` : '<p>No high-risk assessments flagged.</p>';
+        <div class="table-wrap"><table>
+          <thead><tr><th>Business</th><th>Score</th><th>Risk</th><th>Date</th><th></th></tr></thead>
+          <tbody>${flagged.map(a => `<tr>
+            <td><strong>${a.business_name}</strong></td>
+            <td><span class="score-cell">${a.overall_score?.toFixed?.(1) ?? '—'}</span></td>
+            <td>${riskBadge(a.overall_risk_level)}</td>
+            <td>${formatDate(a.created_at)}</td>
+            <td><a class="btn btn-sm btn-primary" href="/app/regulatory/review.html?msme=${a.msme_id}">Review</a></td>
+          </tr>`).join('')}</tbody>
+        </table></div>` : '<div class="empty-state"><p>No high-risk assessments flagged.</p></div>';
 
       const subs = data.submissions || [];
       document.getElementById('submissions').innerHTML = subs.length ? `
-        <table><thead><tr><th>Ref</th><th>MSME</th><th>Regulator</th><th>Status</th><th>Date</th></tr></thead>
-        <tbody>${subs.slice(0,10).map(s => `<tr>
-          <td>${s.submission_ref}</td><td>${s.business_name}</td><td>${s.regulator_type}</td><td>${s.status}</td><td>${formatDate(s.created_at)}</td>
-        </tr>`).join('')}</tbody></table>` : '<p>No submissions yet.</p>';
+        <div class="table-wrap"><table>
+          <thead><tr><th>Ref</th><th>MSME</th><th>Regulator</th><th>Status</th><th>Date</th></tr></thead>
+          <tbody>${subs.slice(0, 10).map(s => `<tr>
+            <td><code>${s.submission_ref}</code></td>
+            <td>${s.business_name}</td>
+            <td>${s.regulator_type}</td>
+            <td>${riskBadge(s.status === 'reviewed' ? 'low' : 'elevated')}</td>
+            <td>${formatDate(s.created_at)}</td>
+          </tr>`).join('')}</tbody>
+        </table></div>` : '<div class="empty-state"><p>No submissions yet.</p></div>';
     }).catch(e => alert(e.message));
   </script>
 </body>

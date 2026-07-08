@@ -2,34 +2,41 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Compliance Review — Regulatory Portal</title>
+  <link rel="icon" href="/app/assets/favicon.svg" type="image/svg+xml" />
   <link rel="stylesheet" href="/app/css/style.css" />
 </head>
 <body>
   <div class="layout">
-    <aside class="sidebar" style="display:flex;flex-direction:column;min-height:100vh;background:linear-gradient(180deg,#5c2d0e,#3d1a0a)">
-      <div class="brand">Regulatory Intelligence</div>
-      <nav>
-        <a href="/app/regulatory/dashboard.html">Dashboard</a>
-        <a href="/app/regulatory/review.html" class="active">Compliance Review</a>
-      </nav>
-      <div class="user-block"><button class="btn btn-outline btn-sm" style="color:#fff;border-color:rgba(255,255,255,.4)" onclick="logout()">Sign Out</button></div>
-    </aside>
+    <aside class="sidebar"></aside>
     <main class="main">
-      <h1 class="page-title">AI Regulatory Compliance Review</h1>
+      <div id="page-header"></div>
       <div class="card">
+        <div class="card-header"><h3>AI Regulatory Compliance Review</h3></div>
+        <p class="card-desc">Run the Regulatory Compliance agent to review MSME assessments for RBI, GSTN, or MCA supervision.</p>
         <div class="form-group">
           <label>MSME ID</label>
           <input type="text" id="msme-id" placeholder="msme-demo-001" />
         </div>
-        <button class="btn btn-primary" id="review-btn">Run Regulatory Compliance Agent</button>
+        <button class="btn btn-primary btn-lg" id="review-btn">Run Compliance Agent</button>
         <div id="result" style="margin-top:1.5rem"></div>
       </div>
     </main>
   </div>
   <script src="/app/js/api.js"></script>
+  <script src="/app/js/ui.js"></script>
   <script>
     if (!requireAuth()) throw new Error('auth');
+    const user = getUser();
+    if (user.organization_type !== 'regulatory') redirectByRole(user);
+    FHS.mountLayout('regulatory', 'review');
+
+    document.getElementById('page-header').innerHTML = FHS.renderPageHeader({
+      title: 'Compliance Review',
+      subtitle: 'AI-assisted regulatory supervision and compliance flagging',
+    });
+
     const params = new URLSearchParams(location.search);
     if (params.get('msme')) document.getElementById('msme-id').value = params.get('msme');
 
@@ -37,17 +44,22 @@
       const msmeId = document.getElementById('msme-id').value.trim();
       if (!msmeId) return alert('Enter MSME ID');
       const el = document.getElementById('result');
-      el.innerHTML = '<p>Running Regulatory Compliance Agent…</p>';
+      const btn = document.getElementById('review-btn');
+      btn.disabled = true;
+      el.innerHTML = '<div class="alert alert-info">Running Regulatory Compliance Agent…</div>';
       try {
         const res = await api(`/api/v1/regulatory/review/${msmeId}`, { method: 'POST' });
         const agent = res.agent_review;
         el.innerHTML = `
-          <div class="alert alert-success">Submission ${res.submission_ref} recorded</div>
-          <p><strong>${agent.agent_type}</strong> — ${agent.summary}</p>
-          <h4>Recommendations</h4>
-          <ul>${agent.recommendations.map(r => `<li>${r}</li>`).join('')}</ul>
-          <pre style="background:#f4f7fa;padding:1rem;border-radius:8px;font-size:.85rem;margin-top:1rem">${JSON.stringify(agent.structured_output, null, 2)}</pre>`;
-      } catch (e) { el.innerHTML = `<div class="alert alert-error">${e.message}</div>`; }
+          <div class="alert alert-success">Submission <strong>${res.submission_ref}</strong> recorded</div>
+          <p style="margin:1rem 0"><strong>${agent.agent_type}</strong> — ${agent.summary}</p>
+          <h4 style="font-size:.9rem;color:var(--primary)">Recommendations</h4>
+          <ul style="margin:.5rem 0 1rem;padding-left:1.25rem;color:var(--muted)">${agent.recommendations.map(r => `<li style="margin-bottom:.35rem">${r}</li>`).join('')}</ul>
+          <pre style="background:#f8fafc;padding:1rem;border-radius:var(--radius-sm);font-size:.82rem;border:1px solid var(--border);overflow:auto">${JSON.stringify(agent.structured_output, null, 2)}</pre>`;
+      } catch (e) {
+        el.innerHTML = `<div class="alert alert-error">${e.message}</div>`;
+      }
+      btn.disabled = false;
     });
   </script>
 </body>
