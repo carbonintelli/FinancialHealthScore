@@ -1,0 +1,158 @@
+{
+  "financial_data": {
+    "profile": {
+      "msme_id": "msme-demo-001",
+      "business_name": "Shree Ganesh Auto Components Pvt Ltd",
+      "udyam_number": "UDYAM-MH-12-0012345",
+      "gstin": "27AABCS1234F1Z5",
+      "sector": "auto_components",
+      "employee_count": 85,
+      "years_in_operation": 12,
+      "annual_turnover_inr": 48000000
+    },
+    "accounting": {
+      "revenue_inr": 48000000,
+      "cost_of_goods_inr": 31200000,
+      "operating_expenses_inr": 9600000,
+      "current_assets_inr": 14500000,
+      "current_liabilities_inr": 8200000,
+      "total_debt_inr": 12000000,
+      "equity_inr": 18500000,
+      "net_profit_inr": 4800000,
+      "period_end": "2026-03-31"
+    },
+    "cash_flows": [
+      {"month": "2026-01", "inflows": 4100000, "outflows": 3750000},
+      {"month": "2026-02", "inflows": 3850000, "outflows": 3620000},
+      {"month": "2026-03", "inflows": 4450000, "outflows": 3890000}
+    ],
+    "utility_bills": [
+      {
+        "month": "2026-01",
+        "electricity_kwh": 18500,
+        "electricity_cost_inr": 148000,
+        "fuel_litres": 2200,
+        "fuel_cost_inr": 198000
+      }
+    ],
+    "payment_records": [
+      {
+        "counterparty": "Tata Steel Ltd",
+        "amount_inr": 850000,
+        "due_date": "2026-04-15",
+        "paid_date": "2026-04-14",
+        "status": "on_time"
+      }
+    ],
+    "bank_statement_summary": {
+      "avg_monthly_balance_inr": 3200000,
+      "min_monthly_balance_inr": 1100000,
+      "cheque_bounce_count_12m": 1
+    },
+    "founder": {
+      "name": "Rajesh Patil",
+      "years_industry_experience": 18,
+      "years_entrepreneurship": 12,
+      "education_level": "graduate",
+      "cibil_score": 782,
+      "prior_defaults": 0,
+      "management_team_size": 4,
+      "succession_plan_documented": false,
+      "industry_certifications": ["ISO 9001 Lead Auditor", "Lean Six Sigma Green Belt"],
+      "linkedin_presence_score": 72
+    },
+    "market_sentiment": {
+      "overall_sentiment_score": 74,
+      "customer_nps": 52,
+      "google_rating": 4.2,
+      "google_review_count": 38,
+      "media_mentions_12m": 6,
+      "positive_media_pct": 83,
+      "customer_retention_rate_pct": 86,
+      "supplier_trust_score": 78,
+      "litigation_count_3y": 0,
+      "gst_compliance_rating": "good"
+    },
+    "product_market": {
+      "products": [
+        {"name": "Precision Forged Crankshafts", "category": "auto_components", "revenue_share_pct": 42, "hsn_code": "8483", "is_export_oriented": true},
+        {"name": "Transmission Gears", "category": "auto_components", "revenue_share_pct": 35, "hsn_code": "8483"},
+        {"name": "EV Motor Housings", "category": "auto_components", "revenue_share_pct": 15, "hsn_code": "8501"}
+      ],
+      "primary_market": "both",
+      "export_revenue_pct": 22,
+      "market_demand_outlook": "moderate_growth",
+      "sector_growth_rate_pct": 9.5,
+      "capacity_utilisation_pct": 78,
+      "order_book_months": 4.2,
+      "import_substitution_potential": true,
+      "ev_supply_chain_exposure": true
+    },
+    "government_policy": {
+      "enrolled_scheme_codes": ["CGTMSE", "CLCSS", "SAMADHAN"],
+      "pending_applications": ["PLI_AUTO"],
+      "zed_certification_level": "silver",
+      "iso_certifications": ["ISO 9001:2015", "IATF 16949"],
+      "gst_filing_compliance_pct": 96,
+      "delayed_payment_complaints_filed": 1,
+      "received_govt_subsidy_inr": 1850000
+    },
+    "credit_bureau": {
+      "crisil_rating": "BBB+",
+      "crisil_outlook": "stable",
+      "crisil_rating_date": "2026-02-15",
+      "rating_agency": "CRISIL",
+      "commercial_credit_score": 3,
+      "emi_on_time_pct_12m": 94.5,
+      "debt_service_coverage_ratio": 1.62,
+      "restructured_loans_count": 0,
+      "written_off_loans_count": 0,
+      "npa_incidents_5y": 0,
+      "past_debts": [
+        {
+          "lender_name": "IDBI Bank",
+          "loan_type": "term_loan",
+          "principal_inr": 8000000,
+          "outstanding_inr": 4200000,
+          "interest_rate_pct": 10.25,
+          "tenure_months": 84,
+          "start_date": "2021-06-01",
+          "status": "active",
+          "repayment_completed_pct": 47.5,
+          "emi_amount_inr": 128500,
+          "collateral_type": "hypothecation"
+        },
+        {
+          "lender_name": "HDFC Bank",
+          "loan_type": "cc_od",
+          "principal_inr": 3000000,
+          "outstanding_inr": 0,
+          "start_date": "2019-03-15",
+          "closed_date": "2024-03-14",
+          "status": "closed",
+          "repayment_completed_pct": 100
+        }
+      ],
+      "repayment_history": [
+        {
+          "month": "2026-01",
+          "lender_name": "IDBI Bank",
+          "emi_amount_inr": 128500,
+          "due_date": "2026-01-05",
+          "paid_date": "2026-01-05",
+          "status": "on_time"
+        },
+        {
+          "month": "2026-02",
+          "lender_name": "IDBI Bank",
+          "emi_amount_inr": 128500,
+          "due_date": "2026-02-05",
+          "paid_date": "2026-02-06",
+          "status": "late"
+        }
+      ]
+    }
+  },
+  "include_carbon_intelligence": true,
+  "audience": "credit_team"
+}
