@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Import Data — Financial Health Score</title>
+  <title>ERP Data Integration — Enterprise Portal</title>
   <link rel="icon" href="/app/assets/favicon.svg" type="image/svg+xml" />
   <link rel="stylesheet" href="/app/css/style.css" />
 </head>
@@ -16,14 +16,14 @@
       <div class="welcome-banner" style="margin-bottom:1.5rem">
         <div class="welcome-banner-glow"></div>
         <div class="welcome-banner-content">
-          <h2>Import & Assess</h2>
-          <p>Connect Tally or Zoho Books, enrich with Sustainow Carbon Intelligence (ci.sustainow.in), and calculate your 20-dimension Financial Health Score.</p>
+          <h2>ERP Integration & Credit Assessment</h2>
+          <p>Connect Tally ERP or Zoho Books, enrich with Sustainow Carbon Intelligence (ci.sustainow.in), and compute your 20-dimension Financial Health Score.</p>
         </div>
       </div>
 
       <div class="card">
-        <div class="card-header"><h3>Data Connector</h3></div>
-        <p class="card-desc">Choose your accounting system to import financial data.</p>
+        <div class="card-header"><h3>Accounting System Connector</h3></div>
+        <p class="card-desc">Select your enterprise resource planning (ERP) system to import financial statements.</p>
         <div class="role-tabs" style="grid-template-columns:1fr 1fr;margin-bottom:1.25rem">
           <div class="role-tab active" data-connector="tally">Tally ERP</div>
           <div class="role-tab" data-connector="zoho">Zoho Books</div>
@@ -34,11 +34,11 @@
         </div>
         <label style="display:flex;align-items:center;gap:.5rem;font-size:.9rem;margin-bottom:1rem">
           <input type="checkbox" id="include-ci" checked />
-          Include ci.sustainow.in carbon footprint & sustainability report
+          Include Sustainow carbon footprint & sustainability intelligence report
         </label>
         <div style="display:flex;flex-wrap:wrap;gap:.5rem">
-          <button class="btn btn-outline" id="preview-btn">Preview Import</button>
-          <button class="btn btn-accent btn-lg" id="assess-btn">Import & Calculate Score</button>
+          <button class="btn btn-outline" id="preview-btn">Preview Data Import</button>
+          <button class="btn btn-accent btn-lg" id="assess-btn">Import & Initiate Credit Assessment</button>
         </div>
       </div>
 
@@ -53,11 +53,12 @@
       </div>
 
       <div class="card" id="result-card" style="display:none">
-        <div class="card-header"><h3>Assessment Result</h3></div>
+        <div class="card-header"><h3>Credit Assessment Result</h3></div>
         <div id="result-content"></div>
       </div>
     </main>
   </div>
+  <script src="/app/js/terminology.js"></script>
   <script src="/app/js/api.js"></script>
   <script src="/app/js/ui.js"></script>
   <script>
@@ -69,8 +70,8 @@
     let selectedConnector = 'tally';
 
     document.getElementById('page-header').innerHTML = FHS.renderPageHeader({
-      title: 'Import Data & Assess',
-      subtitle: 'Tally · Zoho Books · Sustainow Carbon Intelligence',
+      title: 'ERP Data Integration & Assessment',
+      subtitle: 'Tally ERP · Zoho Books · Sustainow Carbon Intelligence',
     });
 
     document.querySelectorAll('[data-connector]').forEach(tab => {
@@ -146,9 +147,9 @@
     document.getElementById('assess-btn').addEventListener('click', async () => {
       const btn = document.getElementById('assess-btn');
       btn.disabled = true;
-      btn.textContent = 'Importing & scoring…';
+      btn.textContent = 'Importing & assessing…';
       document.getElementById('result-card').style.display = '';
-      document.getElementById('result-content').innerHTML = '<div class="alert alert-info">Running 20-dimension score with imported data + Carbon Intelligence…</div>';
+      document.getElementById('result-content').innerHTML = '<div class="alert alert-info">Computing 20-dimension Financial Health Score with imported data and Carbon Intelligence…</div>';
       try {
         const data = await api('/api/v1/msme/assess/import', {
           method: 'POST',
@@ -165,18 +166,18 @@
             score: a.overall_score,
             grade: a.grade,
             riskLevel: a.overall_risk_level,
-            title: 'Financial Health Score',
-            subtitle: `Data: ${data.import_result.source.toUpperCase()} + ci.sustainow.in · ${data.sustainability_report ? 'Sustainability ' + data.sustainability_report.sustainability_score + '/100' : ''}`,
-            ctaHtml: `<a class="btn btn-primary" href="/app/msme/report.html?id=${a.assessment_id}">View Full Report</a>`,
+            title: 'Financial Health Score (FHS)',
+            subtitle: `Data source: ${data.import_result.source.toUpperCase()} + Sustainow CI · ${data.sustainability_report ? 'Sustainability Index ' + data.sustainability_report.sustainability_score + '/100' : ''}`,
+            ctaHtml: `<a class="btn btn-primary" href="/app/msme/report.html?id=${a.assessment_id}">View Credit Assessment Report</a>`,
           })}
           <div class="alert alert-success" style="margin-top:1rem">
-            27 AI agents orchestrated · Assessment ID: <code>${a.assessment_id}</code>
+            AI-assisted credit assessment complete · Reference: <code>${a.assessment_id}</code>
           </div>`;
       } catch (e) {
         document.getElementById('result-content').innerHTML = `<div class="alert alert-error">${e.message}</div>`;
       }
       btn.disabled = false;
-      btn.textContent = 'Import & Calculate Score';
+      btn.textContent = 'Import & Initiate Credit Assessment';
     });
   </script>
 </body>

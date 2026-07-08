@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Government Dashboard — Financial Health Score</title>
+  <title>National MSME Dashboard — Government Portal</title>
   <link rel="icon" href="/app/assets/favicon.svg" type="image/svg+xml" />
   <link rel="stylesheet" href="/app/css/style.css" />
 </head>
@@ -15,11 +15,12 @@
       <div id="welcome"></div>
       <div class="stats-grid" id="stats"></div>
       <div class="card">
-        <div class="card-header"><h3>Registered MSME Portfolio (National View)</h3></div>
+        <div class="card-header"><h3>Registered MSME Portfolio — National Registry</h3></div>
         <div id="msmes"><div class="loading-pulse"></div></div>
       </div>
     </main>
   </div>
+  <script src="/app/js/terminology.js"></script>
   <script src="/app/js/api.js"></script>
   <script src="/app/js/ui.js"></script>
   <script>
@@ -29,8 +30,8 @@
     FHS.mountLayout('govt', 'dashboard');
 
     document.getElementById('page-header').innerHTML = FHS.renderPageHeader({
-      title: 'Government MSME Dashboard',
-      subtitle: 'MSME Ministry · National registry & scheme intelligence',
+      title: 'National MSME Dashboard',
+      subtitle: 'Ministry of MSME · National registry & scheme intelligence',
     });
     document.getElementById('welcome').innerHTML = FHS.renderWelcomeBanner('govt');
 
@@ -38,21 +39,21 @@
       document.getElementById('stats').innerHTML = [
         FHS.renderStatCard('Registered MSMEs', data.registered_msmes, { icon: 'users' }),
         FHS.renderStatCard('Scheme Applications', data.scheme_applications, { icon: 'schemes' }),
-        FHS.renderStatCard('Avg Portfolio Score', data.avg_portfolio_score ?? '—', { icon: 'score', variant: 'success' }),
+        FHS.renderStatCard('Portfolio Avg. FHS', data.avg_portfolio_score ?? '—', { icon: 'score', variant: 'success' }),
       ].join('');
 
       const msmes = data.msmes || [];
       document.getElementById('msmes').innerHTML = msmes.length ? `
         <div class="table-wrap"><table>
-          <thead><tr><th>Business</th><th>Sector</th><th>Score</th><th>Grade</th><th></th></tr></thead>
+          <thead><tr><th>Enterprise</th><th>Sector</th><th>FHS</th><th>Credit Grade</th><th></th></tr></thead>
           <tbody>${msmes.map(m => `<tr>
             <td><strong>${m.business_name}</strong><br><small style="color:var(--muted)">${m.msme_id}</small></td>
             <td>${m.sector || '—'}</td>
             <td>${m.latest_score != null ? `<span class="score-cell">${m.latest_score.toFixed(1)}</span>` : '—'}</td>
             <td>${m.latest_grade ? `<span class="${FHS.gradeClass(m.latest_grade)}">${m.latest_grade}</span>` : '—'}</td>
-            <td><a class="btn btn-sm btn-accent" href="/app/govt/schemes.html?msme=${m.msme_id}">AI Scheme Advisory</a></td>
+            <td><a class="btn btn-sm btn-accent" href="/app/govt/schemes.html?msme=${m.msme_id}">Scheme Advisory</a></td>
           </tr>`).join('')}</tbody>
-        </table></div>` : '<div class="empty-state"><p>No MSMEs registered.</p></div>';
+        </table></div>` : '<div class="empty-state"><p>No MSMEs registered in the national registry.</p></div>';
     }).catch(e => alert(e.message));
   </script>
 </body>

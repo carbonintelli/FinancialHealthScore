@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Regulatory Dashboard — Financial Health Score</title>
+  <title>Supervisory Dashboard — Regulatory Portal</title>
   <link rel="icon" href="/app/assets/favicon.svg" type="image/svg+xml" />
   <link rel="stylesheet" href="/app/css/style.css" />
 </head>
@@ -15,15 +15,16 @@
       <div id="welcome"></div>
       <div class="stats-grid" id="stats"></div>
       <div class="card">
-        <div class="card-header"><h3>High-Risk MSME Assessments</h3></div>
+        <div class="card-header"><h3>Elevated Credit Risk Assessments</h3></div>
         <div id="flagged"><div class="loading-pulse"></div></div>
       </div>
       <div class="card">
-        <div class="card-header"><h3>Recent Regulatory Submissions</h3></div>
+        <div class="card-header"><h3>Regulatory Submission Log</h3></div>
         <div id="submissions"><div class="loading-pulse"></div></div>
       </div>
     </main>
   </div>
+  <script src="/app/js/terminology.js"></script>
   <script src="/app/js/api.js"></script>
   <script src="/app/js/ui.js"></script>
   <script>
@@ -33,35 +34,35 @@
     FHS.mountLayout('regulatory', 'dashboard');
 
     document.getElementById('page-header').innerHTML = FHS.renderPageHeader({
-      title: 'Regulatory Supervision Dashboard',
-      subtitle: 'RBI · GSTN · MCA compliance oversight',
+      title: 'Regulatory Supervisory Dashboard',
+      subtitle: 'RBI · GSTN · MCA compliance & credit risk oversight',
     });
     document.getElementById('welcome').innerHTML = FHS.renderWelcomeBanner('regulatory');
 
     api('/api/v1/regulatory/dashboard').then(data => {
       document.getElementById('stats').innerHTML = [
         FHS.renderStatCard('Pending Reviews', data.pending_reviews, { icon: 'review' }),
-        FHS.renderStatCard('High-Risk MSMEs', data.high_risk_assessments?.length ?? 0, { icon: 'risk', variant: 'risk' }),
-        FHS.renderStatCard('Submissions', data.submissions?.length ?? 0, { icon: 'report' }),
+        FHS.renderStatCard('Elevated-Risk MSMEs', data.high_risk_assessments?.length ?? 0, { icon: 'risk', variant: 'risk' }),
+        FHS.renderStatCard('Regulatory Submissions', data.submissions?.length ?? 0, { icon: 'report' }),
       ].join('');
 
       const flagged = data.high_risk_assessments || [];
       document.getElementById('flagged').innerHTML = flagged.length ? `
         <div class="table-wrap"><table>
-          <thead><tr><th>Business</th><th>Score</th><th>Risk</th><th>Date</th><th></th></tr></thead>
+          <thead><tr><th>Enterprise</th><th>FHS</th><th>Risk Rating</th><th>Assessment Date</th><th></th></tr></thead>
           <tbody>${flagged.map(a => `<tr>
             <td><strong>${a.business_name}</strong></td>
             <td><span class="score-cell">${a.overall_score?.toFixed?.(1) ?? '—'}</span></td>
             <td>${riskBadge(a.overall_risk_level)}</td>
             <td>${formatDate(a.created_at)}</td>
-            <td><a class="btn btn-sm btn-primary" href="/app/regulatory/review.html?msme=${a.msme_id}">Review</a></td>
+            <td><a class="btn btn-sm btn-primary" href="/app/regulatory/review.html?msme=${a.msme_id}">Compliance Review</a></td>
           </tr>`).join('')}</tbody>
-        </table></div>` : '<div class="empty-state"><p>No high-risk assessments flagged.</p></div>';
+        </table></div>` : '<div class="empty-state"><p>No elevated-risk assessments flagged.</p></div>';
 
       const subs = data.submissions || [];
       document.getElementById('submissions').innerHTML = subs.length ? `
         <div class="table-wrap"><table>
-          <thead><tr><th>Ref</th><th>MSME</th><th>Regulator</th><th>Status</th><th>Date</th></tr></thead>
+          <thead><tr><th>Submission Ref.</th><th>Enterprise</th><th>Regulator</th><th>Status</th><th>Date</th></tr></thead>
           <tbody>${subs.slice(0, 10).map(s => `<tr>
             <td><code>${s.submission_ref}</code></td>
             <td>${s.business_name}</td>
@@ -69,7 +70,7 @@
             <td>${riskBadge(s.status === 'reviewed' ? 'low' : 'elevated')}</td>
             <td>${formatDate(s.created_at)}</td>
           </tr>`).join('')}</tbody>
-        </table></div>` : '<div class="empty-state"><p>No submissions yet.</p></div>';
+        </table></div>` : '<div class="empty-state"><p>No regulatory submissions on record.</p></div>';
     }).catch(e => alert(e.message));
   </script>
 </body>

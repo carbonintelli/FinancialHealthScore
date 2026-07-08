@@ -65,12 +65,12 @@ export async function assessFromProfile(opts: AssessFromProfileOptions) {
   }
 
   const request = buildAssessmentRequestFromProfile(profile, opts.audience ?? "credit_team");
-  let carbonData: Record<string, unknown> | undefined;
+  let carbonData: unknown;
   if (opts.includeCarbonIntelligence !== false) {
     try {
-      carbonData = (await fetchFullIntelligence(opts.msmeId)) as Record<string, unknown>;
+      carbonData = await fetchFullIntelligence(opts.msmeId);
     } catch {
-      carbonData = getMockCarbonData(opts.msmeId) as Record<string, unknown>;
+      carbonData = getMockCarbonData(opts.msmeId);
     }
   }
 
@@ -78,7 +78,7 @@ export async function assessFromProfile(opts: AssessFromProfileOptions) {
     applied: [opts.source ?? "msme_data_feed", "ci.sustainow.in"],
     skipped: [] as string[],
     errors: [] as { source: string; message: string }[],
-    mock_mode: carbonData?.mock_data !== false,
+    mock_mode: (carbonData as { mock_data?: boolean } | undefined)?.mock_data !== false,
   };
 
   const result = await assessRequest(request, carbonData, enrichmentLog);

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Login — Financial Health Score</title>
+  <title>Sign In — Financial Health Score Platform</title>
   <link rel="icon" href="/app/assets/favicon.svg" type="image/svg+xml" />
   <link rel="stylesheet" href="/app/css/style.css" />
 </head>
@@ -15,21 +15,21 @@
           <img src="/app/assets/logo.svg" alt="Financial Health Score" width="72" height="72" />
           <div>
             <div class="login-brand-title">Financial Health Score</div>
-            <p class="login-brand-tagline">AI-powered 20-dimension MSME intelligence for banks, businesses, government & regulators</p>
+            <p class="login-brand-tagline">AI-powered 20-dimension MSME credit intelligence for lending institutions, enterprises, government, and regulators</p>
           </div>
         </div>
         <ul class="login-features">
           <li>
             <span class="login-feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20V10"/><path d="M18 20V4"/><path d="M6 20v-4"/></svg></span>
-            <span><strong>20-Dimension Scoring</strong> — liquidity, compliance, carbon risk, alternative data & more</span>
+            <span><strong>20-Dimension Credit Scoring</strong> — liquidity, statutory compliance, carbon transition risk, alternative data & more</span>
           </li>
           <li>
             <span class="login-feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg></span>
-            <span><strong>27 AI Agents</strong> — multi-phase orchestration for credit, risk & reporting</span>
+            <span><strong>27 AI Agents</strong> — multi-phase orchestration for credit underwriting, risk assessment & reporting</span>
           </li>
           <li>
             <span class="login-feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg></span>
-            <span><strong>4 Stakeholder Portals</strong> — Bank, MSME, Government & Regulatory access</span>
+            <span><strong>4 Stakeholder Portals</strong> — Lending Institution, Enterprise, Government & Regulatory access</span>
           </li>
         </ul>
         <div class="login-competition">IDBI Innovate 2026 · SUSTAINOW TECHNOLOGIES</div>
@@ -40,13 +40,13 @@
       <div class="login-card">
         <div class="login-card-header">
           <img src="/app/assets/logo.svg" alt="" width="52" height="52" class="login-mobile-logo" />
-          <h1>Welcome back</h1>
-          <p class="tagline">Sign in to your stakeholder portal</p>
+          <h1>Secure Sign In</h1>
+          <p class="tagline">Access your authorised stakeholder portal</p>
         </div>
 
         <div class="role-tabs">
-          <div class="role-tab active" data-role="bank">Bank</div>
-          <div class="role-tab" data-role="msme">MSME</div>
+          <div class="role-tab active" data-role="bank">Lending Institution</div>
+          <div class="role-tab" data-role="msme">Enterprise (MSME)</div>
           <div class="role-tab" data-role="government">Government</div>
           <div class="role-tab" data-role="regulatory">Regulatory</div>
         </div>
@@ -66,17 +66,18 @@
         </form>
 
         <p id="msme-register-link" style="display:none;margin-top:1rem;text-align:center;font-size:.9rem">
-          New MSME? <a href="/app/msme/register.html">Register & get your Health Score</a>
+          New enterprise? <a href="/app/msme/register.html">Register your MSME & obtain your Financial Health Score</a>
         </p>
 
         <div class="demo-creds" id="demo-creds">
-          <strong>Demo credentials</strong>
+          <strong>Demonstration credentials</strong>
           <div id="cred-list"></div>
         </div>
       </div>
     </div>
   </div>
 
+  <script src="/app/js/terminology.js"></script>
   <script src="/app/js/api.js"></script>
   <script>
     const user = getUser();

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Detailed Report — MSME Portal</title>
+  <title>Credit Assessment Report — Enterprise Portal</title>
   <link rel="icon" href="/app/assets/favicon.svg" type="image/svg+xml" />
   <link rel="stylesheet" href="/app/css/style.css" />
 </head>
@@ -16,6 +16,7 @@
       <iframe class="report-frame" id="report-frame" title="Detailed Report"></iframe>
     </main>
   </div>
+  <script src="/app/js/terminology.js"></script>
   <script src="/app/js/api.js"></script>
   <script src="/app/js/ui.js"></script>
   <script>
@@ -27,10 +28,10 @@
     document.getElementById('page-header').innerHTML = `
       <header class="page-header">
         <div class="page-header-text">
-          <p class="page-eyebrow">Your Financial Health</p>
-          <h1 class="page-title">Detailed Report</h1>
+          <p class="page-eyebrow">Credit Assessment Report</p>
+          <h1 class="page-title">Financial Health Score Report</h1>
         </div>
-        <button class="btn btn-outline" onclick="window.print()">Print / Save PDF</button>
+        <button class="btn btn-outline" onclick="window.print()">Export / Print PDF</button>
       </header>`;
 
     async function load() {
@@ -42,8 +43,8 @@
       if (!id) {
         document.getElementById('summary').innerHTML = `
           <div class="empty-state">
-            <p>No assessment found.</p>
-            <a class="btn btn-accent" href="/app/msme/assess.html" style="margin-top:1rem">Run Assessment</a>
+            <p>No credit assessment on record.</p>
+            <a class="btn btn-accent" href="/app/msme/assess.html" style="margin-top:1rem">Initiate Credit Assessment</a>
           </div>`;
         return;
       }
@@ -62,7 +63,7 @@
           subtitle: report.executive_summary,
         })}
         ${improvements.length ? `
-          <h3 style="margin-top:1.5rem;font-size:.95rem;color:var(--primary)">Recommended Improvements</h3>
+          <h3 style="margin-top:1.5rem;font-size:.95rem;color:var(--primary)">Recommended Credit Improvement Actions</h3>
           <ul style="margin-top:.75rem;padding-left:1.25rem;color:var(--muted)">${improvements.map(i => `<li style="margin-bottom:.35rem">${i}</li>`).join('')}</ul>
         ` : ''}`;
     }

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>MSME Dashboard — Financial Health Score</title>
+  <title>Enterprise Dashboard — Financial Health Score Platform</title>
   <link rel="icon" href="/app/assets/favicon.svg" type="image/svg+xml" />
   <link rel="stylesheet" href="/app/css/style.css" />
 </head>
@@ -15,19 +15,20 @@
       <div id="welcome"></div>
       <div class="stats-grid" id="stats"></div>
       <div class="card" id="score-card">
-        <div class="card-header"><h3>Your Financial Health Score</h3></div>
+        <div class="card-header"><h3>Financial Health Score (FHS)</h3></div>
         <div id="score-block"><div class="loading-pulse" style="height:120px"></div></div>
       </div>
       <div class="card" id="dims-card" style="display:none">
-        <div class="card-header"><h3>Dimension Breakdown</h3></div>
+        <div class="card-header"><h3>Dimensional Credit Analysis</h3></div>
         <div id="dim-bars"></div>
       </div>
       <div class="card">
-        <div class="card-header"><h3>Assessment History</h3></div>
+        <div class="card-header"><h3>Credit Assessment History</h3></div>
         <div id="history"><div class="loading-pulse"></div></div>
       </div>
     </main>
   </div>
+  <script src="/app/js/terminology.js"></script>
   <script src="/app/js/api.js"></script>
   <script src="/app/js/ui.js"></script>
   <script>
@@ -44,17 +45,17 @@
 
       document.getElementById('page-header').innerHTML = FHS.renderPageHeader({
         title: dash.business_name,
-        subtitle: `MSME ID: ${dash.msme_id || user.msme_id || '—'}`,
+        subtitle: `Udyam / MSME ID: ${dash.msme_id || user.msme_id || '—'}`,
         badge: dash.latest_grade ? `<span class="${FHS.gradeClass(dash.latest_grade)}">${dash.latest_grade}</span>` : '',
       });
       document.getElementById('welcome').innerHTML = FHS.renderWelcomeBanner('msme');
 
       document.getElementById('stats').innerHTML = [
-        FHS.renderStatCard('Latest Score', dash.latest_score?.toFixed(1) ?? '—', { icon: 'score', variant: dash.latest_score >= 70 ? 'success' : '' }),
-        FHS.renderStatCard('Grade', dash.latest_grade ?? '—', { icon: 'check' }),
-        FHS.renderStatCard('Risk Level', dash.latest_risk_level ?? '—', { icon: 'risk', variant: ['elevated','high','critical'].includes(dash.latest_risk_level) ? 'risk' : '' }),
-        FHS.renderStatCard('Open Loans', dash.open_loan_applications, { icon: 'loans' }),
-        FHS.renderStatCard('Improvements', dash.improvement_count, { icon: 'trend' }),
+        FHS.renderStatCard('Latest FHS', dash.latest_score?.toFixed(1) ?? '—', { icon: 'score', variant: dash.latest_score >= 70 ? 'success' : '' }),
+        FHS.renderStatCard('Credit Grade', dash.latest_grade ?? '—', { icon: 'check' }),
+        FHS.renderStatCard('Credit Risk Rating', dash.latest_risk_level ? formatRiskLevel(dash.latest_risk_level) : '—', { icon: 'risk', variant: ['elevated','high','critical'].includes(dash.latest_risk_level) ? 'risk' : '' }),
+        FHS.renderStatCard('Open Credit Applications', dash.open_loan_applications, { icon: 'loans' }),
+        FHS.renderStatCard('Improvement Actions', dash.improvement_count, { icon: 'trend' }),
       ].join('');
 
       if (dash.latest_score != null) {
@@ -62,11 +63,11 @@
           score: dash.latest_score,
           grade: dash.latest_grade,
           riskLevel: dash.latest_risk_level,
-          title: 'Your Financial Health Score',
-          subtitle: `Last assessed ${formatDate(dash.last_assessed_at)} · 20 dimensions analysed with AI agent validation`,
+          title: 'Financial Health Score (FHS)',
+          subtitle: `Last assessed ${formatDate(dash.last_assessed_at)} · 20 dimensions evaluated with AI-assisted credit analytics`,
           ctaHtml: `<div style="display:flex;flex-wrap:wrap;gap:.5rem;margin-top:.5rem">
-            <a class="btn btn-primary" href="/app/msme/report.html">View Detailed Report</a>
-            <a class="btn btn-outline" href="/app/msme/assess.html">Run New Assessment</a>
+            <a class="btn btn-primary" href="/app/msme/report.html">View Credit Assessment Report</a>
+            <a class="btn btn-outline" href="/app/msme/assess.html">Initiate New Assessment</a>
           </div>`,
         });
 
@@ -85,26 +86,26 @@
         document.getElementById('score-block').innerHTML = `
           <div class="empty-state">
             <div class="empty-state-icon">${FHS.ICONS.assess}</div>
-            <h4>No assessment yet</h4>
-            <p style="margin-bottom:1rem">Run your first 20-dimension Financial Health Score to unlock credit insights and loan applications.</p>
-            <a class="btn btn-accent btn-lg" href="/app/msme/assess.html">Run Assessment</a>
+            <h4>No credit assessment on record</h4>
+            <p style="margin-bottom:1rem">Initiate your first 20-dimension Financial Health Score assessment to unlock credit insights and facility applications.</p>
+            <a class="btn btn-accent btn-lg" href="/app/msme/assess.html">Initiate Credit Assessment</a>
           </div>`;
       }
 
       if (!history.length) {
-        document.getElementById('history').innerHTML = '<p class="card-desc">No assessment history yet.</p>';
+        document.getElementById('history').innerHTML = '<p class="card-desc">No credit assessment history on record.</p>';
         return;
       }
       document.getElementById('history').innerHTML = `
         <div class="table-wrap"><table>
-          <thead><tr><th>Date</th><th>Score</th><th>Grade</th><th>Risk</th><th></th></tr></thead>
+          <thead><tr><th>Assessment Date</th><th>FHS</th><th>Credit Grade</th><th>Risk Rating</th><th></th></tr></thead>
           <tbody>${history.map(a => `
             <tr>
               <td>${formatDate(a.created_at)}</td>
               <td><span class="score-cell">${a.overall_score.toFixed(1)}</span></td>
               <td><span class="${FHS.gradeClass(a.grade)}">${a.grade}</span></td>
               <td>${riskBadge(a.overall_risk_level)}</td>
-              <td><a class="btn btn-sm btn-primary" href="/app/msme/report.html?id=${a.assessment_id}">Report</a></td>
+              <td><a class="btn btn-sm btn-primary" href="/app/msme/report.html?id=${a.assessment_id}">View Report</a></td>
             </tr>
           `).join('')}</tbody>
         </table></div>`;

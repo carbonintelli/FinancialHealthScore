@@ -46,14 +46,14 @@ function userProfile(user: {
 export async function registerMsme(input: RegisterMsmeInput) {
   const email = input.email.toLowerCase().trim();
   if (!email || !input.password || input.password.length < 8) {
-    throw new Error("Valid email and password (min 8 chars) required");
+    throw new Error("Valid email address and password (minimum 8 characters) are required");
   }
   if (!input.business_name?.trim() || !input.full_name?.trim()) {
-    throw new Error("Business name and full name are required");
+    throw new Error("Registered business name and authorised signatory name are required");
   }
 
   const existing = getDb().prepare("SELECT id FROM users WHERE email = ?").get(email);
-  if (existing) throw new Error("Email already registered");
+  if (existing) throw new Error("This email address is already registered");
 
   const msmeId = `msme-${randomBytes(4).toString("hex")}`;
   const db = getDb();

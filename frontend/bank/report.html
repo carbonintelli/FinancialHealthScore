@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Detailed Report — Financial Health Score</title>
+  <title>Credit Assessment Report — Lending Institution Portal</title>
   <link rel="icon" href="/app/assets/favicon.svg" type="image/svg+xml" />
   <link rel="stylesheet" href="/app/css/style.css" />
 </head>
@@ -16,6 +16,7 @@
       <iframe class="report-frame" id="report-frame" title="Detailed Report"></iframe>
     </main>
   </div>
+  <script src="/app/js/terminology.js"></script>
   <script src="/app/js/api.js"></script>
   <script src="/app/js/ui.js"></script>
   <script>
@@ -31,11 +32,11 @@
       <header class="page-header">
         <div class="page-header-text">
           <p class="page-eyebrow">Credit Assessment Report</p>
-          <h1 class="page-title">Detailed Credit Report</h1>
+          <h1 class="page-title">MSME Credit Assessment Report</h1>
         </div>
         <div style="display:flex;gap:.5rem;flex-wrap:wrap">
-          <button class="btn btn-outline" onclick="window.print()">Print</button>
-          <a class="btn btn-primary" id="html-link" href="#">Open Full HTML</a>
+          <button class="btn btn-outline" onclick="window.print()">Export / Print</button>
+          <a class="btn btn-primary" id="html-link" href="#">Open Full Report</a>
         </div>
       </header>`;
 
@@ -46,7 +47,7 @@
         if (match) assessmentId = match.assessment_id;
       }
       if (!assessmentId) {
-        document.getElementById('summary').innerHTML = '<div class="empty-state"><p>No assessment selected.</p></div>';
+        document.getElementById('summary').innerHTML = '<div class="empty-state"><p>No credit assessment selected.</p></div>';
         return;
       }
 
@@ -67,7 +68,7 @@
           subtitle: report.executive_summary,
         })}
         <div class="alert alert-success" style="margin-top:1.25rem">
-          <strong>Credit Decision:</strong> ${report.credit_decision_recommendation}
+          <strong>Credit Decision Recommendation:</strong> ${report.credit_decision_recommendation}
         </div>`;
     }
     load().catch(e => { document.getElementById('summary').innerHTML = `<div class="alert alert-error">${e.message}</div>`; });

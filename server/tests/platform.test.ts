@@ -247,7 +247,7 @@ describe("MSME Registration & Data Feed", () => {
         business_name: "Test Components Pvt Ltd",
         sector: "manufacturing",
         gstin: "27AABCT1234F1Z9",
-        udyam_number: "UDYAM-MH-99-0099999",
+        udyam_number: `UDYAM-MH-99-${Date.now()}`,
         state: "maharashtra",
         annual_turnover_inr: 15_000_000,
         financial_data: {

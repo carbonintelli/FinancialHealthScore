@@ -82,9 +82,31 @@ function formatDate(iso) {
   return new Date(iso).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
 }
 
+function formatLoanStatus(status) {
+  return typeof FHS_TERMS !== 'undefined' ? FHS_TERMS.formatLoanStatus(status) : status;
+}
+
+function formatRiskLevel(level) {
+  return typeof FHS_TERMS !== 'undefined' ? FHS_TERMS.formatRiskLevel(level) : level;
+}
+
+function formatLoanType(type) {
+  return typeof FHS_TERMS !== 'undefined' ? FHS_TERMS.formatLoanType(type) : type;
+}
+
+function formatDataSource(source) {
+  return typeof FHS_TERMS !== 'undefined' ? FHS_TERMS.formatDataSource(source) : source;
+}
+
+function formatFeedStatus(status) {
+  return typeof FHS_TERMS !== 'undefined' ? FHS_TERMS.formatFeedStatus(status) : status;
+}
+
 function riskBadge(level) {
   if (!level) return '—';
-  return `<span class="badge badge-${level}">${level}</span>`;
+  const badgeClass = typeof FHS_TERMS !== 'undefined' ? FHS_TERMS.riskBadgeClass(level) : level;
+  const label = formatRiskLevel(level);
+  return `<span class="badge badge-${badgeClass}" title="${label}">${label}</span>`;
 }
 
 /** Fetch authenticated HTML report and return a blob URL for iframe embedding. */
