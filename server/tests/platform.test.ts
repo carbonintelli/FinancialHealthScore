@@ -37,7 +37,9 @@ describe("Agentic AI Architecture", () => {
   it("architecture endpoint describes orchestration phases", async () => {
     const res = await request(app).get("/api/v1/agents/architecture");
     expect(res.status).toBe(200);
-    expect(res.body.phases.length).toBe(6);
+    expect(res.body.phases.length).toBe(7);
+    expect(res.body.phases.find((p: { id: string }) => p.id === "dimension_scoring")?.count).toBe(20);
+    expect(res.body.scoring_agents).toBe(20);
     expect(res.body.dimension_agents.length).toBe(20);
     expect(res.body.total_agents_per_full_run).toBe(27);
   });

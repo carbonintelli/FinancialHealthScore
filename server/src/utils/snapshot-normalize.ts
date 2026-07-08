@@ -10,6 +10,7 @@ const VOLATILE_KEYS = new Set([
   "submission_ref",
   "application_ref",
   "access_token",
+  "scoring_orchestration_id",
 ]);
 
 const TIMESTAMP_RE = /^\d{4}-\d{2}-\d{2}/;

@@ -196,9 +196,12 @@ export async function orchestrateAssessment(
 
 export function getArchitecture() {
   return {
-    version: "2.1.0",
+    version: "2.2.0",
     pattern: "multi-phase agentic orchestration",
+    scoring_engine: "nodejs",
+    scoring_agents: 20,
     phases: [
+      { id: "dimension_scoring", name: "Dimension Scoring", agents: DIMENSION_CATALOG.map((d) => `scoring:${d.id}`), parallel: true, count: 20 },
       { id: "enrichment", name: "Data Enrichment", agents: ["data_enrichment"], parallel: false },
       {
         id: "dimension_analysis",
@@ -225,6 +228,7 @@ export function getArchitecture() {
       agent_role: d.agent_role,
     })),
     total_agents_per_full_run: 1 + 20 + 1 + 1 + 1 + 3,
+    total_pipeline_agents: 20 + 1 + 20 + 1 + 1 + 1 + 3,
     llm_enhanced: !!process.env.OPENAI_API_KEY,
   };
 }

@@ -24,6 +24,7 @@ export const config = {
   zohoRefreshToken: process.env.ZOHO_REFRESH_TOKEN || "",
   zohoOrganizationId: process.env.ZOHO_ORGANIZATION_ID || "",
   pythonPath: process.env.PYTHON_PATH || "python3",
+  scoringEngine: (process.env.SCORING_ENGINE || "node").toLowerCase(),
   scoringBridgePath: path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../scoring_bridge.py"),
   frontendPath: path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../frontend"),
   rootPath: path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../.."),

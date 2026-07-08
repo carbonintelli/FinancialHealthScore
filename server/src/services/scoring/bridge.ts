@@ -1,27 +1,17 @@
-import { spawn } from "child_process";
-import path from "path";
 import { config } from "../../config.js";
+import type { AssessmentResult } from "./types.js";
+import {
+  assessDemo as nodeAssessDemo,
+  assessRequest as nodeAssessRequest,
+  getMockCarbonData,
+} from "./index.js";
+import { spawn } from "child_process";
 
-export interface AssessmentResult {
-  assessment_id: string;
-  business_name: string;
-  msme_id?: string;
-  generated_at: string;
-  overall_score: number;
-  overall_risk_level: string;
-  overall_confidence: string;
-  grade: string;
-  dimension_scores: unknown[];
-  risk_indicators: unknown[];
-  key_insights: string[];
-  green_finance_opportunities: string[];
-  carbon_intelligence?: unknown;
-  government_policy_assessment?: unknown;
-  data_gaps: unknown[];
-  recommended_improvements: string[];
-  advanced_intelligence?: unknown;
-  audience_summary: string;
-  metadata: Record<string, unknown>;
+export type { AssessmentResult } from "./types.js";
+export { getMockCarbonData };
+
+function useNodeScoring(): boolean {
+  return config.scoringEngine !== "python";
 }
 
 export function runPythonScoring(payload: Record<string, unknown>): Promise<AssessmentResult> {
@@ -38,7 +28,7 @@ export function runPythonScoring(payload: Record<string, unknown>): Promise<Asse
       if (code !== 0) return reject(new Error(`Scoring bridge failed: ${stderr}`));
       try {
         resolve(JSON.parse(stdout) as AssessmentResult);
-      } catch (e) {
+      } catch {
         reject(new Error(`Invalid scoring output: ${stdout.slice(0, 200)}`));
       }
     });
@@ -48,23 +38,23 @@ export function runPythonScoring(payload: Record<string, unknown>): Promise<Asse
 }
 
 export async function assessDemo(audience = "credit_team", carbonData?: unknown): Promise<AssessmentResult> {
-  return runPythonScoring({ mode: "demo", audience, carbon_data: carbonData ?? getMockCarbonData("msme-demo-001") });
+  if (useNodeScoring()) {
+    return nodeAssessDemo(audience, carbonData);
+  }
+  return runPythonScoring({
+    mode: "demo",
+    audience,
+    carbon_data: carbonData ?? getMockCarbonData("msme-demo-001"),
+  });
 }
 
-export async function assessRequest(request: unknown, carbonData?: unknown, enrichmentLog?: unknown): Promise<AssessmentResult> {
+export async function assessRequest(
+  request: unknown,
+  carbonData?: unknown,
+  enrichmentLog?: unknown,
+): Promise<AssessmentResult> {
+  if (useNodeScoring()) {
+    return nodeAssessRequest(request, carbonData, enrichmentLog);
+  }
   return runPythonScoring({ mode: "assess", request, carbon_data: carbonData, enrichment_log: enrichmentLog });
-}
-
-export function getMockCarbonData(msmeId: string) {
-  return {
-    carbon_summary: { businessName: msmeId === "msme-demo-001" ? "Shree Ganesh Auto Components Pvt Ltd" : `MSME ${msmeId}`, totalEmissionsTco2e: 142.5 },
-    transactions_summary: {
-      avgMonthlyInflowInr: 4100000,
-      avgMonthlyOutflowInr: 3750000,
-      inflowVolatilityPct: 18.5,
-      onTimePaymentRatePct: 80,
-      paymentRecordCount: 5,
-    },
-    reports_overview: { reportingReadiness: "partial", transitionPlanDocumented: false },
-  };
 }

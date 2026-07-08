@@ -54,7 +54,7 @@ describe("API snapshots", () => {
   it("demo assessment credit", async () => {
     const res = await request(app).get("/api/v1/assess/demo").query({ audience: "credit_team" });
     expect(res.status).toBe(200);
-    expect(res.body.overall_score).toBe(77.3);
+    expect(res.body.overall_score).toBe(78.1);
     expect(res.body.grade).toBe("B+");
     expect(res.body.dimension_scores).toHaveLength(20);
     assertMatchesSnapshot(res.body, "demo_assessment_credit");

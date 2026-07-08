@@ -1,7 +1,37 @@
 {
-  "version": "2.1.0",
+  "version": "2.2.0",
   "pattern": "multi-phase agentic orchestration",
+  "scoring_engine": "nodejs",
+  "scoring_agents": 20,
   "phases": [
+    {
+      "id": "dimension_scoring",
+      "name": "Dimension Scoring",
+      "agents": [
+        "scoring:financial_resilience",
+        "scoring:founder_capability",
+        "scoring:cash_flow_health",
+        "scoring:payment_behaviour",
+        "scoring:credit_history_debt_servicing",
+        "scoring:operational_stability",
+        "scoring:legal_compliance",
+        "scoring:carbon_transition_risk",
+        "scoring:alternative_data_signals",
+        "scoring:market_sentiment",
+        "scoring:tax_compliance",
+        "scoring:operational_certifications",
+        "scoring:government_policy_alignment",
+        "scoring:product_demand_outlook",
+        "scoring:esg_disclosure",
+        "scoring:supply_chain_resilience",
+        "scoring:governance_diversity",
+        "scoring:insurance_business_continuity",
+        "scoring:geographic_risk",
+        "scoring:peer_benchmark"
+      ],
+      "parallel": true,
+      "count": 20
+    },
     {
       "id": "enrichment",
       "name": "Data Enrichment",
@@ -216,5 +246,6 @@
     }
   ],
   "total_agents_per_full_run": 27,
+  "total_pipeline_agents": 47,
   "llm_enhanced": false
 }
