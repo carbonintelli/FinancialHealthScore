@@ -80,19 +80,30 @@ Retrieve all credentials: `GET /api/v1/auth/demo-credentials`
 
 ## Scoring Engine
 
-The Node server invokes the Python scoring engine via `scoring_bridge.py` for exact 20-dimension parity. Requires Python 3 with `app/` dependencies installed (`pip install -r requirements.txt`).
+The **Node.js scoring engine** (`server/src/services/scoring/`) is the default runtime. It uses **20 parallel dimension scoring agents** (Phase 0 of agentic assessment) before the existing 27-agent orchestration pipeline interprets results.
 
-### Why a Python bridge?
+```
+Phase 0: dimension_scoring   → 20 parallel scoring agents (deterministic math)
+Phase 1–6: orchestrator     → enrichment, dimension analysis, synthesis, reporting
+```
 
-The **20-dimension scoring engine** lives in Python (`app/services/scoring_engine.py`) — roughly 2,400 lines of domain logic covering liquidity ratios, carbon transition risk, peer benchmarks, governance bonuses, and 15+ other dimension scorers. Rather than maintaining two implementations, the Node platform:
+Set `SCORING_ENGINE=python` to fall back to the legacy Python bridge (`server/scoring_bridge.py`) for comparison or migration.
 
-1. Sends assessment JSON to `server/scoring_bridge.py` via stdin
-2. The bridge calls `scoring_engine.assess()` and returns JSON on stdout
-3. Node handles auth, persistence, AI agent orchestration, and the web UI
+### Architecture
 
-This keeps **one source of truth** for scores while the Node layer owns the multi-stakeholder platform. A full TypeScript port is possible but was intentionally deferred to avoid score drift between runtimes.
+```
+server/src/services/scoring/
+├── engine.ts              # assess() — orchestrates scoring agents + post-process
+├── scoring-agents.ts      # runScoringAgents() — 20 parallel dimension agents
+├── dimensions/            # One scorer per dimension (ported from Python)
+├── post-process.ts        # Risk indicators, data gaps, recommendations
+├── policy-assessment.ts   # Government scheme alignment
+└── bridge.ts              # Routes to Node (default) or Python fallback
+```
 
-Demo MSME baseline: **77.3 / B+** (Shree Ganesh Auto Components Pvt Ltd).
+Demo MSME baseline: **78.1 / B+** (Shree Ganesh Auto Components Pvt Ltd).
+
+Parity with Python is verified in `tests/scoring.test.ts`.
 
 ## Configuration
 
@@ -104,12 +115,14 @@ DATABASE_URL=data/financial_health_node.db
 USE_MOCK_INTEGRATIONS=true
 OPENAI_API_KEY=              # Optional — LLM agent narratives
 CARBON_INTELLIGENCE_API_KEY= # Optional — live CI data
+SCORING_ENGINE=node          # node (default) | python (legacy bridge)
+PYTHON_PATH=python3          # Only needed when SCORING_ENGINE=python
 ```
 
 ## Tests & Snapshots
 
 ```bash
-cd server && npm test              # 23 tests (platform + snapshots)
+cd server && npm test              # 33 tests (platform + snapshots + scoring parity)
 npm run generate:snapshots         # Regenerate tests/snapshots/*.json
 ```
 
@@ -117,6 +130,7 @@ npm run generate:snapshots         # Regenerate tests/snapshots/*.json
 |---|---|
 | `tests/platform.test.ts` | Auth, agents, bank/MSME/govt/regulatory flows |
 | `tests/snapshots.test.ts` | Golden-file API response regression |
+| `tests/scoring.test.ts` | Node scoring engine parity with Python |
 
 Snapshot catalog: [PRODUCT_SNAPSHOTS.md](./PRODUCT_SNAPSHOTS.md)
 

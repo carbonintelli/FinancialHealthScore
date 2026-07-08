@@ -124,293 +124,6 @@
     {
       "agent_type": "dimension_agent",
       "run_id": "<UUID>",
-      "dimension": "cash_flow_health",
-      "dimension_label": "Cash Flow Health",
-      "category": "financial",
-      "score": 57.8,
-      "weight": 0.07,
-      "weighted_contribution": 4,
-      "risk_level": "elevated",
-      "risk_flags": [
-        "Cash flow volatility or margin pressure",
-        "Cash Flow Health risk level: elevated"
-      ],
-      "evidence_count": 2,
-      "positive_signals": 1,
-      "negative_signals": 1,
-      "summary": "Cash Flow Health (Cash flow analyst): score 57.8/100 (weak). Weight 7%, contributes 4.0 pts. 1 positive / 1 negative signals. Flags: Cash flow volatility or margin pressure; Cash Flow Health risk level: elevated.",
-      "recommendations": [
-        "Improve cash flow health — priority remediation for credit uplift",
-        "Implement 13-week cash flow forecasting and receivables optimisation"
-      ],
-      "confidence": "high",
-      "structured_output": {
-        "insights": [
-          {
-            "indicator": "Net Cash Margin",
-            "category": "cash_flow",
-            "value": "8.5%",
-            "benchmark": "8%",
-            "impact": "positive",
-            "narrative": "Average monthly net cash margin of 8.5% from transaction analytics.",
-            "confidence": "high",
-            "data_source": "ci.sustainow.in/transactions"
-          },
-          {
-            "indicator": "Inflow Volatility",
-            "category": "cash_flow",
-            "value": "18.5%",
-            "benchmark": "15%",
-            "impact": "negative",
-            "narrative": "Cash inflow volatility at 18.5% indicates operational stability.",
-            "confidence": "high",
-            "data_source": "ci.sustainow.in/transactions"
-          }
-        ],
-        "data_sources": [
-          "ci.sustainow.in/transactions",
-          "cash_flows"
-        ],
-        "weighted_contribution": 4.046
-      },
-      "used_llm": false
-    },
-    {
-      "agent_type": "dimension_agent",
-      "run_id": "<UUID>",
-      "dimension": "operational_stability",
-      "dimension_label": "Operational Stability",
-      "category": "operational",
-      "score": 79.2,
-      "weight": 0.06,
-      "weighted_contribution": 4.8,
-      "risk_level": "low",
-      "risk_flags": [],
-      "evidence_count": 3,
-      "positive_signals": 2,
-      "negative_signals": 1,
-      "summary": "Operational Stability (Operations analyst): score 79.2/100 (strong). Weight 6%, contributes 4.8 pts. 2 positive / 1 negative signals. No material flags.",
-      "recommendations": [
-        "Maintain current operational stability performance"
-      ],
-      "confidence": "medium",
-      "structured_output": {
-        "insights": [
-          {
-            "indicator": "Opex-to-Revenue Ratio",
-            "category": "operational_efficiency",
-            "value": "20.0%",
-            "benchmark": "25%",
-            "impact": "positive",
-            "narrative": "Operating expenses consume 20.0% of revenue.",
-            "confidence": "high",
-            "data_source": "accounting_records"
-          },
-          {
-            "indicator": "Energy Cost Exposure",
-            "category": "operational_volatility",
-            "value": "8.6%",
-            "benchmark": "8%",
-            "impact": "negative",
-            "narrative": "Energy costs represent 8.6% of revenue, above typical MSME benchmarks.",
-            "confidence": "medium",
-            "data_source": "utility_bills"
-          },
-          {
-            "indicator": "Business Tenure",
-            "category": "stability",
-            "value": "12 years",
-            "benchmark": "5 years",
-            "impact": "positive",
-            "narrative": "Business operating for 12 years.",
-            "confidence": "medium",
-            "data_source": "msme_profile"
-          }
-        ],
-        "data_sources": [
-          "accounting_records",
-          "utility_bills"
-        ],
-        "weighted_contribution": 4.752
-      },
-      "used_llm": false
-    },
-    {
-      "agent_type": "dimension_agent",
-      "run_id": "<UUID>",
-      "dimension": "payment_behaviour",
-      "dimension_label": "Payment Behaviour",
-      "category": "financial",
-      "score": 80,
-      "weight": 0.07,
-      "weighted_contribution": 5.6,
-      "risk_level": "low",
-      "risk_flags": [],
-      "evidence_count": 2,
-      "positive_signals": 0,
-      "negative_signals": 2,
-      "summary": "Payment Behaviour (Payment behaviour analyst): score 80.0/100 (strong). Weight 7%, contributes 5.6 pts. 0 positive / 2 negative signals. No material flags.",
-      "recommendations": [
-        "Maintain current payment behaviour performance"
-      ],
-      "confidence": "high",
-      "structured_output": {
-        "insights": [
-          {
-            "indicator": "On-Time Payment Rate",
-            "category": "payment_behaviour",
-            "value": "80%",
-            "benchmark": "90%",
-            "impact": "negative",
-            "narrative": "80% of payments made on time across 5 records.",
-            "confidence": "high",
-            "data_source": "payment_records"
-          },
-          {
-            "indicator": "Late/Overdue Payments",
-            "category": "payment_behaviour",
-            "value": 1,
-            "benchmark": 0,
-            "impact": "negative",
-            "narrative": "1 late or overdue payment(s) detected.",
-            "confidence": "high",
-            "data_source": "payment_records"
-          }
-        ],
-        "data_sources": [
-          "payment_records",
-          "ci.sustainow.in/transactions"
-        ],
-        "weighted_contribution": 5.6000000000000005
-      },
-      "used_llm": false
-    },
-    {
-      "agent_type": "dimension_agent",
-      "run_id": "<UUID>",
-      "dimension": "carbon_transition_risk",
-      "dimension_label": "Carbon Transition Risk",
-      "category": "sustainability",
-      "score": 49.5,
-      "weight": 0.05,
-      "weighted_contribution": 2.5,
-      "risk_level": "elevated",
-      "risk_flags": [
-        "Carbon intensity or transition plan gap",
-        "Carbon Transition Risk risk level: elevated"
-      ],
-      "evidence_count": 3,
-      "positive_signals": 0,
-      "negative_signals": 3,
-      "summary": "Carbon Transition Risk (Carbon transition analyst): score 49.5/100 (weak). Weight 5%, contributes 2.5 pts. 0 positive / 3 negative signals. Flags: Carbon intensity or transition plan gap; Carbon Transition Risk risk level: elevated.",
-      "recommendations": [
-        "Improve carbon transition risk — priority remediation for credit uplift",
-        "Commission carbon assessment and document transition roadmap for green finance"
-      ],
-      "confidence": "medium",
-      "structured_output": {
-        "insights": [
-          {
-            "indicator": "Carbon Intensity",
-            "category": "transition_risk",
-            "value": "0.50 kgCO₂/₹",
-            "benchmark": "0.30",
-            "impact": "negative",
-            "narrative": "Carbon intensity of 0.50 kgCO₂ per revenue unit from Carbon Intelligence assessment.",
-            "confidence": "medium",
-            "data_source": "ci.sustainow.in/carbon-summary"
-          },
-          {
-            "indicator": "Energy Cost Share",
-            "category": "transition_risk",
-            "value": "15.0%",
-            "benchmark": "10%",
-            "impact": "negative",
-            "narrative": "Energy costs account for 15.0% of operational spend.",
-            "confidence": "high",
-            "data_source": "ci.sustainow.in/carbon-summary"
-          },
-          {
-            "indicator": "Transition Plan",
-            "category": "transition_risk",
-            "value": "not documented",
-            "benchmark": "documented",
-            "impact": "negative",
-            "narrative": "No documented decarbonisation transition plan on file.",
-            "confidence": "medium",
-            "data_source": "ci.sustainow.in/reports"
-          }
-        ],
-        "data_sources": [
-          "ci.sustainow.in"
-        ],
-        "weighted_contribution": 2.475
-      },
-      "used_llm": false
-    },
-    {
-      "agent_type": "dimension_agent",
-      "run_id": "<UUID>",
-      "dimension": "alternative_data_signals",
-      "dimension_label": "Alternative Data Signals",
-      "category": "alternative",
-      "score": 80,
-      "weight": 0.05,
-      "weighted_contribution": 4,
-      "risk_level": "low",
-      "risk_flags": [],
-      "evidence_count": 3,
-      "positive_signals": 1,
-      "negative_signals": 2,
-      "summary": "Alternative Data Signals (Alternative data analyst): score 80.0/100 (strong). Weight 5%, contributes 4.0 pts. 1 positive / 2 negative signals. No material flags.",
-      "recommendations": [
-        "Maintain current alternative data signals performance"
-      ],
-      "confidence": "high",
-      "structured_output": {
-        "insights": [
-          {
-            "indicator": "Supplier Concentration (Top 3)",
-            "category": "concentration_risk",
-            "value": "50%",
-            "benchmark": "30%",
-            "impact": "negative",
-            "narrative": "Top 3 suppliers account for 50% of spend.",
-            "confidence": "high",
-            "data_source": "ci.sustainow.in/transactions"
-          },
-          {
-            "indicator": "Customer Concentration (Top 3)",
-            "category": "concentration_risk",
-            "value": "50%",
-            "benchmark": "30%",
-            "impact": "negative",
-            "narrative": "Top 3 customers contribute 50% of revenue.",
-            "confidence": "high",
-            "data_source": "ci.sustainow.in/transactions"
-          },
-          {
-            "indicator": "Cash Buffer (Months)",
-            "category": "liquidity",
-            "value": 9.6,
-            "benchmark": 2,
-            "impact": "positive",
-            "narrative": "Bank balance covers ~9.6 months of revenue.",
-            "confidence": "medium",
-            "data_source": "bank_statement_summary"
-          }
-        ],
-        "data_sources": [
-          "transactions",
-          "bank_statements"
-        ],
-        "weighted_contribution": 4
-      },
-      "used_llm": false
-    },
-    {
-      "agent_type": "dimension_agent",
-      "run_id": "<UUID>",
       "dimension": "founder_capability",
       "dimension_label": "Founder Capability",
       "category": "market",
@@ -519,6 +232,433 @@
     {
       "agent_type": "dimension_agent",
       "run_id": "<UUID>",
+      "dimension": "cash_flow_health",
+      "dimension_label": "Cash Flow Health",
+      "category": "financial",
+      "score": 57.8,
+      "weight": 0.07,
+      "weighted_contribution": 4,
+      "risk_level": "elevated",
+      "risk_flags": [
+        "Cash flow volatility or margin pressure",
+        "Cash Flow Health risk level: elevated"
+      ],
+      "evidence_count": 2,
+      "positive_signals": 1,
+      "negative_signals": 1,
+      "summary": "Cash Flow Health (Cash flow analyst): score 57.8/100 (weak). Weight 7%, contributes 4.0 pts. 1 positive / 1 negative signals. Flags: Cash flow volatility or margin pressure; Cash Flow Health risk level: elevated.",
+      "recommendations": [
+        "Improve cash flow health — priority remediation for credit uplift",
+        "Implement 13-week cash flow forecasting and receivables optimisation"
+      ],
+      "confidence": "high",
+      "structured_output": {
+        "insights": [
+          {
+            "indicator": "Net Cash Margin",
+            "category": "cash_flow",
+            "value": "8.5%",
+            "benchmark": "8%",
+            "impact": "positive",
+            "narrative": "Average monthly net cash margin of 8.5% from transaction analytics.",
+            "confidence": "high",
+            "data_source": "ci.sustainow.in/transactions"
+          },
+          {
+            "indicator": "Inflow Volatility",
+            "category": "cash_flow",
+            "value": "18.5%",
+            "benchmark": "15%",
+            "impact": "negative",
+            "narrative": "Cash inflow volatility at 18.5% indicates operational stability.",
+            "confidence": "high",
+            "data_source": "ci.sustainow.in/transactions"
+          }
+        ],
+        "data_sources": [
+          "ci.sustainow.in/transactions",
+          "cash_flows"
+        ],
+        "weighted_contribution": 4.046
+      },
+      "used_llm": false
+    },
+    {
+      "agent_type": "dimension_agent",
+      "run_id": "<UUID>",
+      "dimension": "payment_behaviour",
+      "dimension_label": "Payment Behaviour",
+      "category": "financial",
+      "score": 80,
+      "weight": 0.07,
+      "weighted_contribution": 5.6,
+      "risk_level": "low",
+      "risk_flags": [],
+      "evidence_count": 2,
+      "positive_signals": 0,
+      "negative_signals": 2,
+      "summary": "Payment Behaviour (Payment behaviour analyst): score 80.0/100 (strong). Weight 7%, contributes 5.6 pts. 0 positive / 2 negative signals. No material flags.",
+      "recommendations": [
+        "Maintain current payment behaviour performance"
+      ],
+      "confidence": "high",
+      "structured_output": {
+        "insights": [
+          {
+            "indicator": "On-Time Payment Rate",
+            "category": "payment_behaviour",
+            "value": "80%",
+            "benchmark": "90%",
+            "impact": "negative",
+            "narrative": "80% of payments made on time across 5 records.",
+            "confidence": "high",
+            "data_source": "payment_records"
+          },
+          {
+            "indicator": "Late/Overdue Payments",
+            "category": "payment_behaviour",
+            "value": 1,
+            "benchmark": 0,
+            "impact": "negative",
+            "narrative": "1 late or overdue payment(s) detected.",
+            "confidence": "high",
+            "data_source": "payment_records"
+          }
+        ],
+        "data_sources": [
+          "payment_records",
+          "ci.sustainow.in/transactions"
+        ],
+        "weighted_contribution": 5.6000000000000005
+      },
+      "used_llm": false
+    },
+    {
+      "agent_type": "dimension_agent",
+      "run_id": "<UUID>",
+      "dimension": "credit_history_debt_servicing",
+      "dimension_label": "Credit History & Debt Servicing",
+      "category": "financial",
+      "score": 81.2,
+      "weight": 0.06,
+      "weighted_contribution": 4.9,
+      "risk_level": "low",
+      "risk_flags": [],
+      "evidence_count": 6,
+      "positive_signals": 4,
+      "negative_signals": 0,
+      "summary": "Credit History & Debt Servicing (Credit bureau analyst): score 81.2/100 (strong). Weight 6%, contributes 4.9 pts. 4 positive / 0 negative signals. No material flags.",
+      "recommendations": [
+        "Maintain current credit history & debt servicing performance"
+      ],
+      "confidence": "high",
+      "structured_output": {
+        "insights": [
+          {
+            "indicator": "CRISIL Rating",
+            "category": "credit_rating",
+            "value": "BBB+ (stable outlook)",
+            "benchmark": "BBB+",
+            "impact": "positive",
+            "narrative": "CRISIL rating of BBB+ (stable outlook) reflects adequate creditworthiness for MSME lending.",
+            "confidence": "high",
+            "data_source": "credit_rating_agency"
+          },
+          {
+            "indicator": "CIBIL MSME Rank (CMR)",
+            "category": "credit_bureau",
+            "value": 3,
+            "benchmark": "1-3",
+            "impact": "positive",
+            "narrative": "CIBIL MSME Rank CMR-3 (low risk).",
+            "confidence": "high",
+            "data_source": "cibil_commercial"
+          },
+          {
+            "indicator": "Past Debt Repayment",
+            "category": "repayment_history",
+            "value": "100% avg completion",
+            "benchmark": "100%",
+            "impact": "positive",
+            "narrative": "2 closed loan(s) with average 100% principal repaid — strong repayment track record.",
+            "confidence": "high",
+            "data_source": "loan_history"
+          },
+          {
+            "indicator": "Active Debt Facilities",
+            "category": "debt_profile",
+            "value": "1 loans, ₹42,00,000 outstanding",
+            "benchmark": null,
+            "impact": "neutral",
+            "narrative": "1 active loan facility(ies) with ₹42,00,000 total outstanding.",
+            "confidence": "high",
+            "data_source": "loan_history"
+          },
+          {
+            "indicator": "EMI Repayment Discipline",
+            "category": "repayment_history",
+            "value": "83% on-time (6 EMIs)",
+            "benchmark": "95%",
+            "impact": "neutral",
+            "narrative": "83% of 6 EMIs paid on time.",
+            "confidence": "high",
+            "data_source": "repayment_records"
+          },
+          {
+            "indicator": "Debt Service Coverage Ratio",
+            "category": "debt_servicing",
+            "value": 1.6,
+            "benchmark": 1.25,
+            "impact": "positive",
+            "narrative": "DSCR of 1.62x indicates comfortable debt servicing capacity.",
+            "confidence": "high",
+            "data_source": "financial_analysis"
+          }
+        ],
+        "data_sources": [
+          "CIBIL/CRISIL",
+          "repayment_history"
+        ],
+        "weighted_contribution": 4.872
+      },
+      "used_llm": false
+    },
+    {
+      "agent_type": "dimension_agent",
+      "run_id": "<UUID>",
+      "dimension": "operational_stability",
+      "dimension_label": "Operational Stability",
+      "category": "operational",
+      "score": 79.2,
+      "weight": 0.06,
+      "weighted_contribution": 4.8,
+      "risk_level": "low",
+      "risk_flags": [],
+      "evidence_count": 3,
+      "positive_signals": 2,
+      "negative_signals": 1,
+      "summary": "Operational Stability (Operations analyst): score 79.2/100 (strong). Weight 6%, contributes 4.8 pts. 2 positive / 1 negative signals. No material flags.",
+      "recommendations": [
+        "Maintain current operational stability performance"
+      ],
+      "confidence": "medium",
+      "structured_output": {
+        "insights": [
+          {
+            "indicator": "Opex-to-Revenue Ratio",
+            "category": "operational_efficiency",
+            "value": "20.0%",
+            "benchmark": "25%",
+            "impact": "positive",
+            "narrative": "Operating expenses consume 20.0% of revenue.",
+            "confidence": "high",
+            "data_source": "accounting_records"
+          },
+          {
+            "indicator": "Energy Cost Exposure",
+            "category": "operational_volatility",
+            "value": "8.6%",
+            "benchmark": "8%",
+            "impact": "negative",
+            "narrative": "Energy costs represent 8.6% of revenue, above typical MSME benchmarks.",
+            "confidence": "medium",
+            "data_source": "utility_bills"
+          },
+          {
+            "indicator": "Business Tenure",
+            "category": "stability",
+            "value": "12 years",
+            "benchmark": "5 years",
+            "impact": "positive",
+            "narrative": "Business operating for 12 years.",
+            "confidence": "medium",
+            "data_source": "msme_profile"
+          }
+        ],
+        "data_sources": [
+          "accounting_records",
+          "utility_bills"
+        ],
+        "weighted_contribution": 4.752
+      },
+      "used_llm": false
+    },
+    {
+      "agent_type": "dimension_agent",
+      "run_id": "<UUID>",
+      "dimension": "legal_compliance",
+      "dimension_label": "Legal Compliance",
+      "category": "compliance",
+      "score": 92.5,
+      "weight": 0.06,
+      "weighted_contribution": 5.6,
+      "risk_level": "low",
+      "risk_flags": [],
+      "evidence_count": 2,
+      "positive_signals": 2,
+      "negative_signals": 0,
+      "summary": "Legal Compliance (Legal compliance analyst): score 92.5/100 (strong). Weight 6%, contributes 5.5 pts. 2 positive / 0 negative signals. No material flags.",
+      "recommendations": [
+        "Maintain current legal compliance performance"
+      ],
+      "confidence": "high",
+      "structured_output": {
+        "insights": [
+          {
+            "indicator": "Pending Lawsuits",
+            "category": "legal_risk",
+            "value": "0 company, 0 founder/director",
+            "benchmark": 0,
+            "impact": "positive",
+            "narrative": "0 pending legal case(s): 0 against company, 0 against founders/directors.",
+            "confidence": "high",
+            "data_source": "legal_records"
+          },
+          {
+            "indicator": "Favorable Resolutions",
+            "category": "legal_track_record",
+            "value": "100%",
+            "benchmark": "80%",
+            "impact": "positive",
+            "narrative": "100% of resolved cases had favorable outcomes.",
+            "confidence": "medium",
+            "data_source": "legal_records"
+          }
+        ],
+        "data_sources": [
+          "e-Courts/MCA",
+          "legal_compliance"
+        ],
+        "weighted_contribution": 5.55
+      },
+      "used_llm": false
+    },
+    {
+      "agent_type": "dimension_agent",
+      "run_id": "<UUID>",
+      "dimension": "carbon_transition_risk",
+      "dimension_label": "Carbon Transition Risk",
+      "category": "sustainability",
+      "score": 56.6,
+      "weight": 0.05,
+      "weighted_contribution": 2.8,
+      "risk_level": "elevated",
+      "risk_flags": [
+        "Carbon intensity or transition plan gap",
+        "Carbon Transition Risk risk level: elevated"
+      ],
+      "evidence_count": 3,
+      "positive_signals": 0,
+      "negative_signals": 3,
+      "summary": "Carbon Transition Risk (Carbon transition analyst): score 56.6/100 (weak). Weight 5%, contributes 2.8 pts. 0 positive / 3 negative signals. Flags: Carbon intensity or transition plan gap; Carbon Transition Risk risk level: elevated.",
+      "recommendations": [
+        "Improve carbon transition risk — priority remediation for credit uplift",
+        "Commission carbon assessment and document transition roadmap for green finance"
+      ],
+      "confidence": "high",
+      "structured_output": {
+        "insights": [
+          {
+            "indicator": "Carbon Intensity",
+            "category": "transition_risk",
+            "value": "0.42 kgCO₂/₹",
+            "benchmark": "0.30",
+            "impact": "negative",
+            "narrative": "Carbon intensity of 0.42 kgCO₂ per revenue unit from Carbon Intelligence assessment.",
+            "confidence": "high",
+            "data_source": "ci.sustainow.in/carbon-summary"
+          },
+          {
+            "indicator": "Energy Cost Share",
+            "category": "transition_risk",
+            "value": "12.4%",
+            "benchmark": "10%",
+            "impact": "negative",
+            "narrative": "Energy costs account for 12.4% of operational spend.",
+            "confidence": "high",
+            "data_source": "ci.sustainow.in/carbon-summary"
+          },
+          {
+            "indicator": "Transition Plan",
+            "category": "transition_risk",
+            "value": "not documented",
+            "benchmark": "documented",
+            "impact": "negative",
+            "narrative": "No documented decarbonisation transition plan on file.",
+            "confidence": "medium",
+            "data_source": "ci.sustainow.in/reports"
+          }
+        ],
+        "data_sources": [
+          "ci.sustainow.in"
+        ],
+        "weighted_contribution": 2.83
+      },
+      "used_llm": false
+    },
+    {
+      "agent_type": "dimension_agent",
+      "run_id": "<UUID>",
+      "dimension": "alternative_data_signals",
+      "dimension_label": "Alternative Data Signals",
+      "category": "alternative",
+      "score": 89.8,
+      "weight": 0.05,
+      "weighted_contribution": 4.5,
+      "risk_level": "low",
+      "risk_flags": [],
+      "evidence_count": 3,
+      "positive_signals": 2,
+      "negative_signals": 1,
+      "summary": "Alternative Data Signals (Alternative data analyst): score 89.8/100 (strong). Weight 5%, contributes 4.5 pts. 2 positive / 1 negative signals. No material flags.",
+      "recommendations": [
+        "Maintain current alternative data signals performance"
+      ],
+      "confidence": "high",
+      "structured_output": {
+        "insights": [
+          {
+            "indicator": "Supplier Concentration (Top 3)",
+            "category": "concentration_risk",
+            "value": "42%",
+            "benchmark": "30%",
+            "impact": "negative",
+            "narrative": "Top 3 suppliers account for 42% of spend.",
+            "confidence": "high",
+            "data_source": "ci.sustainow.in/transactions"
+          },
+          {
+            "indicator": "Customer Concentration (Top 3)",
+            "category": "concentration_risk",
+            "value": "39%",
+            "benchmark": "30%",
+            "impact": "positive",
+            "narrative": "Top 3 customers contribute 39% of revenue.",
+            "confidence": "high",
+            "data_source": "ci.sustainow.in/transactions"
+          },
+          {
+            "indicator": "Cash Buffer (Months)",
+            "category": "liquidity",
+            "value": 9.6,
+            "benchmark": 2,
+            "impact": "positive",
+            "narrative": "Bank balance covers ~9.6 months of revenue.",
+            "confidence": "medium",
+            "data_source": "bank_statement_summary"
+          }
+        ],
+        "data_sources": [
+          "transactions",
+          "bank_statements"
+        ],
+        "weighted_contribution": 4.49
+      },
+      "used_llm": false
+    },
+    {
+      "agent_type": "dimension_agent",
+      "run_id": "<UUID>",
       "dimension": "market_sentiment",
       "dimension_label": "Market Sentiment",
       "category": "market",
@@ -614,6 +754,234 @@
           "media"
         ],
         "weighted_contribution": 3.98
+      },
+      "used_llm": false
+    },
+    {
+      "agent_type": "dimension_agent",
+      "run_id": "<UUID>",
+      "dimension": "tax_compliance",
+      "dimension_label": "Tax Compliance",
+      "category": "compliance",
+      "score": 93.6,
+      "weight": 0.04,
+      "weighted_contribution": 3.7,
+      "risk_level": "low",
+      "risk_flags": [],
+      "evidence_count": 5,
+      "positive_signals": 5,
+      "negative_signals": 0,
+      "summary": "Tax Compliance (Tax compliance analyst): score 93.6/100 (strong). Weight 4%, contributes 3.7 pts. 5 positive / 0 negative signals. No material flags.",
+      "recommendations": [
+        "Maintain current tax compliance performance"
+      ],
+      "confidence": "high",
+      "structured_output": {
+        "insights": [
+          {
+            "indicator": "ITR Filing Compliance",
+            "category": "income_tax",
+            "value": "3/3 years on time",
+            "benchmark": "3/3",
+            "impact": "positive",
+            "narrative": "Income tax returns filed on time for 3 of last 3 years.",
+            "confidence": "high",
+            "data_source": "income_tax_department"
+          },
+          {
+            "indicator": "Income Tax Paid (12M)",
+            "category": "income_tax",
+            "value": "₹11,20,000",
+            "benchmark": ">0",
+            "impact": "positive",
+            "narrative": "₹11,20,000 income tax paid in trailing 12 months.",
+            "confidence": "high",
+            "data_source": "income_tax_department"
+          },
+          {
+            "indicator": "Advance Tax Compliance",
+            "category": "income_tax",
+            "value": "100%",
+            "benchmark": "100%",
+            "impact": "positive",
+            "narrative": "Advance tax compliance at 100%.",
+            "confidence": "high",
+            "data_source": "income_tax_department"
+          },
+          {
+            "indicator": "TDS Compliance",
+            "category": "statutory_tax",
+            "value": "97%",
+            "benchmark": "95%",
+            "impact": "positive",
+            "narrative": "TDS deposit and filing compliance at 97%.",
+            "confidence": "medium",
+            "data_source": "income_tax_department"
+          },
+          {
+            "indicator": "GST Filing Compliance",
+            "category": "indirect_tax",
+            "value": "96%",
+            "benchmark": "95%",
+            "impact": "positive",
+            "narrative": "GST return filing compliance at 96%.",
+            "confidence": "high",
+            "data_source": "gst_portal"
+          }
+        ],
+        "data_sources": [
+          "GSTN/ITR"
+        ],
+        "weighted_contribution": 3.7439999999999998
+      },
+      "used_llm": false
+    },
+    {
+      "agent_type": "dimension_agent",
+      "run_id": "<UUID>",
+      "dimension": "operational_certifications",
+      "dimension_label": "Operational Certifications",
+      "category": "operational",
+      "score": 92,
+      "weight": 0.04,
+      "weighted_contribution": 3.7,
+      "risk_level": "low",
+      "risk_flags": [],
+      "evidence_count": 3,
+      "positive_signals": 3,
+      "negative_signals": 0,
+      "summary": "Operational Certifications (Certification analyst): score 92.0/100 (strong). Weight 4%, contributes 3.7 pts. 3 positive / 0 negative signals. No material flags.",
+      "recommendations": [
+        "Maintain current operational certifications performance"
+      ],
+      "confidence": "high",
+      "structured_output": {
+        "insights": [
+          {
+            "indicator": "Certification Portfolio",
+            "category": "quality_compliance",
+            "value": "ISO 9001:2015, IATF 16949, ISO 14001:2015, ISO 9001:2015, IATF 16949:2016",
+            "benchmark": "ISO 9001 + sector standard",
+            "impact": "positive",
+            "narrative": "9 operational certification(s) including ISO 9001:2015.",
+            "confidence": "high",
+            "data_source": "certification_records"
+          },
+          {
+            "indicator": "Quality Audit",
+            "category": "quality_compliance",
+            "value": "passed",
+            "benchmark": "passed",
+            "impact": "positive",
+            "narrative": "Most recent quality audit passed successfully.",
+            "confidence": "high",
+            "data_source": "audit_reports"
+          },
+          {
+            "indicator": "Certification Coverage",
+            "category": "quality_compliance",
+            "value": "88%",
+            "benchmark": "80%",
+            "impact": "positive",
+            "narrative": "Certifications cover 88% of production processes.",
+            "confidence": "medium",
+            "data_source": "certification_records"
+          }
+        ],
+        "data_sources": [
+          "ISO/IATF audits"
+        ],
+        "weighted_contribution": 3.68
+      },
+      "used_llm": false
+    },
+    {
+      "agent_type": "dimension_agent",
+      "run_id": "<UUID>",
+      "dimension": "government_policy_alignment",
+      "dimension_label": "Government Policy Alignment",
+      "category": "compliance",
+      "score": 76.6,
+      "weight": 0.04,
+      "weighted_contribution": 3.1,
+      "risk_level": "low",
+      "risk_flags": [],
+      "evidence_count": 6,
+      "positive_signals": 5,
+      "negative_signals": 1,
+      "summary": "Government Policy Alignment (Policy alignment analyst): score 76.6/100 (strong). Weight 4%, contributes 3.1 pts. 5 positive / 1 negative signals. No material flags.",
+      "recommendations": [
+        "Maintain current government policy alignment performance"
+      ],
+      "confidence": "high",
+      "structured_output": {
+        "insights": [
+          {
+            "indicator": "Udyam Registration",
+            "category": "government_policy",
+            "value": "enrolled",
+            "benchmark": "enrolled",
+            "impact": "positive",
+            "narrative": "Official MSME registration portal enabling priority sector lending, subsidies, and tender preferences.",
+            "confidence": "high",
+            "data_source": "government_policy_catalog"
+          },
+          {
+            "indicator": "Credit Guarantee Fund Trust for Micro and Small Enterprises",
+            "category": "government_policy",
+            "value": "enrolled",
+            "benchmark": "enrolled",
+            "impact": "positive",
+            "narrative": "Collateral-free credit guarantee for MSME loans up to ₹5 Cr.",
+            "confidence": "high",
+            "data_source": "government_policy_catalog"
+          },
+          {
+            "indicator": "Production Linked Incentive — Automobile & Auto Components",
+            "category": "government_policy",
+            "value": "recommended",
+            "benchmark": "enrolled",
+            "impact": "positive",
+            "narrative": "PLI scheme boosting domestic auto component manufacturing and EV supply chain.",
+            "confidence": "medium",
+            "data_source": "government_policy_catalog"
+          },
+          {
+            "indicator": "Pradhan Mantri MUDRA Yojana",
+            "category": "government_policy",
+            "value": "eligible",
+            "benchmark": "enrolled",
+            "impact": "negative",
+            "narrative": "Micro-finance scheme for non-corporate, non-farm small/micro enterprises.",
+            "confidence": "medium",
+            "data_source": "government_policy_catalog"
+          },
+          {
+            "indicator": "Sector Policy Tailwinds",
+            "category": "government_policy",
+            "value": 5,
+            "benchmark": null,
+            "impact": "positive",
+            "narrative": "Udyam Registration: active enrollment; Credit Guarantee Fund Trust for Micro and Small Enterprises: active enrollment",
+            "confidence": "medium",
+            "data_source": "government_policy_catalog"
+          },
+          {
+            "indicator": "Statutory Compliance",
+            "category": "government_compliance",
+            "value": "92/100",
+            "benchmark": "80",
+            "impact": "positive",
+            "narrative": "Regulatory compliance score 92/100 covering labour, environmental, PF/ESI, and statutory filings.",
+            "confidence": "high",
+            "data_source": "compliance_records"
+          }
+        ],
+        "data_sources": [
+          "UDYAM",
+          "scheme enrollment"
+        ],
+        "weighted_contribution": 3.064
       },
       "used_llm": false
     },
@@ -724,433 +1092,6 @@
           "sector_data"
         ],
         "weighted_contribution": 3.3280000000000003
-      },
-      "used_llm": false
-    },
-    {
-      "agent_type": "dimension_agent",
-      "run_id": "<UUID>",
-      "dimension": "government_policy_alignment",
-      "dimension_label": "Government Policy Alignment",
-      "category": "compliance",
-      "score": 76.6,
-      "weight": 0.04,
-      "weighted_contribution": 3.1,
-      "risk_level": "low",
-      "risk_flags": [],
-      "evidence_count": 6,
-      "positive_signals": 5,
-      "negative_signals": 1,
-      "summary": "Government Policy Alignment (Policy alignment analyst): score 76.6/100 (strong). Weight 4%, contributes 3.1 pts. 5 positive / 1 negative signals. No material flags.",
-      "recommendations": [
-        "Maintain current government policy alignment performance"
-      ],
-      "confidence": "high",
-      "structured_output": {
-        "insights": [
-          {
-            "indicator": "Udyam Registration",
-            "category": "government_policy",
-            "value": "enrolled",
-            "benchmark": "enrolled",
-            "impact": "positive",
-            "narrative": "Official MSME registration portal enabling priority sector lending, subsidies, and tender preferences.",
-            "confidence": "high",
-            "data_source": "government_policy_catalog"
-          },
-          {
-            "indicator": "Credit Guarantee Fund Trust for Micro and Small Enterprises",
-            "category": "government_policy",
-            "value": "enrolled",
-            "benchmark": "enrolled",
-            "impact": "positive",
-            "narrative": "Collateral-free credit guarantee for MSME loans up to ₹5 Cr.",
-            "confidence": "high",
-            "data_source": "government_policy_catalog"
-          },
-          {
-            "indicator": "Production Linked Incentive — Automobile & Auto Components",
-            "category": "government_policy",
-            "value": "recommended",
-            "benchmark": "enrolled",
-            "impact": "positive",
-            "narrative": "PLI scheme boosting domestic auto component manufacturing and EV supply chain.",
-            "confidence": "medium",
-            "data_source": "government_policy_catalog"
-          },
-          {
-            "indicator": "Pradhan Mantri MUDRA Yojana",
-            "category": "government_policy",
-            "value": "eligible",
-            "benchmark": "enrolled",
-            "impact": "negative",
-            "narrative": "Micro-finance scheme for non-corporate, non-farm small/micro enterprises.",
-            "confidence": "medium",
-            "data_source": "government_policy_catalog"
-          },
-          {
-            "indicator": "Sector Policy Tailwinds",
-            "category": "government_policy",
-            "value": 5,
-            "benchmark": null,
-            "impact": "positive",
-            "narrative": "Udyam Registration: active enrollment; Credit Guarantee Fund Trust for Micro and Small Enterprises: active enrollment",
-            "confidence": "medium",
-            "data_source": "government_policy_catalog"
-          },
-          {
-            "indicator": "Statutory Compliance",
-            "category": "government_compliance",
-            "value": "92/100",
-            "benchmark": "80",
-            "impact": "positive",
-            "narrative": "Regulatory compliance score 92/100 covering labour, environmental, PF/ESI, and statutory filings.",
-            "confidence": "high",
-            "data_source": "compliance_records"
-          }
-        ],
-        "data_sources": [
-          "UDYAM",
-          "scheme enrollment"
-        ],
-        "weighted_contribution": 3.064
-      },
-      "used_llm": false
-    },
-    {
-      "agent_type": "dimension_agent",
-      "run_id": "<UUID>",
-      "dimension": "credit_history_debt_servicing",
-      "dimension_label": "Credit History & Debt Servicing",
-      "category": "financial",
-      "score": 81.2,
-      "weight": 0.06,
-      "weighted_contribution": 4.9,
-      "risk_level": "low",
-      "risk_flags": [],
-      "evidence_count": 6,
-      "positive_signals": 4,
-      "negative_signals": 0,
-      "summary": "Credit History & Debt Servicing (Credit bureau analyst): score 81.2/100 (strong). Weight 6%, contributes 4.9 pts. 4 positive / 0 negative signals. No material flags.",
-      "recommendations": [
-        "Maintain current credit history & debt servicing performance"
-      ],
-      "confidence": "high",
-      "structured_output": {
-        "insights": [
-          {
-            "indicator": "CRISIL Rating",
-            "category": "credit_rating",
-            "value": "BBB+ (stable outlook)",
-            "benchmark": "BBB+",
-            "impact": "positive",
-            "narrative": "CRISIL rating of BBB+ (stable outlook) reflects adequate creditworthiness for MSME lending.",
-            "confidence": "high",
-            "data_source": "credit_rating_agency"
-          },
-          {
-            "indicator": "CIBIL MSME Rank (CMR)",
-            "category": "credit_bureau",
-            "value": 3,
-            "benchmark": "1-3",
-            "impact": "positive",
-            "narrative": "CIBIL MSME Rank CMR-3 (low risk).",
-            "confidence": "high",
-            "data_source": "cibil_commercial"
-          },
-          {
-            "indicator": "Past Debt Repayment",
-            "category": "repayment_history",
-            "value": "100% avg completion",
-            "benchmark": "100%",
-            "impact": "positive",
-            "narrative": "2 closed loan(s) with average 100% principal repaid — strong repayment track record.",
-            "confidence": "high",
-            "data_source": "loan_history"
-          },
-          {
-            "indicator": "Active Debt Facilities",
-            "category": "debt_profile",
-            "value": "1 loans, ₹4,200,000 outstanding",
-            "benchmark": null,
-            "impact": "neutral",
-            "narrative": "1 active loan facility(ies) with ₹4,200,000 total outstanding.",
-            "confidence": "high",
-            "data_source": "loan_history"
-          },
-          {
-            "indicator": "EMI Repayment Discipline",
-            "category": "repayment_history",
-            "value": "83% on-time (6 EMIs)",
-            "benchmark": "95%",
-            "impact": "neutral",
-            "narrative": "83% of 6 EMIs paid on time.",
-            "confidence": "high",
-            "data_source": "repayment_records"
-          },
-          {
-            "indicator": "Debt Service Coverage Ratio",
-            "category": "debt_servicing",
-            "value": 1.62,
-            "benchmark": 1.25,
-            "impact": "positive",
-            "narrative": "DSCR of 1.62x indicates comfortable debt servicing capacity.",
-            "confidence": "high",
-            "data_source": "financial_analysis"
-          }
-        ],
-        "data_sources": [
-          "CIBIL/CRISIL",
-          "repayment_history"
-        ],
-        "weighted_contribution": 4.872
-      },
-      "used_llm": false
-    },
-    {
-      "agent_type": "dimension_agent",
-      "run_id": "<UUID>",
-      "dimension": "legal_compliance",
-      "dimension_label": "Legal Compliance",
-      "category": "compliance",
-      "score": 92.5,
-      "weight": 0.06,
-      "weighted_contribution": 5.6,
-      "risk_level": "low",
-      "risk_flags": [],
-      "evidence_count": 2,
-      "positive_signals": 2,
-      "negative_signals": 0,
-      "summary": "Legal Compliance (Legal compliance analyst): score 92.5/100 (strong). Weight 6%, contributes 5.5 pts. 2 positive / 0 negative signals. No material flags.",
-      "recommendations": [
-        "Maintain current legal compliance performance"
-      ],
-      "confidence": "high",
-      "structured_output": {
-        "insights": [
-          {
-            "indicator": "Pending Lawsuits",
-            "category": "legal_risk",
-            "value": "0 company, 0 founder/director",
-            "benchmark": 0,
-            "impact": "positive",
-            "narrative": "0 pending legal case(s): 0 against company, 0 against founders/directors.",
-            "confidence": "high",
-            "data_source": "legal_records"
-          },
-          {
-            "indicator": "Favorable Resolutions",
-            "category": "legal_track_record",
-            "value": "100%",
-            "benchmark": "80%",
-            "impact": "positive",
-            "narrative": "100% of resolved cases had favorable outcomes.",
-            "confidence": "medium",
-            "data_source": "legal_records"
-          }
-        ],
-        "data_sources": [
-          "e-Courts/MCA",
-          "legal_compliance"
-        ],
-        "weighted_contribution": 5.55
-      },
-      "used_llm": false
-    },
-    {
-      "agent_type": "dimension_agent",
-      "run_id": "<UUID>",
-      "dimension": "tax_compliance",
-      "dimension_label": "Tax Compliance",
-      "category": "compliance",
-      "score": 93.6,
-      "weight": 0.04,
-      "weighted_contribution": 3.7,
-      "risk_level": "low",
-      "risk_flags": [],
-      "evidence_count": 5,
-      "positive_signals": 5,
-      "negative_signals": 0,
-      "summary": "Tax Compliance (Tax compliance analyst): score 93.6/100 (strong). Weight 4%, contributes 3.7 pts. 5 positive / 0 negative signals. No material flags.",
-      "recommendations": [
-        "Maintain current tax compliance performance"
-      ],
-      "confidence": "high",
-      "structured_output": {
-        "insights": [
-          {
-            "indicator": "ITR Filing Compliance",
-            "category": "income_tax",
-            "value": "3/3 years on time",
-            "benchmark": "3/3",
-            "impact": "positive",
-            "narrative": "Income tax returns filed on time for 3 of last 3 years.",
-            "confidence": "high",
-            "data_source": "income_tax_department"
-          },
-          {
-            "indicator": "Income Tax Paid (12M)",
-            "category": "income_tax",
-            "value": "₹1,120,000",
-            "benchmark": ">0",
-            "impact": "positive",
-            "narrative": "₹1,120,000 income tax paid in trailing 12 months.",
-            "confidence": "high",
-            "data_source": "income_tax_department"
-          },
-          {
-            "indicator": "Advance Tax Compliance",
-            "category": "income_tax",
-            "value": "100%",
-            "benchmark": "100%",
-            "impact": "positive",
-            "narrative": "Advance tax compliance at 100%.",
-            "confidence": "high",
-            "data_source": "income_tax_department"
-          },
-          {
-            "indicator": "TDS Compliance",
-            "category": "statutory_tax",
-            "value": "97%",
-            "benchmark": "95%",
-            "impact": "positive",
-            "narrative": "TDS deposit and filing compliance at 97%.",
-            "confidence": "medium",
-            "data_source": "income_tax_department"
-          },
-          {
-            "indicator": "GST Filing Compliance",
-            "category": "indirect_tax",
-            "value": "96%",
-            "benchmark": "95%",
-            "impact": "positive",
-            "narrative": "GST return filing compliance at 96%.",
-            "confidence": "high",
-            "data_source": "gst_portal"
-          }
-        ],
-        "data_sources": [
-          "GSTN/ITR"
-        ],
-        "weighted_contribution": 3.7439999999999998
-      },
-      "used_llm": false
-    },
-    {
-      "agent_type": "dimension_agent",
-      "run_id": "<UUID>",
-      "dimension": "operational_certifications",
-      "dimension_label": "Operational Certifications",
-      "category": "operational",
-      "score": 92,
-      "weight": 0.04,
-      "weighted_contribution": 3.7,
-      "risk_level": "low",
-      "risk_flags": [],
-      "evidence_count": 3,
-      "positive_signals": 3,
-      "negative_signals": 0,
-      "summary": "Operational Certifications (Certification analyst): score 92.0/100 (strong). Weight 4%, contributes 3.7 pts. 3 positive / 0 negative signals. No material flags.",
-      "recommendations": [
-        "Maintain current operational certifications performance"
-      ],
-      "confidence": "high",
-      "structured_output": {
-        "insights": [
-          {
-            "indicator": "Certification Portfolio",
-            "category": "quality_compliance",
-            "value": "ISO 9001:2015, IATF 16949, ISO 14001:2015, ISO 9001:2015, IATF 16949:2016",
-            "benchmark": "ISO 9001 + sector standard",
-            "impact": "positive",
-            "narrative": "9 operational certification(s) including ISO 9001:2015.",
-            "confidence": "high",
-            "data_source": "certification_records"
-          },
-          {
-            "indicator": "Quality Audit",
-            "category": "quality_compliance",
-            "value": "passed",
-            "benchmark": "passed",
-            "impact": "positive",
-            "narrative": "Most recent quality audit passed successfully.",
-            "confidence": "high",
-            "data_source": "audit_reports"
-          },
-          {
-            "indicator": "Certification Coverage",
-            "category": "quality_compliance",
-            "value": "88%",
-            "benchmark": "80%",
-            "impact": "positive",
-            "narrative": "Certifications cover 88% of production processes.",
-            "confidence": "medium",
-            "data_source": "certification_records"
-          }
-        ],
-        "data_sources": [
-          "ISO/IATF audits"
-        ],
-        "weighted_contribution": 3.68
-      },
-      "used_llm": false
-    },
-    {
-      "agent_type": "dimension_agent",
-      "run_id": "<UUID>",
-      "dimension": "governance_diversity",
-      "dimension_label": "Governance Diversity",
-      "category": "compliance",
-      "score": 65.8,
-      "weight": 0.03,
-      "weighted_contribution": 2,
-      "risk_level": "moderate",
-      "risk_flags": [],
-      "evidence_count": 3,
-      "positive_signals": 3,
-      "negative_signals": 0,
-      "summary": "Governance Diversity (Governance analyst): score 65.8/100 (adequate). Weight 3%, contributes 2.0 pts. 3 positive / 0 negative signals. No material flags.",
-      "recommendations": [
-        "Document women-led enterprise status for governance score bonus eligibility"
-      ],
-      "confidence": "medium",
-      "structured_output": {
-        "insights": [
-          {
-            "indicator": "Female Founders",
-            "category": "governance_diversity",
-            "value": 1,
-            "benchmark": ">=1",
-            "impact": "positive",
-            "narrative": "1 female founder(s) — associated with lower credit risk and eligibility for Stand-Up India / MUDRA Mahila programs.",
-            "confidence": "medium",
-            "data_source": "governance_records"
-          },
-          {
-            "indicator": "Female Directors",
-            "category": "governance_diversity",
-            "value": "2 (40% of board)",
-            "benchmark": ">=1",
-            "impact": "positive",
-            "narrative": "2 female director(s) on board — strengthens governance and diversity-linked finance eligibility.",
-            "confidence": "medium",
-            "data_source": "governance_records"
-          },
-          {
-            "indicator": "Board Independence",
-            "category": "governance",
-            "value": "40%",
-            "benchmark": "33%",
-            "impact": "positive",
-            "narrative": "40% independent board representation.",
-            "confidence": "medium",
-            "data_source": "governance_records"
-          }
-        ],
-        "data_sources": [
-          "board_composition"
-        ],
-        "weighted_contribution": 1.9739999999999998
       },
       "used_llm": false
     },
@@ -1289,6 +1230,65 @@
           "inventory"
         ],
         "weighted_contribution": 3.616
+      },
+      "used_llm": false
+    },
+    {
+      "agent_type": "dimension_agent",
+      "run_id": "<UUID>",
+      "dimension": "governance_diversity",
+      "dimension_label": "Governance Diversity",
+      "category": "compliance",
+      "score": 65.8,
+      "weight": 0.03,
+      "weighted_contribution": 2,
+      "risk_level": "moderate",
+      "risk_flags": [],
+      "evidence_count": 3,
+      "positive_signals": 3,
+      "negative_signals": 0,
+      "summary": "Governance Diversity (Governance analyst): score 65.8/100 (adequate). Weight 3%, contributes 2.0 pts. 3 positive / 0 negative signals. No material flags.",
+      "recommendations": [
+        "Document women-led enterprise status for governance score bonus eligibility"
+      ],
+      "confidence": "medium",
+      "structured_output": {
+        "insights": [
+          {
+            "indicator": "Female Founders",
+            "category": "governance_diversity",
+            "value": 1,
+            "benchmark": ">=1",
+            "impact": "positive",
+            "narrative": "1 female founder(s) — associated with lower credit risk and eligibility for Stand-Up India / MUDRA Mahila programs.",
+            "confidence": "medium",
+            "data_source": "governance_records"
+          },
+          {
+            "indicator": "Female Directors",
+            "category": "governance_diversity",
+            "value": "2 (40% of board)",
+            "benchmark": ">=1",
+            "impact": "positive",
+            "narrative": "2 female director(s) on board — strengthens governance and diversity-linked finance eligibility.",
+            "confidence": "medium",
+            "data_source": "governance_records"
+          },
+          {
+            "indicator": "Board Independence",
+            "category": "governance",
+            "value": "40%",
+            "benchmark": "33%",
+            "impact": "positive",
+            "narrative": "40% independent board representation.",
+            "confidence": "medium",
+            "data_source": "governance_records"
+          }
+        ],
+        "data_sources": [
+          "board_composition"
+        ],
+        "weighted_contribution": 1.9739999999999998
       },
       "used_llm": false
     },
@@ -1440,7 +1440,7 @@
             "value": "66th percentile",
             "benchmark": "50th",
             "impact": "positive",
-            "narrative": "Revenue ₹48,000,000 vs sector median ₹35,000,000 — 66th percentile.",
+            "narrative": "Revenue ₹4,80,00,000 vs sector median ₹3,50,00,000 — 66th percentile.",
             "confidence": "high",
             "data_source": "sector_benchmarks"
           },
@@ -1505,15 +1505,15 @@
     "confidence": "medium",
     "structured_output": {
       "flagged_count": 3,
-      "risk_score": 32
+      "risk_score": 31
     },
     "used_llm": false,
     "composite_risk_level": "moderate",
-    "risk_score": 32,
+    "risk_score": 31,
     "flagged_dimensions": [
       {
         "dimension": "carbon_transition_risk",
-        "score": 49.5,
+        "score": 56.6,
         "risk_level": "elevated",
         "flag": "Carbon intensity or transition plan gap"
       },
@@ -1540,20 +1540,20 @@
   "health_score": {
     "agent_type": "health_score_synthesis",
     "run_id": "<UUID>",
-    "summary": "Financial Health Score 77.3/100 (Grade B+) validated across 20 dimension agents. Agent recomputation: 77.3.",
+    "summary": "Financial Health Score 78.1/100 (Grade B+) validated across 20 dimension agents. Agent recomputation: 78.1.",
     "recommendations": [
-      "Strengthen Carbon Transition Risk (current: 49.5)",
+      "Strengthen Carbon Transition Risk (current: 56.6)",
       "Strengthen Cash Flow Health (current: 57.8)",
       "Strengthen Peer Benchmark (current: 60.0)"
     ],
     "confidence": "high",
     "structured_output": {
       "delta": 0,
-      "agent_sum": 76.2
+      "agent_sum": 76.99999999999999
     },
     "used_llm": false,
-    "computed_score": 77.3,
-    "agent_validated_score": 77.3,
+    "computed_score": 78.1,
+    "agent_validated_score": 78.1,
     "grade": "B+",
     "governance_bonus": 1.1,
     "dimension_contributions": [
@@ -1562,48 +1562,40 @@
         "contribution": 5.8
       },
       {
-        "dimension": "cash_flow_health",
-        "contribution": 4
+        "dimension": "founder_capability",
+        "contribution": 5.9
       },
       {
-        "dimension": "operational_stability",
-        "contribution": 4.8
+        "dimension": "cash_flow_health",
+        "contribution": 4
       },
       {
         "dimension": "payment_behaviour",
         "contribution": 5.6
       },
       {
-        "dimension": "carbon_transition_risk",
-        "contribution": 2.5
-      },
-      {
-        "dimension": "alternative_data_signals",
-        "contribution": 4
-      },
-      {
-        "dimension": "founder_capability",
-        "contribution": 5.9
-      },
-      {
-        "dimension": "market_sentiment",
-        "contribution": 4
-      },
-      {
-        "dimension": "product_demand_outlook",
-        "contribution": 3.3
-      },
-      {
-        "dimension": "government_policy_alignment",
-        "contribution": 3.1
-      },
-      {
         "dimension": "credit_history_debt_servicing",
         "contribution": 4.9
       },
       {
+        "dimension": "operational_stability",
+        "contribution": 4.8
+      },
+      {
         "dimension": "legal_compliance",
         "contribution": 5.6
+      },
+      {
+        "dimension": "carbon_transition_risk",
+        "contribution": 2.8
+      },
+      {
+        "dimension": "alternative_data_signals",
+        "contribution": 4.5
+      },
+      {
+        "dimension": "market_sentiment",
+        "contribution": 4
       },
       {
         "dimension": "tax_compliance",
@@ -1614,8 +1606,12 @@
         "contribution": 3.7
       },
       {
-        "dimension": "governance_diversity",
-        "contribution": 2
+        "dimension": "government_policy_alignment",
+        "contribution": 3.1
+      },
+      {
+        "dimension": "product_demand_outlook",
+        "contribution": 3.3
       },
       {
         "dimension": "esg_disclosure",
@@ -1624,6 +1620,10 @@
       {
         "dimension": "supply_chain_resilience",
         "contribution": 3.6
+      },
+      {
+        "dimension": "governance_diversity",
+        "contribution": 2
       },
       {
         "dimension": "insurance_business_continuity",
@@ -1647,11 +1647,11 @@
   "reporting": {
     "agent_type": "report_orchestration",
     "run_id": "<UUID>",
-    "summary": "Shree Ganesh Auto Components Pvt Ltd Financial Health Score: 77.3/100 (Grade B+, moderate risk). Analyzed by 20 dimension agents. Strongest: Tax Compliance, Legal Compliance, Operational Certifications. Attention needed: Peer Benchmark, Cash Flow Health, Carbon Transition Risk. 3 dimension risk flag(s).",
+    "summary": "Shree Ganesh Auto Components Pvt Ltd Financial Health Score: 78.1/100 (Grade B+, moderate risk). Analyzed by 20 dimension agents. Strongest: Tax Compliance, Legal Compliance, Operational Certifications. Attention needed: Peer Benchmark, Cash Flow Health, Carbon Transition Risk. 3 dimension risk flag(s).",
     "recommendations": [
-      "Improve carbon transition risk (current: 49.5/100): Commission carbon assessment and develop transition roadmap.",
+      "Improve carbon transition risk (current: 56.6/100): Commission carbon assessment and develop transition roadmap.",
       "Improve cash flow health (current: 57.8/100): Implement cash flow forecasting and optimise receivables/payables cycles.",
-      "Improve peer benchmark (current: 60.0/100): Improve metrics below sector median to advance portfolio percentile ranking.",
+      "Improve peer benchmark (current: 60/100): Improve metrics below sector median to advance portfolio percentile ranking.",
       "[Scheme] Apply for Pradhan Mantri MUDRA Yojana — Shishu (up to ₹50K)",
       "[Scheme] Apply for Make in India 2.0 — FDI facilitation",
       "[Scheme] Apply for PLI — Advanced Chemistry Cell Battery Storage — Incentive on cell sales",
@@ -1674,11 +1674,11 @@
       "dimension_agent_count": 20
     },
     "used_llm": false,
-    "executive_summary": "Shree Ganesh Auto Components Pvt Ltd Financial Health Score: 77.3/100 (Grade B+, moderate risk). Analyzed by 20 dimension agents. Strongest: Tax Compliance, Legal Compliance, Operational Certifications. Attention needed: Peer Benchmark, Cash Flow Health, Carbon Transition Risk. 3 dimension risk flag(s).",
-    "credit_decision": "CONDITIONAL APPROVAL — Score 77.3/100. Secured facility or CGTMSE guarantee with covenant monitoring.",
+    "executive_summary": "Shree Ganesh Auto Components Pvt Ltd Financial Health Score: 78.1/100 (Grade B+, moderate risk). Analyzed by 20 dimension agents. Strongest: Tax Compliance, Legal Compliance, Operational Certifications. Attention needed: Peer Benchmark, Cash Flow Health, Carbon Transition Risk. 3 dimension risk flag(s).",
+    "credit_decision": "CONDITIONAL APPROVAL — Score 78.1/100. Secured facility or CGTMSE guarantee with covenant monitoring.",
     "stakeholder_summaries": {
       "bank": "Credit exposure assessment complete. CONDITIONAL APPROVAL . Review flagged dimensions before sanction.",
-      "msme": "Your Financial Health Score is 77.3/100 (Grade B+). Focus improvements on: Peer Benchmark, Cash Flow Health, Carbon Transition Risk.",
+      "msme": "Your Financial Health Score is 78.1/100 (Grade B+). Focus improvements on: Peer Benchmark, Cash Flow Health, Carbon Transition Risk.",
       "government": "MSME eligible for scheme advisory. Policy alignment score: 76.6",
       "regulatory": "Compliance review: 0 compliance dimension flag(s)."
     },
@@ -1698,7 +1698,7 @@
     {
       "agent_type": "credit_analysis",
       "run_id": "<UUID>",
-      "summary": "CONDITIONAL APPROVAL — Shree Ganesh Auto Components Pvt Ltd scored 77.3/100 (Grade B+) with 2 flagged risk indicator(s).",
+      "summary": "CONDITIONAL APPROVAL — Shree Ganesh Auto Components Pvt Ltd scored 78.1/100 (Grade B+) with 2 flagged risk indicator(s).",
       "recommendations": [
         "Standard MSME lending terms applicable",
         "Resolve flagged risk indicators within 90-day covenant window",
@@ -1707,7 +1707,7 @@
       "confidence": "high",
       "structured_output": {
         "recommendation": "CONDITIONAL APPROVAL",
-        "overall_score": 77.3,
+        "overall_score": 78.1,
         "grade": "B+",
         "risk_count": 2
       },
@@ -1756,7 +1756,7 @@
     }
   ],
   "summary": {
-    "overall_score": 77.3,
+    "overall_score": 78.1,
     "grade": "B+",
     "composite_risk_level": "moderate",
     "top_strengths": [
@@ -1769,7 +1769,7 @@
       "Cash Flow Health",
       "Carbon Transition Risk"
     ],
-    "credit_recommendation": "CONDITIONAL APPROVAL — Score 77.3/100. Secured facility or CGTMSE guarantee with covenant monitoring.",
+    "credit_recommendation": "CONDITIONAL APPROVAL — Score 78.1/100. Secured facility or CGTMSE guarantee with covenant monitoring.",
     "dimensions_analyzed": 20,
     "total_agents_run": 27
   },
