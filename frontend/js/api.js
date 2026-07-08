@@ -62,6 +62,8 @@ function isMsmeUser(user) {
 function redirectByRole(user) {
   if (isBankUser(user)) window.location.href = '/app/bank/dashboard.html';
   else if (isMsmeUser(user)) window.location.href = '/app/msme/dashboard.html';
+  else if (user && user.organization_type === 'government') window.location.href = '/app/govt/dashboard.html';
+  else if (user && user.organization_type === 'regulatory') window.location.href = '/app/regulatory/dashboard.html';
   else window.location.href = '/app/index.html';
 }
 

@@ -1,0 +1,11 @@
+{
+  "name": "financial-health-score",
+  "version": "2.0.0",
+  "private": true,
+  "scripts": {
+    "start": "cd server && npm run build && npm start",
+    "dev": "cd server && npm run dev",
+    "install:all": "cd server && npm install",
+    "test": "cd server && npm test"
+  }
+}
