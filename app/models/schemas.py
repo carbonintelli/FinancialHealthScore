@@ -65,6 +65,9 @@ class MSMEProfile(BaseModel):
     business_name: str
     udyam_number: str | None = None
     gstin: str | None = None
+    pan: str | None = Field(None, description="Permanent Account Number for tax/bureau verification")
+    state: str | None = Field(None, description="Operating state e.g. maharashtra, gujarat")
+    pincode: str | None = None
     sector: str = Field(..., description="e.g. manufacturing, services, trading, auto_components")
     employee_count: int | None = Field(None, ge=1)
     years_in_operation: float | None = Field(None, ge=0)
@@ -203,6 +206,84 @@ class GovernanceDiversityProfile(BaseModel):
         False, description="Enrolled in Stand-Up India, MUDRA Mahila, or similar"
     )
     board_independence_pct: float | None = Field(None, ge=0, le=100)
+
+
+class ESGDisclosureProfile(BaseModel):
+    """ESG and BRSR disclosure beyond carbon intelligence."""
+
+    brsr_lite_ready: bool = False
+    ghg_inventory_completed: bool = False
+    esg_report_published: bool = False
+    esg_report_year: int | None = None
+    disclosure_score: float | None = Field(None, ge=0, le=100)
+    supplier_esg_program: bool = False
+    water_stress_disclosure: bool = False
+    waste_management_program: bool = False
+
+
+class SupplyChainProfile(BaseModel):
+    """Supply chain structure and stress test results."""
+
+    key_supplier_count: int | None = Field(None, ge=0)
+    key_customer_count: int | None = Field(None, ge=0)
+    single_source_dependency_pct: float | None = Field(None, ge=0, le=100)
+    inventory_days: float | None = Field(None, ge=0)
+    alternate_suppliers_identified_pct: float | None = Field(None, ge=0, le=100)
+    stress_scenario_survival_months: float | None = Field(
+        None, ge=0, description="Months survivable under 30% revenue shock"
+    )
+    import_dependency_pct: float | None = Field(None, ge=0, le=100)
+
+
+class InsuranceProfile(BaseModel):
+    """Business insurance and continuity coverage."""
+
+    property_insurance: bool = False
+    machinery_breakdown_cover: bool = False
+    business_interruption_cover: bool = False
+    liability_insurance: bool = False
+    key_person_insurance: bool = False
+    coverage_adequacy_pct: float | None = Field(None, ge=0, le=100)
+    total_coverage_inr: float | None = Field(None, ge=0)
+    claims_history_clean: bool = True
+    policy_expiry_within_90d: bool = False
+
+
+class GeographicProfile(BaseModel):
+    """Geographic and regional risk factors."""
+
+    state: str | None = None
+    district: str | None = None
+    tier: str | None = Field(None, description="tier1, tier2, tier3, rural")
+    flood_risk_zone: str | None = Field(None, description="low, moderate, high, very_high")
+    industrial_cluster_presence: bool = False
+    seismic_zone: str | None = None
+
+
+class DocumentUpload(BaseModel):
+    """Document for OCR/intelligence validation."""
+
+    document_type: str = Field(..., description="itr, audit_report, bank_statement, gst_return, balance_sheet")
+    file_name: str
+    reference_id: str | None = None
+    uploaded_at: date | None = None
+
+
+class IntegrationStatus(BaseModel):
+    source: str
+    status: str
+    mock: bool = True
+    message: str | None = None
+
+
+class AdvancedIntelligenceSummary(BaseModel):
+    """Results from external integrations and advanced analytics."""
+
+    enrichment_applied: list[str] = Field(default_factory=list)
+    integration_status: list[IntegrationStatus] = Field(default_factory=list)
+    document_validation: dict[str, Any] | None = None
+    peer_percentile_overall: float | None = None
+    stress_test_passed: bool | None = None
 
 
 class ProductLine(BaseModel):
@@ -365,6 +446,11 @@ class FinancialDataInput(BaseModel):
     operational_certifications: OperationalCertificationProfile | None = None
     government_compliance: GovernmentComplianceProfile | None = None
     governance_diversity: GovernanceDiversityProfile | None = None
+    esg_disclosure: ESGDisclosureProfile | None = None
+    supply_chain: SupplyChainProfile | None = None
+    insurance: InsuranceProfile | None = None
+    geographic: GeographicProfile | None = None
+    documents: list[DocumentUpload] = Field(default_factory=list)
 
 
 class AssessmentRequest(BaseModel):
@@ -376,6 +462,10 @@ class AssessmentRequest(BaseModel):
     audience: AudienceRole = Field(
         AudienceRole.CREDIT_TEAM,
         description="Tailor insight emphasis for the requesting team",
+    )
+    auto_enrich: bool = Field(
+        True,
+        description="Auto-fetch bureau, tax, legal data from GSTIN/PAN when integrations enabled",
     )
 
 
@@ -446,6 +536,7 @@ class FinancialHealthScoreResult(BaseModel):
         default_factory=list,
         description="Actionable recommendations to strengthen Financial Health Score",
     )
+    advanced_intelligence: AdvancedIntelligenceSummary | None = None
     audience_summary: str
     metadata: dict[str, Any] = Field(default_factory=dict)
 
@@ -455,6 +546,8 @@ class HealthResponse(BaseModel):
     version: str
     carbon_intelligence_connected: bool
     mock_mode: bool
+    integrations_mock_mode: bool = True
+    dimension_count: int = 20
 
 
 class IntegrationInfo(BaseModel):

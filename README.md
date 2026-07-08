@@ -2,7 +2,7 @@
 
 **AI-Powered Alternative Data Intelligence for MSME Credit Decisions**
 
-Developed for **IDBI Innovate 2026** — transforming fragmented MSME financial and operational data into explainable, actionable intelligence for smarter credit decisions.
+Developed for **IDBI Innovate 2026** — **20-dimension** AI-powered alternative data intelligence for MSME credit decisions.
 
 ## Overview
 
@@ -97,63 +97,58 @@ curl -X POST http://localhost:8080/api/v1/assess \
 curl http://localhost:8080/api/v1/assess/demo?audience=credit_team
 ```
 
-## Scoring Model
+## Scoring Model (20 Dimensions)
 
-The overall Financial Health Score (0–100) is a weighted composite of **15 dimensions**:
+| Dimension | Weight |
+|---|---|
+| Financial Resilience | 9% |
+| Founder Capability | 8% |
+| Cash Flow Health | 7% |
+| Payment Behaviour | 7% |
+| Credit History & Debt Servicing | 6% |
+| Operational Stability | 6% |
+| Legal Compliance | 6% |
+| Carbon Transition Risk | 5% |
+| Alternative Data Signals | 5% |
+| Market Sentiment | 5% |
+| Tax Compliance | 4% |
+| Operational Certifications | 4% |
+| Government Policy Alignment | 4% |
+| Product Demand Outlook | 4% |
+| ESG Disclosure | 4% |
+| Supply Chain Resilience | 4% |
+| Governance Diversity | 3% |
+| Insurance & Business Continuity | 3% |
+| Geographic Risk | 3% |
+| Peer Benchmark | 3% |
 
-| Dimension | Weight | Data Sources |
+## External Integrations (Implemented)
+
+| Integration | Endpoint | Mode |
 |---|---|---|
-| Financial Resilience | 12% | Liquidity, leverage, margins |
-| Cash Flow Health | 8% | Cash flows + CI transaction analytics |
-| Operational Stability | 7% | Opex, utility bills, tenure |
-| Payment Behaviour | 8% | Payment records + CI data |
-| Carbon Transition Risk | 6% | ci.sustainow.in carbon intelligence |
-| Alternative Data Signals | 6% | Concentration, bank balances |
-| Founder Capability | 9% | Experience, CIBIL, management depth |
-| Market Sentiment | 6% | NPS, reviews, media, retention |
-| Product Demand Outlook | 5% | Products, order book, sector growth |
-| Government Policy Alignment | 5% | Schemes + statutory compliance |
-| Credit History & Debt Servicing | 8% | CRISIL, past debts, EMI, DSCR |
-| **Legal Compliance** | 7% | Company/founder lawsuits, criminal cases |
-| **Tax Compliance** | 5% | ITR, income tax paid, advance tax, TDS |
-| **Operational Certifications** | 5% | ISO, IATF, BIS, ZED, quality audits |
-| **Governance Diversity** | 3% | Female founders/directors, women-led enterprise |
+| CIBIL/CRISIL Bureau | `POST /api/v1/integrations/bureau/pull` | Mock + live API |
+| GSTN/ITR Tax | `POST /api/v1/integrations/tax/verify` | Mock + live API |
+| e-Courts/MCA Legal | `POST /api/v1/integrations/legal/search` | Mock + live API |
+| Document OCR | Auto via `documents[]` in assessment | Mock + live API |
+| Carbon Intelligence | ci.sustainow.in | Mock + live API |
+| Auto-enrichment | `auto_enrich: true` on assessment | Pulls bureau/tax/legal from GSTIN/PAN |
+
+Set API keys in `.env` to switch from mock to live integrations.
+
+## Advanced Analytics (Implemented)
+
+- **Peer portfolio benchmarking** — percentile rank vs sector cohort
+- **ESG/BRSR disclosure scoring** — beyond carbon intelligence
+- **Supply chain stress testing** — 30% revenue shock survival months
+- **Insurance & business continuity** — coverage adequacy assessment
+- **Geographic risk indexing** — state economic index + flood zone
+- **Document intelligence** — ITR, audit, bank statement OCR validation
 
 ### Governance Diversity Credit Benefit
 
-Women-led MSMEs receive a **governance score bonus** (up to +2.5 points on overall score) based on RBI-observed lower NPA correlation. Female founders/directors improve the governance dimension and unlock Stand-Up India / MUDRA Mahila eligibility insights.
+Women-led MSMEs receive a **governance score bonus** (up to +2.5 points on overall score). Every assessment returns `data_gaps`, `recommended_improvements`, and `advanced_intelligence` summaries.
 
-### Recommended Improvements
-
-Every assessment returns `recommended_improvements` — actionable steps to close data gaps and improve weak dimensions.
-
-### Suggested Future Enhancements
-
-| Enhancement | Benefit |
-|---|---|
-| Live CIBIL/CRISIL bureau API | Automated credit rating pull |
-| GSTN / Income Tax API | Real-time tax compliance verification |
-| e-Courts / MCA integration | Automated litigation search |
-| Document intelligence (ITR, audit) | OCR validation of financials |
-| Peer portfolio benchmarking | Percentile rank vs sector cohort |
-| ESG disclosure scoring | BRSR-lite readiness beyond carbon |
-| Supply chain stress testing | Shock scenario for key customers |
-
-### New Assessment Parameters
-
-**Founder Risk & Capability** — Industry experience, entrepreneurship tenure, CIBIL score, prior defaults, management team depth, succession planning, certifications.
-
-**Market Sentiment** — Customer NPS, Google ratings, media sentiment, customer retention, supplier trust, litigation history, GST compliance.
-
-**Product & Market Demand** — Product portfolio mix, market demand outlook, sector growth rate, capacity utilisation, order book depth, export share, EV/import-substitution exposure.
-
-**Government Policy Alignment** — Enrollment in schemes (Udyam, CGTMSE, PLI, CLCSS, ZED, SAMADHAN, etc.), eligibility for unenrolled schemes, sector policy tailwinds, and financing opportunities.
-
-Each dimension produces:
-- Score (0–100) with letter grade (A+ to F)
-- Risk level (low → critical)
-- Confidence level (high/medium/low)
-- Evidence-linked insights with data source attribution
+Each dimension produces score (0–100), risk level, confidence, and evidence-linked insights.
 
 ## Project Structure
 

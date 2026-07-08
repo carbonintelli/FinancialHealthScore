@@ -50,7 +50,7 @@ def test_scoring_engine_produces_valid_score(demo_request, mock_carbon_data):
 
     assert 0 <= result.overall_score <= 100
     assert result.grade in {"A+", "A", "B+", "B", "C+", "C", "D", "F"}
-    assert len(result.dimension_scores) == 15
+    assert len(result.dimension_scores) == 20
     assert result.carbon_intelligence is not None
     assert result.carbon_intelligence.source == "ci.sustainow.in"
     assert len(result.key_insights) > 0
@@ -102,6 +102,50 @@ def test_legal_tax_governance_dimensions(demo_request, mock_carbon_data):
     assert len(result.recommended_improvements) > 0
 
 
+def test_advanced_dimensions(demo_request, mock_carbon_data):
+    result = scoring_engine.assess(demo_request, mock_carbon_data)
+    dims = {d.dimension for d in result.dimension_scores}
+    assert "esg_disclosure" in dims
+    assert "supply_chain_resilience" in dims
+    assert "insurance_business_continuity" in dims
+    assert "geographic_risk" in dims
+    assert "peer_benchmark" in dims
+    assert result.advanced_intelligence is not None
+
+
+@pytest.mark.asyncio
+async def test_integrations_status_endpoint():
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        response = await client.get("/api/v1/integrations/status")
+    assert response.status_code == 200
+    data = response.json()
+    assert data["dimension_count"] == 20
+    assert "credit_bureau" in data["integrations"]
+
+
+@pytest.mark.asyncio
+async def test_bureau_pull_endpoint():
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        response = await client.post(
+            "/api/v1/integrations/bureau/pull",
+            params={"gstin": "27AABCS1234F1Z5", "business_name": "Test Co"},
+        )
+    assert response.status_code == 200
+    assert response.json()["data"]["crisilRating"] == "BBB+"
+
+
+@pytest.mark.asyncio
+async def test_enrichment_pipeline():
+    from app.services.enrichment import enrich_financial_data
+    from app.data.sample_msme import build_demo_request
+
+    request = build_demo_request()
+    fd, log = await enrich_financial_data(request.financial_data)
+    assert "credit_bureau" in log["applied"] or "tax_verification" in log["applied"]
+
+
 def test_founder_capability_dimension(demo_request, mock_carbon_data):
     result = scoring_engine.assess(demo_request, mock_carbon_data)
     founder_dim = next(d for d in result.dimension_scores if d.dimension == "founder_capability")
@@ -147,7 +191,7 @@ async def test_health_endpoint():
     assert response.status_code == 200
     data = response.json()
     assert data["status"] == "healthy"
-    assert "version" in data
+    assert data["dimension_count"] == 20
 
 
 @pytest.mark.asyncio
@@ -161,9 +205,9 @@ async def test_demo_assessment_endpoint():
     assert data["business_name"] == "Shree Ganesh Auto Components Pvt Ltd"
     assert data["carbon_intelligence"]["mock_data"] is True
     assert data["government_policy_assessment"] is not None
-    assert len(data["dimension_scores"]) == 15
-    assert "recommended_improvements" in data
-    assert "data_gaps" in data
+    assert len(data["dimension_scores"]) == 20
+    assert "advanced_intelligence" in data
+    assert data["advanced_intelligence"] is not None
     credit_dim = next(d for d in data["dimension_scores"] if d["dimension"] == "credit_history_debt_servicing")
     assert credit_dim["score"] > 0
 

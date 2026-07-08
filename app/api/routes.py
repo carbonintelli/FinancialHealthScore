@@ -15,7 +15,9 @@ from app.models.schemas import (
 )
 from app.config import settings
 from app.services.carbon_intelligence import CarbonIntelligenceClient, CarbonIntelligenceError, carbon_client
+from app.services.enrichment import enrich_financial_data
 from app.services.scoring_engine import scoring_engine
+from app.services.integrations import bureau_client, tax_client, legal_client, document_client
 
 logger = logging.getLogger(__name__)
 
@@ -30,6 +32,8 @@ async def health_check():
         version=settings.app_version,
         carbon_intelligence_connected=settings.has_carbon_api_key,
         mock_mode=not settings.has_carbon_api_key and settings.use_mock_carbon_data,
+        integrations_mock_mode=settings.use_mock_integrations and not settings.has_live_integrations,
+        dimension_count=20,
     )
 
 
@@ -46,6 +50,13 @@ async def integration_info():
             "and produces explainable credit decision intelligence."
         ),
     )
+
+
+async def _run_assessment(request: AssessmentRequest, carbon_data: dict | None) -> FinancialHealthScoreResult:
+    enrichment_log = None
+    if request.auto_enrich:
+        request.financial_data, enrichment_log = await enrich_financial_data(request.financial_data)
+    return scoring_engine.assess(request, carbon_data, enrichment_log)
 
 
 @router.post(
@@ -84,7 +95,7 @@ async def assess_msme(request: AssessmentRequest):
                     detail=f"Carbon Intelligence service error: {exc}",
                 ) from exc
 
-    return scoring_engine.assess(request, carbon_data)
+    return await _run_assessment(request, carbon_data)
 
 
 @router.get(
@@ -101,7 +112,7 @@ async def demo_assessment(
 
     request = build_demo_request(audience=audience)
     carbon_data = await carbon_client.fetch_full_intelligence("msme-demo-001")
-    return scoring_engine.assess(request, carbon_data)
+    return await _run_assessment(request, carbon_data)
 
 
 @router.get(
@@ -143,7 +154,41 @@ async def score_from_carbon_only(
         annual_revenue=txn.get("avgMonthlyInflowInr", 5_000_000) * 12,
         audience=audience,
     )
-    return scoring_engine.assess(request, carbon_data)
+    return scoring_engine.assess(request, carbon_data, enrichment_log=None)
+
+
+@router.get("/integrations/status", tags=["Integrations"])
+async def integrations_status():
+    """Status of external data integration clients."""
+    return {
+        "mock_mode": settings.use_mock_integrations and not settings.has_live_integrations,
+        "integrations": {
+            "credit_bureau": {"configured": bool(settings.credit_bureau_api_key), "source": "CIBIL/CRISIL"},
+            "tax_verification": {"configured": bool(settings.tax_api_key), "source": "GSTN/ITR"},
+            "legal_search": {"configured": bool(settings.legal_api_key), "source": "e-Courts/MCA"},
+            "document_intelligence": {"configured": bool(settings.document_api_key), "source": "OCR"},
+            "carbon_intelligence": {"configured": settings.has_carbon_api_key, "source": "ci.sustainow.in"},
+        },
+        "dimension_count": 20,
+    }
+
+
+@router.post("/integrations/bureau/pull", tags=["Integrations"])
+async def pull_bureau_report(gstin: str | None = None, pan: str | None = None, business_name: str = "MSME"):
+    """Pull CIBIL/CRISIL commercial bureau report."""
+    return await bureau_client.pull_commercial_report(gstin, pan, business_name)
+
+
+@router.post("/integrations/tax/verify", tags=["Integrations"])
+async def verify_tax(gstin: str | None = None, pan: str | None = None):
+    """Verify GSTN/ITR tax compliance."""
+    return await tax_client.verify(gstin, pan)
+
+
+@router.post("/integrations/legal/search", tags=["Integrations"])
+async def search_legal(business_name: str, directors: list[str] | None = None):
+    """Search e-Courts/MCA for litigation."""
+    return await legal_client.search(business_name, directors)
 
 
 @router.get(

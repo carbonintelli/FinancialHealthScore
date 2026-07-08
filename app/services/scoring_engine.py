@@ -19,10 +19,13 @@ from app.models.schemas import (
     PolicyAlignmentInsight,
     RiskIndicator,
     RiskLevel,
+    AdvancedIntelligenceSummary,
+    IntegrationStatus,
 )
 from app.data.government_policies import get_applicable_policies, get_policy_by_code
 from app.services.credit_ratings import crisil_rating_to_score
 from app.data.certifications import certification_value
+from app.services.advanced_scoring import advanced_scoring
 
 
 def _clamp(value: float, low: float = 0.0, high: float = 100.0) -> float:
@@ -75,21 +78,26 @@ class ScoringEngine:
     """Computes explainable Financial Health Scores from financial and carbon data."""
 
     DIMENSION_WEIGHTS = {
-        "financial_resilience": 0.12,
-        "cash_flow_health": 0.08,
-        "operational_stability": 0.07,
-        "payment_behaviour": 0.08,
-        "carbon_transition_risk": 0.06,
-        "alternative_data_signals": 0.06,
-        "founder_capability": 0.09,
-        "market_sentiment": 0.06,
-        "product_demand_outlook": 0.05,
-        "government_policy_alignment": 0.05,
-        "credit_history_debt_servicing": 0.08,
-        "legal_compliance": 0.07,
-        "tax_compliance": 0.05,
-        "operational_certifications": 0.05,
+        "financial_resilience": 0.09,
+        "cash_flow_health": 0.07,
+        "operational_stability": 0.06,
+        "payment_behaviour": 0.07,
+        "carbon_transition_risk": 0.05,
+        "alternative_data_signals": 0.05,
+        "founder_capability": 0.08,
+        "market_sentiment": 0.05,
+        "product_demand_outlook": 0.04,
+        "government_policy_alignment": 0.04,
+        "credit_history_debt_servicing": 0.06,
+        "legal_compliance": 0.06,
+        "tax_compliance": 0.04,
+        "operational_certifications": 0.04,
         "governance_diversity": 0.03,
+        "esg_disclosure": 0.04,
+        "supply_chain_resilience": 0.04,
+        "insurance_business_continuity": 0.03,
+        "geographic_risk": 0.03,
+        "peer_benchmark": 0.03,
     }
 
     # Max overall score uplift for strong women-led governance (research-backed lower NPA correlation)
@@ -99,6 +107,7 @@ class ScoringEngine:
         self,
         request: AssessmentRequest,
         carbon_data: dict[str, Any] | None = None,
+        enrichment_log: dict[str, Any] | None = None,
     ) -> FinancialHealthScoreResult:
         fd = request.financial_data
         profile = fd.profile
@@ -121,6 +130,13 @@ class ScoringEngine:
         dimensions.append(self._score_operational_certifications(fd.operational_certifications, fd.government_policy))
         dimensions.append(self._score_governance_diversity(fd.governance_diversity, fd.founder))
 
+        adv = advanced_scoring
+        dimensions.append(adv.score_esg_disclosure(fd.esg_disclosure, carbon_data, self.DIMENSION_WEIGHTS["esg_disclosure"]))
+        dimensions.append(adv.score_supply_chain_resilience(fd.supply_chain, fd.product_market, carbon_data, self.DIMENSION_WEIGHTS["supply_chain_resilience"]))
+        dimensions.append(adv.score_insurance(fd.insurance, self.DIMENSION_WEIGHTS["insurance_business_continuity"]))
+        dimensions.append(adv.score_geographic_risk(fd.geographic, profile, self.DIMENSION_WEIGHTS["geographic_risk"]))
+        dimensions.append(adv.score_peer_benchmark(profile, acct, fd.credit_bureau, carbon_data, self.DIMENSION_WEIGHTS["peer_benchmark"]))
+
         overall = sum(d.score * d.weight for d in dimensions)
         governance_bonus = self._governance_overall_bonus(fd.governance_diversity, dimensions)
         overall = _clamp(overall + governance_bonus, 0, 100)
@@ -134,6 +150,7 @@ class ScoringEngine:
         carbon_summary = self._build_carbon_summary(carbon_data, profile.msme_id)
         policy_assessment = self._build_government_policy_assessment(fd, profile)
         recommended = self._build_recommended_improvements(dimensions, data_gaps, fd, policy_assessment)
+        advanced_summary = self._build_advanced_intelligence_summary(dimensions, enrichment_log, fd)
         audience_summary = self._audience_summary(request.audience, overall, risk_indicators)
 
         return FinancialHealthScoreResult(
@@ -153,6 +170,7 @@ class ScoringEngine:
             government_policy_assessment=policy_assessment,
             data_gaps=data_gaps,
             recommended_improvements=recommended,
+            advanced_intelligence=advanced_summary,
             audience_summary=audience_summary,
             metadata={
                 "sector": profile.sector,
@@ -162,6 +180,7 @@ class ScoringEngine:
                 "high_priority_gaps": sum(1 for g in data_gaps if g.severity == "high"),
                 "governance_score_bonus": round(governance_bonus, 2),
                 "dimension_count": len(dimensions),
+                "enrichment_applied": enrichment_log.get("applied", []) if enrichment_log else [],
             },
         )
 
@@ -2249,6 +2268,41 @@ class ScoringEngine:
 
         return min(bonus, self.GOVERNANCE_SCORE_BONUS_CAP)
 
+    def _build_advanced_intelligence_summary(
+        self,
+        dimensions: list[DimensionScore],
+        enrichment_log: dict[str, Any] | None,
+        fd,
+    ) -> AdvancedIntelligenceSummary:
+        integration_status: list[IntegrationStatus] = []
+        sources = [
+            ("credit_bureau", "CIBIL/CRISIL Bureau"),
+            ("tax_verification", "GSTN/ITR Verification"),
+            ("legal_search", "e-Courts/MCA Litigation"),
+            ("document_intelligence", "Document OCR"),
+        ]
+        applied = enrichment_log.get("applied", []) if enrichment_log else []
+        mock = enrichment_log.get("mock_mode", True) if enrichment_log else True
+
+        for key, label in sources:
+            integration_status.append(IntegrationStatus(
+                source=key,
+                status="applied" if key in applied else "skipped",
+                mock=mock,
+                message=label,
+            ))
+
+        peer_dim = next((d for d in dimensions if d.dimension == "peer_benchmark"), None)
+        supply_dim = next((d for d in dimensions if d.dimension == "supply_chain_resilience"), None)
+
+        return AdvancedIntelligenceSummary(
+            enrichment_applied=applied,
+            integration_status=integration_status,
+            document_validation=enrichment_log.get("document_validation") if enrichment_log else None,
+            peer_percentile_overall=peer_dim.score if peer_dim else None,
+            stress_test_passed=supply_dim.score >= 60 if supply_dim else None,
+        )
+
     def _build_recommended_improvements(
         self,
         dimensions: list[DimensionScore],
@@ -2291,12 +2345,16 @@ class ScoringEngine:
         if not fd.legal_compliance:
             recs.append("Conduct litigation search (company + directors) via e-Courts / MCA for legal compliance scoring.")
 
-        # Future enhancements
-        recs.append(
-            "[Future] Integrate live CIBIL/CRISIL bureau pull, GSTN API, and e-Courts for automated verification."
-        )
+        if not fd.esg_disclosure:
+            recs.append("Complete BRSR Lite readiness assessment and publish GHG inventory for ESG disclosure scoring.")
 
-        return recs[:10]
+        if not fd.supply_chain:
+            recs.append("Run supply chain stress test (30% revenue shock) and document alternate suppliers.")
+
+        if not fd.insurance:
+            recs.append("Obtain business interruption and key-person insurance for continuity risk coverage.")
+
+        return recs[:12]
 
     def _identify_data_gaps(self, fd, carbon_data) -> list[DataGap]:
         """Identify missing or incomplete inputs that reduce assessment confidence."""
@@ -2624,6 +2682,11 @@ class ScoringEngine:
             "tax_compliance": "Clear outstanding tax demands and maintain timely ITR and advance tax payments.",
             "operational_certifications": "Obtain ISO 9001 and sector-specific certifications (IATF, BIS, FSSAI).",
             "governance_diversity": "Strengthen board governance and explore women entrepreneur scheme benefits.",
+            "esg_disclosure": "Complete BRSR Lite disclosure and publish annual ESG report.",
+            "supply_chain_resilience": "Diversify suppliers and establish alternate sourcing for critical inputs.",
+            "insurance_business_continuity": "Obtain business interruption and key-person insurance coverage.",
+            "geographic_risk": "Assess regional exposure and industrial cluster infrastructure advantages.",
+            "peer_benchmark": "Improve metrics below sector median to advance portfolio percentile ranking.",
         }
         return recs.get(dimension, "Conduct detailed due diligence.")
 
@@ -2773,6 +2836,15 @@ class ScoringEngine:
             sources.append("compliance_records")
         if fd.governance_diversity:
             sources.append("governance_records")
+        if fd.esg_disclosure:
+            sources.append("esg_disclosure")
+        if fd.supply_chain:
+            sources.append("supply_chain_records")
+        if fd.insurance:
+            sources.append("insurance_records")
+        if fd.geographic or fd.profile.state:
+            sources.append("geographic_risk_index")
+        sources.append("sector_benchmarks")
         return sources
 
 
