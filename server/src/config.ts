@@ -11,7 +11,7 @@ export const config = {
   jwtExpireMinutes: parseInt(process.env.JWT_EXPIRE_MINUTES || "480", 10),
   databaseUrl: process.env.DATABASE_URL || "data/financial_health_node.db",
   appName: "Financial Health Score",
-  appVersion: "2.0.0",
+  appVersion: "2.1.0",
   openaiApiKey: process.env.OPENAI_API_KEY || "",
   useMockIntegrations: process.env.USE_MOCK_INTEGRATIONS !== "false",
   carbonApiKey: process.env.CARBON_INTELLIGENCE_API_KEY || "",

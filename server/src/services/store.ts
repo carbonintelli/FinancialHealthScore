@@ -1,6 +1,7 @@
 import { getDb } from "../db/index.js";
 import type { AssessmentResult } from "./scoring/bridge.js";
-import { orchestrateAgents } from "./agents/index.js";
+import { orchestrateAssessment } from "./agents/orchestrator.js";
+import type { OrchestrationResult } from "./agents/types.js";
 
 export function saveAssessment(
   userId: number,
@@ -34,14 +35,15 @@ export async function assessAndStore(
   audience: string,
   runAgents = true
 ) {
-  let agentInsights = null;
+  let agentInsights: OrchestrationResult | null = null;
   if (runAgents) {
-    agentInsights = await orchestrateAgents({
+    agentInsights = await orchestrateAssessment({
       msmeId: result.msme_id,
       businessName: result.business_name,
       assessment: result as unknown as Record<string, unknown>,
       sector: "auto_components",
       triggerSource: "assessment",
+      audience,
     });
   }
   saveAssessment(userId, result, audience, agentInsights);

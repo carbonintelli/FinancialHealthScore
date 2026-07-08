@@ -68,6 +68,7 @@ See [docs/NODE_PLATFORM.md](docs/NODE_PLATFORM.md) and [docs/PLATFORM.md](docs/P
 
 | Document | Description |
 |---|---|
+| [docs/AGENTIC_ARCHITECTURE.md](docs/AGENTIC_ARCHITECTURE.md) | Multi-phase agentic AI orchestration (27 agents, 6 phases) |
 | [docs/NODE_PLATFORM.md](docs/NODE_PLATFORM.md) | Node.js server, AI agents, multi-stakeholder architecture |
 | [docs/PLATFORM.md](docs/PLATFORM.md) | Login, bank & MSME portals, loan workflow, detailed reports |
 | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | System context, request flow, component map, testing strategy |

@@ -14,7 +14,9 @@ import {
   getAllMsmesSummary,
 } from "../services/store.js";
 import { buildDetailedReport, renderHtmlReport } from "../services/reports/index.js";
-import { runPolicyAgent, runRegulatoryAgent, orchestrateAgents } from "../services/agents/index.js";
+import { runPolicyAgent, runRegulatoryAgent } from "../services/agents/legacy-agents.js";
+import { orchestrateAssessment, getArchitecture } from "../services/agents/orchestrator.js";
+import { getOrchestrationRun, listAgentRuns } from "../services/agents/logger.js";
 import { getDb } from "../db/index.js";
 import { v4 as uuidv4 } from "uuid";
 
@@ -30,6 +32,8 @@ apiRouter.get("/health", (_req, res) => {
     integrations_mock_mode: config.useMockIntegrations,
     dimension_count: 20,
     ai_agents_enabled: true,
+    agentic_orchestration: true,
+    dimension_agents: 20,
     openai_configured: !!config.openaiApiKey,
   });
 });
@@ -72,14 +76,73 @@ apiRouter.get("/integrations/status", (_req, res) => {
       document_intelligence: { configured: false, source: "OCR" },
       carbon_intelligence: { configured: !!config.carbonApiKey, source: "ci.sustainow.in" },
     },
-    ai_agents: ["credit_analysis", "policy_advisory", "regulatory_compliance", "data_enrichment", "report_narrative"],
+    ai_agents: {
+      orchestration: "multi-phase",
+      dimension_agents: 20,
+      synthesis_agents: ["risk_synthesis", "health_score_synthesis", "report_orchestration"],
+      stakeholder_agents: ["credit_analysis", "policy_advisory", "regulatory_compliance"],
+      enrichment: "data_enrichment",
+    },
     dimension_count: 20,
   });
 });
 
-apiRouter.get("/agents/status", requireAuth, (_req, res) => {
-  const runs = getDb().prepare("SELECT agent_type, COUNT(*) as count FROM agent_runs GROUP BY agent_type").all();
-  res.json({ agents: runs, openai_configured: !!config.openaiApiKey });
+apiRouter.get("/agents/architecture", (_req, res) => {
+  res.json(getArchitecture());
+});
+
+apiRouter.get("/agents/status", requireAuth, (req, res) => {
+  const assessmentId = req.query.assessment_id as string | undefined;
+  const runs = listAgentRuns(assessmentId);
+  res.json({ agents: runs, openai_configured: !!config.openaiApiKey, architecture: getArchitecture() });
+});
+
+apiRouter.post("/agents/orchestrate/:assessmentId", requireAuth, async (req: AuthRequest, res) => {
+  const assessmentId = String(req.params.assessmentId);
+  const record = getAssessment(assessmentId);
+  if (!record) return res.status(404).json({ detail: "Assessment not found" });
+  if (!canAccess(req.user!, record.msme_id)) return res.status(403).json({ detail: "Access denied" });
+
+  try {
+    const result = JSON.parse(record.result_json);
+    const orchestration = await orchestrateAssessment({
+      msmeId: record.msme_id,
+      businessName: record.business_name,
+      assessment: result,
+      sector: "auto_components",
+      triggerSource: "manual_orchestration",
+      audience: record.audience,
+    });
+    getDb()
+      .prepare("UPDATE assessment_records SET agent_insights_json = ? WHERE assessment_id = ?")
+      .run(JSON.stringify(orchestration), assessmentId);
+    res.json(orchestration);
+  } catch (e) {
+    res.status(500).json({ detail: String(e) });
+  }
+});
+
+apiRouter.get("/agents/orchestration/:orchestrationId", requireAuth, (req, res) => {
+  const run = getOrchestrationRun(String(req.params.orchestrationId));
+  if (!run) return res.status(404).json({ detail: "Orchestration not found" });
+  res.json(JSON.parse(run.output_json));
+});
+
+apiRouter.get("/agents/dimension/:dimensionId", requireAuth, async (req: AuthRequest, res) => {
+  const assessmentId = req.query.assessment_id as string;
+  if (!assessmentId) return res.status(400).json({ detail: "assessment_id required" });
+  const record = getAssessment(assessmentId);
+  if (!record) return res.status(404).json({ detail: "Assessment not found" });
+
+  const insights = record.agent_insights_json ? JSON.parse(record.agent_insights_json) : null;
+  if (!insights?.dimension_agents) {
+    return res.status(404).json({ detail: "No dimension agent data — run orchestration first" });
+  }
+  const dim = insights.dimension_agents.find(
+    (d: { dimension: string }) => d.dimension === req.params.dimensionId
+  );
+  if (!dim) return res.status(404).json({ detail: "Dimension agent not found" });
+  res.json(dim);
 });
 
 // Bank routes
