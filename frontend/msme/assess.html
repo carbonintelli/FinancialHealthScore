@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Run Assessment — Financial Health Score</title>
+  <title>Credit Assessment — Enterprise Portal</title>
   <link rel="icon" href="/app/assets/favicon.svg" type="image/svg+xml" />
   <link rel="stylesheet" href="/app/css/style.css" />
 </head>
@@ -13,45 +13,46 @@
     <main class="main">
       <div id="page-header"></div>
       <div class="card">
-        <div class="card-header"><h3>Quick Assessment</h3></div>
-        <p class="card-desc">Run a 20-dimension Financial Health Score with Carbon Intelligence enrichment and 27-agent AI orchestration.</p>
+        <div class="card-header"><h3>Credit Assessment</h3></div>
+        <p class="card-desc">Initiate a 20-dimension Financial Health Score assessment with Carbon Intelligence enrichment and AI-assisted credit analytics.</p>
         <button class="btn btn-accent btn-lg" id="quick-btn">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-          Run Quick Assessment
+          Initiate Credit Assessment
         </button>
         <div id="result" style="margin-top:1.5rem"></div>
       </div>
       <div class="card" id="loan-card">
-        <div class="card-header"><h3>Apply for MSME Loan</h3></div>
-        <p class="card-desc">Submit a loan application to IDBI Bank after completing your assessment.</p>
+        <div class="card-header"><h3>Credit Facility Application</h3></div>
+        <p class="card-desc">Submit a credit facility application to IDBI Bank upon completion of your credit assessment.</p>
         <form id="loan-form">
           <div class="form-group">
-            <label>Loan Type</label>
+            <label>Facility Type</label>
             <select id="loan-type">
-              <option value="working_capital">Working Capital</option>
+              <option value="working_capital">Working Capital Facility</option>
               <option value="term_loan">Term Loan</option>
               <option value="equipment_finance">Equipment Finance</option>
-              <option value="green_finance">Green / Sustainability Linked</option>
+              <option value="green_finance">Green / ESG-Linked Finance</option>
             </select>
           </div>
           <div class="form-group">
-            <label>Amount (INR)</label>
+            <label>Sanction Amount (INR)</label>
             <input type="number" id="amount" min="100000" step="50000" value="2500000" required />
           </div>
           <div class="form-group">
-            <label>Tenure (months)</label>
+            <label>Repayment Tenure (months)</label>
             <input type="number" id="tenure" min="6" max="120" value="36" required />
           </div>
           <div class="form-group">
-            <label>Purpose</label>
-            <textarea id="purpose" rows="3" placeholder="Describe loan purpose…"></textarea>
+            <label>Facility Purpose</label>
+            <textarea id="purpose" rows="3" placeholder="Describe the intended use of credit facility…"></textarea>
           </div>
-          <button type="submit" class="btn btn-primary">Submit to IDBI Bank</button>
+          <button type="submit" class="btn btn-primary">Submit Credit Application to IDBI Bank</button>
         </form>
         <div id="loan-msg" style="margin-top:1rem"></div>
       </div>
     </main>
   </div>
+  <script src="/app/js/terminology.js"></script>
   <script src="/app/js/api.js"></script>
   <script src="/app/js/ui.js"></script>
   <script>
@@ -61,8 +62,8 @@
     FHS.mountLayout('msme', 'assess');
 
     document.getElementById('page-header').innerHTML = FHS.renderPageHeader({
-      title: 'Run Assessment',
-      subtitle: 'Generate your Financial Health Score with AI-powered insights',
+      title: 'Credit Assessment',
+      subtitle: 'Generate your Financial Health Score with AI-assisted credit analytics',
     });
 
     if (user.role === 'msme_viewer') {
@@ -76,7 +77,7 @@
       const el = document.getElementById('result');
       const btn = document.getElementById('quick-btn');
       btn.disabled = true;
-      el.innerHTML = '<div class="alert alert-info">Running 20-dimension assessment with 27 AI agents…</div>';
+      el.innerHTML = '<div class="alert alert-info">Initiating 20-dimension credit assessment with AI orchestration…</div>';
       try {
         const r = await api('/api/v1/msme/assess/quick', { method: 'POST' });
         lastAssessmentId = r.assessment_id;
@@ -85,11 +86,11 @@
             score: r.overall_score,
             grade: r.grade,
             riskLevel: r.overall_risk_level,
-            title: 'Assessment Complete',
-            subtitle: '27 agents orchestrated across enrichment, dimension analysis, risk synthesis & reporting',
-            ctaHtml: `<a class="btn btn-primary" href="/app/msme/report.html?id=${r.assessment_id}">View Full Report</a>`,
+            title: 'Credit Assessment Complete',
+            subtitle: 'Multi-phase AI orchestration across enrichment, dimensional analysis, risk synthesis & reporting',
+            ctaHtml: `<a class="btn btn-primary" href="/app/msme/report.html?id=${r.assessment_id}">View Credit Assessment Report</a>`,
           })}
-          <div class="alert alert-success" style="margin-top:1rem">Assessment ID: <code>${r.assessment_id}</code></div>`;
+          <div class="alert alert-success" style="margin-top:1rem">Assessment Reference: <code>${r.assessment_id}</code></div>`;
       } catch (e) {
         el.innerHTML = `<div class="alert alert-error">${e.message}</div>`;
       }
@@ -109,7 +110,7 @@
             assessment_id: lastAssessmentId,
           }),
         });
-        document.getElementById('loan-msg').innerHTML = `<div class="alert alert-success">Application <strong>${res.application_ref}</strong> submitted successfully.</div>`;
+        document.getElementById('loan-msg').innerHTML = `<div class="alert alert-success">Credit application <strong>${res.application_ref}</strong> submitted successfully.</div>`;
       } catch (err) {
         document.getElementById('loan-msg').innerHTML = `<div class="alert alert-error">${err.message}</div>`;
       }

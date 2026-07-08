@@ -19,46 +19,54 @@ const FHS = (() => {
     check: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>',
   };
 
+  function portalMeta(portalKey) {
+    return (typeof FHS_TERMS !== 'undefined' && FHS_TERMS.PORTALS[portalKey]) || {};
+  }
+
+  function navLabel(portalKey, id, fallback) {
+    return (typeof FHS_TERMS !== 'undefined' && FHS_TERMS.NAV[portalKey]?.[id]) || fallback;
+  }
+
   const PORTALS = {
     bank: {
       theme: 'theme-bank',
-      portalLabel: 'Bank Portal',
-      portalSub: 'IDBI MSME Lending',
+      get portalLabel() { return portalMeta('bank').portalLabel || 'Lending Institution Portal'; },
+      get portalSub() { return portalMeta('bank').portalSub || 'MSME Credit & Risk Management'; },
       nav: [
-        { id: 'dashboard', href: '/app/bank/dashboard.html', label: 'Dashboard', icon: 'dashboard' },
-        { id: 'portfolio', href: '/app/bank/portfolio.html', label: 'Portfolio', icon: 'portfolio' },
-        { id: 'loans', href: '/app/bank/loans.html', label: 'Loan Applications', icon: 'loans' },
-        { id: 'api', href: '/api/v1/health', label: 'API Health', icon: 'api', external: true },
+        { id: 'dashboard', href: '/app/bank/dashboard.html', label: 'Executive Dashboard', icon: 'dashboard' },
+        { id: 'portfolio', href: '/app/bank/portfolio.html', label: 'MSME Lending Portfolio', icon: 'portfolio' },
+        { id: 'loans', href: '/app/bank/loans.html', label: 'Credit Applications', icon: 'loans' },
+        { id: 'api', href: '/api/v1/health', label: 'Platform Health', icon: 'api', external: true },
       ],
     },
     msme: {
       theme: 'theme-msme',
-      portalLabel: 'MSME Portal',
-      portalSub: 'Your Business Health',
+      get portalLabel() { return portalMeta('msme').portalLabel || 'Enterprise Portal'; },
+      get portalSub() { return portalMeta('msme').portalSub || 'Financial Health & Credit Access'; },
       nav: [
-        { id: 'dashboard', href: '/app/msme/dashboard.html', label: 'Dashboard', icon: 'dashboard' },
-        { id: 'profile', href: '/app/msme/profile.html', label: 'Data Feed', icon: 'portfolio' },
-        { id: 'import', href: '/app/msme/import.html', label: 'Import Data', icon: 'portfolio' },
-        { id: 'assess', href: '/app/msme/assess.html', label: 'Run Assessment', icon: 'assess' },
-        { id: 'report', href: '/app/msme/report.html', label: 'My Report', icon: 'report' },
-        { id: 'loans', href: '/app/msme/loans.html', label: 'Loan Applications', icon: 'loans' },
+        { id: 'dashboard', href: '/app/msme/dashboard.html', label: 'Enterprise Dashboard', icon: 'dashboard' },
+        { id: 'profile', href: '/app/msme/profile.html', label: 'Financial Data Submission', icon: 'portfolio' },
+        { id: 'import', href: '/app/msme/import.html', label: 'ERP Data Integration', icon: 'portfolio' },
+        { id: 'assess', href: '/app/msme/assess.html', label: 'Credit Assessment', icon: 'assess' },
+        { id: 'report', href: '/app/msme/report.html', label: 'Credit Assessment Report', icon: 'report' },
+        { id: 'loans', href: '/app/msme/loans.html', label: 'Credit Applications', icon: 'loans' },
       ],
     },
     govt: {
       theme: 'theme-govt',
-      portalLabel: 'MSME Intelligence',
-      portalSub: 'Government Portal',
+      get portalLabel() { return portalMeta('govt').portalLabel || 'MSME Policy Intelligence'; },
+      get portalSub() { return portalMeta('govt').portalSub || 'Ministry of MSME · Scheme Analytics'; },
       nav: [
-        { id: 'dashboard', href: '/app/govt/dashboard.html', label: 'Dashboard', icon: 'dashboard' },
+        { id: 'dashboard', href: '/app/govt/dashboard.html', label: 'National MSME Dashboard', icon: 'dashboard' },
         { id: 'schemes', href: '/app/govt/schemes.html', label: 'Scheme Advisory', icon: 'schemes' },
       ],
     },
     regulatory: {
       theme: 'theme-regulatory',
-      portalLabel: 'Regulatory Intelligence',
-      portalSub: 'RBI · GSTN · MCA',
+      get portalLabel() { return portalMeta('regulatory').portalLabel || 'Regulatory Supervisory Portal'; },
+      get portalSub() { return portalMeta('regulatory').portalSub || 'RBI · GSTN · MCA Oversight'; },
       nav: [
-        { id: 'dashboard', href: '/app/regulatory/dashboard.html', label: 'Dashboard', icon: 'dashboard' },
+        { id: 'dashboard', href: '/app/regulatory/dashboard.html', label: 'Supervisory Dashboard', icon: 'dashboard' },
         { id: 'review', href: '/app/regulatory/review.html', label: 'Compliance Review', icon: 'review' },
       ],
     },
@@ -90,18 +98,19 @@ const FHS = (() => {
     const navHtml = portal.nav.map(item => {
       const active = item.id === activeId ? ' active' : '';
       const ext = item.external ? ' target="_blank" rel="noopener"' : '';
+      const label = navLabel(portalKey, item.id, item.label);
       return `<a href="${item.href}" class="nav-link${active}"${ext}>
-        <span class="nav-icon">${ICONS[item.icon] || ''}</span>${item.label}
+        <span class="nav-icon">${ICONS[item.icon] || ''}</span>${label}
       </a>`;
     }).join('');
 
-    const roleLabel = user?.role?.replace(/_/g, ' ') || '';
+    const roleLabel = typeof FHS_TERMS !== 'undefined' ? FHS_TERMS.formatRole(user?.role) : (user?.role?.replace(/_/g, ' ') || '');
     return `
       <aside class="sidebar ${portal.theme}">
         <div class="sidebar-brand">
           <img src="/app/assets/logo.svg" alt="Financial Health Score" class="logo-img" width="44" height="44" />
           <div>
-            <div class="brand-title">Financial Health Score</div>
+            <div class="brand-title">${typeof FHS_TERMS !== 'undefined' ? FHS_TERMS.LABELS.fhsShort : 'Financial Health Score'}</div>
             <div class="brand-sub">${portal.portalSub}</div>
           </div>
         </div>
@@ -116,7 +125,7 @@ const FHS = (() => {
             </div>
           </div>
           <button type="button" class="btn-logout" onclick="logout()">
-            ${ICONS.logout}<span>Sign Out</span>
+            ${ICONS.logout}<span>${typeof FHS_TERMS !== 'undefined' ? FHS_TERMS.LABELS.signOut : 'Sign Out'}</span>
           </button>
         </div>
       </aside>`;
@@ -126,7 +135,7 @@ const FHS = (() => {
     return `
       <header class="page-header">
         <div class="page-header-text">
-          <p class="page-eyebrow">Financial Health Score Platform</p>
+          <p class="page-eyebrow">${typeof FHS_TERMS !== 'undefined' ? FHS_TERMS.LABELS.platformName : 'Financial Health Score Platform'}</p>
           <h1 class="page-title">${title}</h1>
           ${subtitle ? `<p class="page-subtitle">${subtitle}</p>` : ''}
         </div>
@@ -158,7 +167,7 @@ const FHS = (() => {
           <h2>${title || 'Financial Health Score'}</h2>
           <div class="score-hero-meta">
             ${riskLevel ? riskBadge(riskLevel) : ''}
-            ${grade ? `<span class="${gradeClass(grade)}">${grade} Grade</span>` : ''}
+            ${grade ? `<span class="${gradeClass(grade)}">${grade} Credit Grade</span>` : ''}
           </div>
           ${subtitle ? `<p class="score-hero-sub">${subtitle}</p>` : ''}
           ${ctaHtml || ''}
@@ -192,21 +201,21 @@ const FHS = (() => {
       </div>`;
     return `
       <div class="dim-bars-grid">
-        <div><h4 class="dim-section-title">Top Strengths</h4>${top.map(d => bar(d, 'strong')).join('')}</div>
-        <div><h4 class="dim-section-title">Areas to Improve</h4>${bottom.map(d => bar(d, 'weak')).join('')}</div>
+        <div><h4 class="dim-section-title">${typeof FHS_TERMS !== 'undefined' ? FHS_TERMS.LABELS.topStrengths : 'Key Credit Strengths'}</h4>${top.map(d => bar(d, 'strong')).join('')}</div>
+        <div><h4 class="dim-section-title">${typeof FHS_TERMS !== 'undefined' ? FHS_TERMS.LABELS.areasToImprove : 'Areas Requiring Attention'}</h4>${bottom.map(d => bar(d, 'weak')).join('')}</div>
       </div>`;
   }
 
   function formatDimName(id) {
-    return id.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+    return typeof FHS_TERMS !== 'undefined' ? FHS_TERMS.formatDimension(id) : id.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
   }
 
   function renderWelcomeBanner(portalKey) {
-    const messages = {
-      bank: { title: 'Portfolio Intelligence', text: 'Monitor MSME credit health, run assessments, and manage loan pipelines with AI-powered insights.' },
-      msme: { title: 'Know Your Business Health', text: 'Your 20-dimension Financial Health Score helps you access credit, schemes, and growth capital.' },
-      govt: { title: 'National MSME Oversight', text: 'Track registered MSMEs, scheme uptake, and AI-powered policy recommendations.' },
-      regulatory: { title: 'Supervisory Compliance', text: 'Review high-risk assessments and regulatory submissions across RBI, GSTN, and MCA.' },
+    const messages = (typeof FHS_TERMS !== 'undefined' && FHS_TERMS.WELCOME) || {
+      bank: { title: 'Portfolio Credit Intelligence', text: 'Monitor MSME creditworthiness and manage the lending pipeline.' },
+      msme: { title: 'Enterprise Financial Health Overview', text: 'Your Financial Health Score supports credit access and scheme eligibility.' },
+      govt: { title: 'National MSME Registry & Analytics', text: 'Track registered MSMEs and scheme uptake.' },
+      regulatory: { title: 'Regulatory Supervisory Oversight', text: 'Review elevated-risk assessments and statutory submissions.' },
     };
     const m = messages[portalKey] || messages.bank;
     return `

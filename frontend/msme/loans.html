@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Loan Applications — MSME Portal</title>
+  <title>Credit Applications — Enterprise Portal</title>
   <link rel="icon" href="/app/assets/favicon.svg" type="image/svg+xml" />
   <link rel="stylesheet" href="/app/css/style.css" />
 </head>
@@ -15,6 +15,7 @@
       <div class="card" id="loans"><div class="loading-pulse"></div></div>
     </main>
   </div>
+  <script src="/app/js/terminology.js"></script>
   <script src="/app/js/api.js"></script>
   <script src="/app/js/ui.js"></script>
   <script>
@@ -24,8 +25,8 @@
     FHS.mountLayout('msme', 'loans');
 
     document.getElementById('page-header').innerHTML = FHS.renderPageHeader({
-      title: 'My Loan Applications',
-      subtitle: 'Track your loan requests to IDBI Bank',
+      title: 'Credit Facility Applications',
+      subtitle: 'Track your credit applications submitted to IDBI Bank',
     });
 
     api('/api/v1/msme/loans').then(loans => {
@@ -33,21 +34,21 @@
         document.getElementById('loans').innerHTML = `
           <div class="empty-state">
             <div class="empty-state-icon">${FHS.ICONS.loans}</div>
-            <h4>No applications yet</h4>
-            <p style="margin-bottom:1rem">Complete an assessment first, then apply for MSME financing.</p>
-            <a class="btn btn-accent" href="/app/msme/assess.html">Run Assessment & Apply</a>
+            <h4>No credit applications on record</h4>
+            <p style="margin-bottom:1rem">Complete a credit assessment, then apply for MSME credit facilities.</p>
+            <a class="btn btn-accent" href="/app/msme/assess.html">Initiate Assessment & Apply</a>
           </div>`;
         return;
       }
       document.getElementById('loans').innerHTML = `
         <div class="table-wrap"><table>
-          <thead><tr><th>Reference</th><th>Type</th><th>Amount</th><th>Status</th><th>Submitted</th><th>Notes</th></tr></thead>
+          <thead><tr><th>Application Ref.</th><th>Facility Type</th><th>Sanction Amount</th><th>Status</th><th>Submitted</th><th>Credit Officer Notes</th></tr></thead>
           <tbody>${loans.map(l => `
             <tr>
               <td><code>${l.application_ref}</code></td>
-              <td>${l.loan_type.replace(/_/g, ' ')}</td>
+              <td>${formatLoanType(l.loan_type)}</td>
               <td>${formatInr(l.amount_inr)}</td>
-              <td><span class="badge badge-moderate">${l.status}</span></td>
+              <td><span class="badge badge-moderate">${formatLoanStatus(l.status)}</span></td>
               <td>${formatDate(l.created_at)}</td>
               <td>${l.reviewer_notes || '—'}</td>
             </tr>

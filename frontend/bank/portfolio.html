@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Portfolio — Financial Health Score</title>
+  <title>MSME Lending Portfolio — Lending Institution Portal</title>
   <link rel="icon" href="/app/assets/favicon.svg" type="image/svg+xml" />
   <link rel="stylesheet" href="/app/css/style.css" />
 </head>
@@ -15,6 +15,7 @@
       <div class="card" id="portfolio"><div class="loading-pulse"></div></div>
     </main>
   </div>
+  <script src="/app/js/terminology.js"></script>
   <script src="/app/js/api.js"></script>
   <script src="/app/js/ui.js"></script>
   <script>
@@ -24,12 +25,12 @@
     FHS.mountLayout('bank', 'portfolio');
 
     document.getElementById('page-header').innerHTML = FHS.renderPageHeader({
-      title: 'MSME Portfolio',
-      subtitle: 'Assess credit health and manage relationships across your lending book',
+      title: 'MSME Lending Portfolio',
+      subtitle: 'Assess creditworthiness and manage borrower relationships across your lending book',
     });
 
     async function assess(msmeId, name) {
-      if (!confirm(`Run Financial Health Score assessment for ${name}?`)) return;
+      if (!confirm(`Initiate credit assessment for ${name}?`)) return;
       try {
         const result = await api(`/api/v1/bank/assess/${msmeId}`, { method: 'POST' });
         window.location.href = `/app/bank/report.html?id=${result.assessment_id}`;
@@ -39,7 +40,7 @@
     api('/api/v1/bank/portfolio').then(items => {
       document.getElementById('portfolio').innerHTML = `
         <div class="table-wrap"><table>
-          <thead><tr><th>Business</th><th>Sector</th><th>Score</th><th>Grade</th><th>Risk</th><th>Credit Limit</th><th>RM</th><th></th></tr></thead>
+          <thead><tr><th>Enterprise</th><th>Sector</th><th>FHS</th><th>Credit Grade</th><th>Risk Rating</th><th>Sanctioned Limit</th><th>RM</th><th></th></tr></thead>
           <tbody>${items.map(p => `
             <tr>
               <td><strong>${p.business_name}</strong><br><small style="color:var(--muted)">${p.msme_id}</small></td>
@@ -50,8 +51,8 @@
               <td>${formatInr(p.credit_limit_inr)}</td>
               <td>${p.relationship_manager || '—'}</td>
               <td style="white-space:nowrap">
-                <button class="btn btn-sm btn-accent" onclick="assess('${p.msme_id}','${p.business_name.replace(/'/g, "\\'")}')">Assess</button>
-                ${p.latest_score != null ? `<a class="btn btn-sm btn-outline" href="/app/bank/report.html?msme=${p.msme_id}">Report</a>` : ''}
+                <button class="btn btn-sm btn-accent" onclick="assess('${p.msme_id}','${p.business_name.replace(/'/g, "\\'")}')">Initiate Assessment</button>
+                ${p.latest_score != null ? `<a class="btn btn-sm btn-outline" href="/app/bank/report.html?msme=${p.msme_id}">Credit Report</a>` : ''}
               </td>
             </tr>
           `).join('')}</tbody>

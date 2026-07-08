@@ -35,10 +35,10 @@ authRouter.post("/login", (req, res) => {
   const { email, password } = req.body;
   const user = getDb().prepare("SELECT * FROM users WHERE email = ?").get(String(email).toLowerCase()) as UserRow | undefined;
   if (!user || !verifyPassword(password, user.password_hash)) {
-    return res.status(401).json({ detail: "Invalid email or password" });
+    return res.status(401).json({ detail: "Invalid credentials. Please verify your email and password." });
   }
   if (!user.is_active) {
-    return res.status(403).json({ detail: "Account is inactive" });
+    return res.status(403).json({ detail: "Account has been deactivated. Contact your administrator." });
   }
   const org = getDb().prepare("SELECT * FROM organizations WHERE id = ?").get(user.organization_id) as OrgRow;
   res.json({

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Loan Applications — Financial Health Score</title>
+  <title>Credit Applications — Lending Institution Portal</title>
   <link rel="icon" href="/app/assets/favicon.svg" type="image/svg+xml" />
   <link rel="stylesheet" href="/app/css/style.css" />
 </head>
@@ -15,6 +15,7 @@
       <div class="card" id="loans"><div class="loading-pulse"></div></div>
     </main>
   </div>
+  <script src="/app/js/terminology.js"></script>
   <script src="/app/js/api.js"></script>
   <script src="/app/js/ui.js"></script>
   <script>
@@ -24,12 +25,12 @@
     FHS.mountLayout('bank', 'loans');
 
     document.getElementById('page-header').innerHTML = FHS.renderPageHeader({
-      title: 'Loan Applications',
-      subtitle: 'Review, approve, or reject MSME loan requests',
+      title: 'Credit Applications',
+      subtitle: 'Review, sanction, or decline MSME credit facility requests',
     });
 
     async function updateStatus(id, status) {
-      const notes = prompt('Reviewer notes (optional):') || '';
+      const notes = prompt('Credit officer remarks (optional):') || '';
       try {
         await api(`/api/v1/bank/loans/${id}`, {
           method: 'PATCH',
@@ -42,26 +43,26 @@
     async function load() {
       const loans = await api('/api/v1/bank/loans');
       if (!loans.length) {
-        document.getElementById('loans').innerHTML = '<div class="empty-state"><p>No loan applications yet.</p></div>';
+        document.getElementById('loans').innerHTML = '<div class="empty-state"><p>No credit applications on record.</p></div>';
         return;
       }
       document.getElementById('loans').innerHTML = `
         <div class="table-wrap"><table>
-          <thead><tr><th>Ref</th><th>Business</th><th>Type</th><th>Amount</th><th>Tenure</th><th>Status</th><th>Date</th><th></th></tr></thead>
+          <thead><tr><th>Application Ref.</th><th>Enterprise</th><th>Facility Type</th><th>Amount</th><th>Tenure</th><th>Status</th><th>Submitted</th><th></th></tr></thead>
           <tbody>${loans.map(l => `
             <tr>
               <td><code>${l.application_ref}</code></td>
               <td><strong>${l.business_name}</strong></td>
-              <td>${l.loan_type.replace(/_/g, ' ')}</td>
+              <td>${formatLoanType(l.loan_type)}</td>
               <td>${formatInr(l.amount_inr)}</td>
               <td>${l.tenure_months} mo</td>
-              <td><span class="badge badge-${l.status === 'approved' || l.status === 'disbursed' ? 'low' : l.status === 'rejected' ? 'critical' : 'moderate'}">${l.status}</span></td>
+              <td><span class="badge badge-${l.status === 'approved' || l.status === 'disbursed' ? 'low' : l.status === 'rejected' ? 'critical' : 'moderate'}">${formatLoanStatus(l.status)}</span></td>
               <td>${formatDate(l.created_at)}</td>
               <td style="white-space:nowrap">
-                ${l.status === 'submitted' ? `<button class="btn btn-sm btn-outline" onclick="updateStatus(${l.id},'under_review')">Review</button>` : ''}
+                ${l.status === 'submitted' ? `<button class="btn btn-sm btn-outline" onclick="updateStatus(${l.id},'under_review')">Begin Review</button>` : ''}
                 ${['submitted','under_review'].includes(l.status) ? `
-                  <button class="btn btn-sm btn-accent" onclick="updateStatus(${l.id},'approved')">Approve</button>
-                  <button class="btn btn-sm btn-outline" onclick="updateStatus(${l.id},'rejected')">Reject</button>
+                  <button class="btn btn-sm btn-accent" onclick="updateStatus(${l.id},'approved')">Sanction</button>
+                  <button class="btn btn-sm btn-outline" onclick="updateStatus(${l.id},'rejected')">Decline</button>
                 ` : ''}
               </td>
             </tr>

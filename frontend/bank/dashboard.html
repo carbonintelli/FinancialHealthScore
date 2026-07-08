@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Bank Dashboard — Financial Health Score</title>
+  <title>Executive Dashboard — Lending Institution Portal</title>
   <link rel="icon" href="/app/assets/favicon.svg" type="image/svg+xml" />
   <link rel="stylesheet" href="/app/css/style.css" />
 </head>
@@ -15,18 +15,19 @@
       <div id="welcome"></div>
       <div class="stats-grid" id="stats"></div>
       <div class="card" id="score-overview" style="display:none">
-        <div class="card-header"><h3>Portfolio Health Overview</h3></div>
+        <div class="card-header"><h3>Portfolio Credit Health Overview</h3></div>
         <div id="portfolio-score"></div>
       </div>
       <div class="card">
         <div class="card-header">
-          <h3>Recent Assessments</h3>
+          <h3>Recent Credit Assessments</h3>
           <a class="btn btn-sm btn-outline" href="/app/bank/portfolio.html">View Portfolio</a>
         </div>
         <div id="assessments-table"><div class="loading-pulse"></div></div>
       </div>
     </main>
   </div>
+  <script src="/app/js/terminology.js"></script>
   <script src="/app/js/api.js"></script>
   <script src="/app/js/ui.js"></script>
   <script>
@@ -36,8 +37,8 @@
     FHS.mountLayout('bank', 'dashboard');
 
     document.getElementById('page-header').innerHTML = FHS.renderPageHeader({
-      title: 'Bank Dashboard',
-      subtitle: `${user.organization_name || 'IDBI Bank'} · MSME Lending Intelligence`,
+      title: 'Executive Dashboard',
+      subtitle: `${user.organization_name || 'IDBI Bank'} · MSME Credit & Risk Intelligence`,
     });
     document.getElementById('welcome').innerHTML = FHS.renderWelcomeBanner('bank');
 
@@ -49,11 +50,11 @@
 
       document.getElementById('stats').innerHTML = [
         FHS.renderStatCard('Portfolio MSMEs', stats.portfolio_count, { icon: 'users' }),
-        FHS.renderStatCard('Avg Score', stats.average_score ?? '—', { icon: 'score', variant: 'success' }),
-        FHS.renderStatCard('High Risk', stats.high_risk_count, { icon: 'risk', variant: stats.high_risk_count > 0 ? 'risk' : '' }),
-        FHS.renderStatCard('Assessments (Month)', stats.assessments_this_month, { icon: 'trend' }),
-        FHS.renderStatCard('Pending Loans', stats.pending_loans, { icon: 'loans' }),
-        FHS.renderStatCard('Approved', formatInr(stats.approved_loans_inr), { icon: 'check' }),
+        FHS.renderStatCard('Portfolio Avg. FHS', stats.average_score ?? '—', { icon: 'score', variant: 'success' }),
+        FHS.renderStatCard('Elevated Credit Risk', stats.high_risk_count, { icon: 'risk', variant: stats.high_risk_count > 0 ? 'risk' : '' }),
+        FHS.renderStatCard('Assessments (MTD)', stats.assessments_this_month, { icon: 'trend' }),
+        FHS.renderStatCard('Pending Applications', stats.pending_loans, { icon: 'loans' }),
+        FHS.renderStatCard('Sanctioned (INR)', formatInr(stats.approved_loans_inr), { icon: 'check' }),
       ].join('');
 
       if (stats.average_score != null) {
@@ -62,24 +63,24 @@
           score: stats.average_score,
           grade: stats.average_score >= 80 ? 'A' : stats.average_score >= 70 ? 'B+' : stats.average_score >= 60 ? 'B' : 'C+',
           riskLevel: stats.high_risk_count > 0 ? 'moderate' : 'low',
-          title: 'Portfolio Average Score',
-          subtitle: `Across ${stats.portfolio_count} MSMEs · ${stats.high_risk_count} flagged high-risk`,
-          ctaHtml: `<a class="btn btn-primary" href="/app/bank/portfolio.html">Manage Portfolio</a>`,
+          title: 'Portfolio Average FHS',
+          subtitle: `Across ${stats.portfolio_count} MSME borrowers · ${stats.high_risk_count} flagged elevated credit risk`,
+          ctaHtml: `<a class="btn btn-primary" href="/app/bank/portfolio.html">View Lending Portfolio</a>`,
         });
       }
 
       if (!assessments.length) {
         document.getElementById('assessments-table').innerHTML = `
           <div class="empty-state">
-            <p>No assessments yet. Run one from the Portfolio page.</p>
-            <a class="btn btn-primary" href="/app/bank/portfolio.html" style="margin-top:1rem">Go to Portfolio</a>
+            <p>No credit assessments on record. Initiate one from the Lending Portfolio.</p>
+            <a class="btn btn-primary" href="/app/bank/portfolio.html" style="margin-top:1rem">Go to Lending Portfolio</a>
           </div>`;
         return;
       }
 
       document.getElementById('assessments-table').innerHTML = `
         <div class="table-wrap"><table>
-          <thead><tr><th>Business</th><th>Score</th><th>Grade</th><th>Risk</th><th>Date</th><th></th></tr></thead>
+          <thead><tr><th>Enterprise</th><th>FHS</th><th>Credit Grade</th><th>Risk Rating</th><th>Assessment Date</th><th></th></tr></thead>
           <tbody>${assessments.slice(0, 10).map(a => `
             <tr>
               <td><strong>${a.business_name}</strong></td>
@@ -87,7 +88,7 @@
               <td><span class="${FHS.gradeClass(a.grade)}">${a.grade}</span></td>
               <td>${riskBadge(a.overall_risk_level)}</td>
               <td>${formatDate(a.created_at)}</td>
-              <td><a class="btn btn-sm btn-primary" href="/app/bank/report.html?id=${a.assessment_id}">Report</a></td>
+              <td><a class="btn btn-sm btn-primary" href="/app/bank/report.html?id=${a.assessment_id}">Credit Report</a></td>
             </tr>
           `).join('')}</tbody>
         </table></div>`;

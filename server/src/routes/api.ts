@@ -210,8 +210,8 @@ apiRouter.get("/agents/status", requireAuth, (req, res) => {
 apiRouter.post("/agents/orchestrate/:assessmentId", requireAuth, async (req: AuthRequest, res) => {
   const assessmentId = String(req.params.assessmentId);
   const record = getAssessment(assessmentId);
-  if (!record) return res.status(404).json({ detail: "Assessment not found" });
-  if (!canAccess(req.user!, record.msme_id)) return res.status(403).json({ detail: "Access denied" });
+  if (!record) return res.status(404).json({ detail: "Credit assessment not found" });
+  if (!canAccess(req.user!, record.msme_id)) return res.status(403).json({ detail: "Access to this assessment is not authorised" });
 
   try {
     const result = JSON.parse(record.result_json);
@@ -292,7 +292,7 @@ apiRouter.get("/bank/assessments", ...bankAuth, (req: AuthRequest, res) => {
 apiRouter.post("/bank/assess/:msmeId", ...bankAuth, async (req: AuthRequest, res) => {
   const msmeId = String(req.params.msmeId);
   if (!bankHasMsme(req.user!.organization_id, msmeId)) {
-    return res.status(404).json({ detail: "MSME not in portfolio" });
+    return res.status(404).json({ detail: "MSME borrower is not in your lending portfolio" });
   }
   try {
     const audience = (req.query.audience as string) || "credit_team";
@@ -329,16 +329,16 @@ apiRouter.get("/msme/dashboard", ...msmeAuth, (req: AuthRequest, res) => {
 
 apiRouter.get("/msme/profile", ...msmeAuth, (req: AuthRequest, res) => {
   const msmeId = req.user!.msme_id;
-  if (!msmeId) return res.status(400).json({ detail: "MSME profile not linked" });
+  if (!msmeId) return res.status(400).json({ detail: "MSME enterprise profile is not linked to this account" });
   const profile = getMsmeProfile(msmeId);
-  if (!profile) return res.status(404).json({ detail: "Profile not found" });
+  if (!profile) return res.status(404).json({ detail: "Enterprise profile not found" });
   res.json(profile);
 });
 
 apiRouter.put("/msme/profile", ...msmeAuth, (req: AuthRequest, res) => {
-  if (req.user!.role === "msme_viewer") return res.status(403).json({ detail: "Viewers cannot update profile" });
+  if (req.user!.role === "msme_viewer") return res.status(403).json({ detail: "Read-only access: profile updates are not permitted" });
   const msmeId = req.user!.msme_id;
-  if (!msmeId) return res.status(400).json({ detail: "MSME profile not linked" });
+  if (!msmeId) return res.status(400).json({ detail: "MSME enterprise profile is not linked to this account" });
   const org = getDb().prepare("SELECT name FROM organizations WHERE id = ?").get(req.user!.organization_id) as { name: string };
   const existing = getMsmeProfile(msmeId);
   const body = req.body ?? {};
@@ -363,14 +363,14 @@ apiRouter.put("/msme/profile", ...msmeAuth, (req: AuthRequest, res) => {
 
 apiRouter.get("/msme/data-feeds", ...msmeAuth, (req: AuthRequest, res) => {
   const msmeId = req.user!.msme_id;
-  if (!msmeId) return res.status(400).json({ detail: "MSME profile not linked" });
+  if (!msmeId) return res.status(400).json({ detail: "MSME enterprise profile is not linked to this account" });
   res.json({ feeds: listDataFeeds(msmeId) });
 });
 
 apiRouter.post("/msme/data-feed", ...msmeAuth, async (req: AuthRequest, res) => {
-  if (req.user!.role === "msme_viewer") return res.status(403).json({ detail: "Viewers cannot submit data feeds" });
+  if (req.user!.role === "msme_viewer") return res.status(403).json({ detail: "Read-only access: financial data submission is not permitted" });
   const msmeId = req.user!.msme_id;
-  if (!msmeId) return res.status(400).json({ detail: "MSME profile not linked" });
+  if (!msmeId) return res.status(400).json({ detail: "MSME enterprise profile is not linked to this account" });
   const org = getDb().prepare("SELECT name FROM organizations WHERE id = ?").get(req.user!.organization_id) as { name: string };
   if (!req.body?.financial_data && !req.body?.accounting) {
     return res.status(400).json({ detail: "financial_data or accounting block required" });
@@ -396,9 +396,9 @@ apiRouter.post("/msme/data-feed", ...msmeAuth, async (req: AuthRequest, res) => 
 });
 
 apiRouter.post("/msme/assess", ...msmeAuth, async (req: AuthRequest, res) => {
-  if (req.user!.role === "msme_viewer") return res.status(403).json({ detail: "Viewers cannot assess" });
+  if (req.user!.role === "msme_viewer") return res.status(403).json({ detail: "Read-only access: credit assessment is not permitted" });
   const msmeId = req.user!.msme_id;
-  if (!msmeId) return res.status(400).json({ detail: "MSME profile not linked" });
+  if (!msmeId) return res.status(400).json({ detail: "MSME enterprise profile is not linked to this account" });
   try {
     const result = await assessFromProfile({
       userId: req.user!.id,
@@ -415,7 +415,7 @@ apiRouter.post("/msme/assess", ...msmeAuth, async (req: AuthRequest, res) => {
 });
 
 apiRouter.post("/msme/assess/quick", ...msmeAuth, async (req: AuthRequest, res) => {
-  if (req.user!.role === "msme_viewer") return res.status(403).json({ detail: "Viewers cannot assess" });
+  if (req.user!.role === "msme_viewer") return res.status(403).json({ detail: "Read-only access: credit assessment is not permitted" });
   const msmeId = req.user!.msme_id!;
   try {
     const profile = getMsmeProfile(msmeId);
@@ -442,12 +442,12 @@ apiRouter.get("/msme/assessments", ...msmeAuth, (req: AuthRequest, res) => {
 });
 
 apiRouter.post("/msme/assess/import", ...msmeAuth, async (req: AuthRequest, res) => {
-  if (req.user!.role === "msme_viewer") return res.status(403).json({ detail: "Viewers cannot assess" });
+  if (req.user!.role === "msme_viewer") return res.status(403).json({ detail: "Read-only access: credit assessment is not permitted" });
   const connector = req.body.connector as "tally" | "zoho";
   if (!connector || !["tally", "zoho"].includes(connector)) {
     return res.status(400).json({ detail: "connector must be 'tally' or 'zoho'" });
   }
-  if (!req.user!.msme_id) return res.status(400).json({ detail: "MSME profile not linked" });
+  if (!req.user!.msme_id) return res.status(400).json({ detail: "MSME enterprise profile is not linked to this account" });
 
   try {
     const org = getDb().prepare("SELECT name FROM organizations WHERE id = ?").get(req.user!.organization_id) as { name: string };
@@ -585,8 +585,8 @@ apiRouter.post("/regulatory/review/:msmeId", ...regAuth, async (req: AuthRequest
 apiRouter.get("/reports/:assessmentId", requireAuth, (req: AuthRequest, res) => {
   const assessmentId = String(req.params.assessmentId);
   const record = getAssessment(assessmentId);
-  if (!record) return res.status(404).json({ detail: "Assessment not found" });
-  if (!canAccess(req.user!, record.msme_id)) return res.status(403).json({ detail: "Access denied" });
+  if (!record) return res.status(404).json({ detail: "Credit assessment not found" });
+  if (!canAccess(req.user!, record.msme_id)) return res.status(403).json({ detail: "Access to this assessment is not authorised" });
   const result = JSON.parse(record.result_json);
   const agents = record.agent_insights_json ? JSON.parse(record.agent_insights_json) : null;
   res.json(buildDetailedReport(result, agents));
@@ -595,8 +595,8 @@ apiRouter.get("/reports/:assessmentId", requireAuth, (req: AuthRequest, res) => 
 apiRouter.get("/reports/:assessmentId/html", requireAuth, (req: AuthRequest, res) => {
   const assessmentId = String(req.params.assessmentId);
   const record = getAssessment(assessmentId);
-  if (!record) return res.status(404).json({ detail: "Assessment not found" });
-  if (!canAccess(req.user!, record.msme_id)) return res.status(403).json({ detail: "Access denied" });
+  if (!record) return res.status(404).json({ detail: "Credit assessment not found" });
+  if (!canAccess(req.user!, record.msme_id)) return res.status(403).json({ detail: "Access to this assessment is not authorised" });
   const result = JSON.parse(record.result_json);
   const agents = record.agent_insights_json ? JSON.parse(record.agent_insights_json) : null;
   const report = buildDetailedReport(result, agents);
@@ -605,7 +605,7 @@ apiRouter.get("/reports/:assessmentId/html", requireAuth, (req: AuthRequest, res
 
 // Loans
 apiRouter.post("/msme/loans", ...msmeAuth, (req: AuthRequest, res) => {
-  if (req.user!.role === "msme_viewer") return res.status(403).json({ detail: "Viewers cannot submit loans" });
+  if (req.user!.role === "msme_viewer") return res.status(403).json({ detail: "Read-only access: credit applications are not permitted" });
   const org = getDb().prepare("SELECT name FROM organizations WHERE id = ?").get(req.user!.organization_id) as { name: string };
   const idbi = getDb().prepare("SELECT id FROM organizations WHERE registration_id = 'BANK-IDBI-001'").get() as { id: number };
   const ref = `LN-${Date.now()}-${uuidv4().slice(0, 6).toUpperCase()}`;
@@ -647,7 +647,7 @@ apiRouter.patch("/bank/loans/:loanId", ...bankAuth, (req: AuthRequest, res) => {
   const allowed = ["under_review", "approved", "rejected", "disbursed"];
   if (!allowed.includes(status)) return res.status(400).json({ detail: `status must be one of: ${allowed.join(", ")}` });
   const updated = updateLoanStatus(loanId, req.user!.organization_id, status, reviewer_notes ?? null);
-  if (!updated) return res.status(404).json({ detail: "Loan not found" });
+  if (!updated) return res.status(404).json({ detail: "Credit application not found" });
   res.json(updated);
 });
 
