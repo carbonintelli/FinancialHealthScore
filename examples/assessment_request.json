@@ -96,6 +96,61 @@
       "gst_filing_compliance_pct": 96,
       "delayed_payment_complaints_filed": 1,
       "received_govt_subsidy_inr": 1850000
+    },
+    "credit_bureau": {
+      "crisil_rating": "BBB+",
+      "crisil_outlook": "stable",
+      "crisil_rating_date": "2026-02-15",
+      "rating_agency": "CRISIL",
+      "commercial_credit_score": 3,
+      "emi_on_time_pct_12m": 94.5,
+      "debt_service_coverage_ratio": 1.62,
+      "restructured_loans_count": 0,
+      "written_off_loans_count": 0,
+      "npa_incidents_5y": 0,
+      "past_debts": [
+        {
+          "lender_name": "IDBI Bank",
+          "loan_type": "term_loan",
+          "principal_inr": 8000000,
+          "outstanding_inr": 4200000,
+          "interest_rate_pct": 10.25,
+          "tenure_months": 84,
+          "start_date": "2021-06-01",
+          "status": "active",
+          "repayment_completed_pct": 47.5,
+          "emi_amount_inr": 128500,
+          "collateral_type": "hypothecation"
+        },
+        {
+          "lender_name": "HDFC Bank",
+          "loan_type": "cc_od",
+          "principal_inr": 3000000,
+          "outstanding_inr": 0,
+          "start_date": "2019-03-15",
+          "closed_date": "2024-03-14",
+          "status": "closed",
+          "repayment_completed_pct": 100
+        }
+      ],
+      "repayment_history": [
+        {
+          "month": "2026-01",
+          "lender_name": "IDBI Bank",
+          "emi_amount_inr": 128500,
+          "due_date": "2026-01-05",
+          "paid_date": "2026-01-05",
+          "status": "on_time"
+        },
+        {
+          "month": "2026-02",
+          "lender_name": "IDBI Bank",
+          "emi_amount_inr": 128500,
+          "due_date": "2026-02-05",
+          "paid_date": "2026-02-06",
+          "status": "late"
+        }
+      ]
     }
   },
   "include_carbon_intelligence": true,

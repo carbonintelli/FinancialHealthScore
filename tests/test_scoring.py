@@ -50,12 +50,40 @@ def test_scoring_engine_produces_valid_score(demo_request, mock_carbon_data):
 
     assert 0 <= result.overall_score <= 100
     assert result.grade in {"A+", "A", "B+", "B", "C+", "C", "D", "F"}
-    assert len(result.dimension_scores) == 10
+    assert len(result.dimension_scores) == 11
     assert result.carbon_intelligence is not None
     assert result.carbon_intelligence.source == "ci.sustainow.in"
     assert len(result.key_insights) > 0
     assert result.government_policy_assessment is not None
     assert result.government_policy_assessment.enrolled_count >= 1
+    assert isinstance(result.data_gaps, list)
+
+
+def test_credit_history_dimension(demo_request, mock_carbon_data):
+    result = scoring_engine.assess(demo_request, mock_carbon_data)
+    credit_dim = next(d for d in result.dimension_scores if d.dimension == "credit_history_debt_servicing")
+    assert credit_dim.score > 0
+    assert any(i.indicator == "CRISIL Rating" for i in credit_dim.insights)
+    assert any(i.indicator == "Past Debt Repayment" for i in credit_dim.insights)
+    assert any(i.indicator == "EMI Repayment Discipline" for i in credit_dim.insights)
+
+
+def test_data_gaps_identified_for_minimal_input():
+    from app.data.sample_msme import build_minimal_request
+
+    result = scoring_engine.assess(build_minimal_request("x", "Test Co", 5_000_000))
+    assert len(result.data_gaps) > 0
+    gap_fields = {g.field for g in result.data_gaps}
+    assert "credit_bureau" in gap_fields
+    assert "founder" in gap_fields
+    assert any(g.severity == "high" for g in result.data_gaps)
+
+
+def test_crisil_rating_scoring():
+    from app.services.credit_ratings import crisil_rating_to_score
+
+    assert crisil_rating_to_score("AAA") > crisil_rating_to_score("BBB+")
+    assert crisil_rating_to_score("A-", "positive") > crisil_rating_to_score("A-", "negative")
 
 
 def test_founder_capability_dimension(demo_request, mock_carbon_data):
@@ -117,7 +145,10 @@ async def test_demo_assessment_endpoint():
     assert data["business_name"] == "Shree Ganesh Auto Components Pvt Ltd"
     assert data["carbon_intelligence"]["mock_data"] is True
     assert data["government_policy_assessment"] is not None
-    assert len(data["dimension_scores"]) == 10
+    assert len(data["dimension_scores"]) == 11
+    assert "data_gaps" in data
+    credit_dim = next(d for d in data["dimension_scores"] if d["dimension"] == "credit_history_debt_servicing")
+    assert credit_dim["score"] > 0
 
 
 @pytest.mark.asyncio

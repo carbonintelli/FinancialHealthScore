@@ -11,6 +11,7 @@ from app.models.schemas import (
     AudienceRole,
     CarbonIntelligenceSummary,
     ConfidenceLevel,
+    DataGap,
     DimensionScore,
     EvidenceInsight,
     FinancialHealthScoreResult,
@@ -20,6 +21,7 @@ from app.models.schemas import (
     RiskLevel,
 )
 from app.data.government_policies import get_applicable_policies, get_policy_by_code
+from app.services.credit_ratings import crisil_rating_to_score
 
 
 def _clamp(value: float, low: float = 0.0, high: float = 100.0) -> float:
@@ -72,16 +74,17 @@ class ScoringEngine:
     """Computes explainable Financial Health Scores from financial and carbon data."""
 
     DIMENSION_WEIGHTS = {
-        "financial_resilience": 0.20,
-        "cash_flow_health": 0.12,
-        "operational_stability": 0.10,
-        "payment_behaviour": 0.10,
-        "carbon_transition_risk": 0.08,
-        "alternative_data_signals": 0.08,
-        "founder_capability": 0.12,
-        "market_sentiment": 0.08,
-        "product_demand_outlook": 0.07,
+        "financial_resilience": 0.17,
+        "cash_flow_health": 0.11,
+        "operational_stability": 0.09,
+        "payment_behaviour": 0.09,
+        "carbon_transition_risk": 0.07,
+        "alternative_data_signals": 0.07,
+        "founder_capability": 0.11,
+        "market_sentiment": 0.07,
+        "product_demand_outlook": 0.06,
         "government_policy_alignment": 0.05,
+        "credit_history_debt_servicing": 0.11,
     }
 
     def assess(
@@ -104,11 +107,13 @@ class ScoringEngine:
         dimensions.append(self._score_market_sentiment(fd.market_sentiment))
         dimensions.append(self._score_product_demand(fd.product_market, profile))
         dimensions.append(self._score_government_policy_alignment(fd, profile))
+        dimensions.append(self._score_credit_history_debt_servicing(fd.credit_bureau, fd.accounting))
 
         overall = sum(d.score * d.weight for d in dimensions)
         confidences = [d.confidence for d in dimensions]
         overall_confidence = _avg_confidence(confidences)
 
+        data_gaps = self._identify_data_gaps(fd, carbon_data)
         risk_indicators = self._build_risk_indicators(dimensions, acct, carbon_data, fd)
         key_insights = self._build_key_insights(dimensions, risk_indicators)
         green_opportunities = self._identify_green_finance_opportunities(dimensions, carbon_data)
@@ -131,11 +136,14 @@ class ScoringEngine:
             green_finance_opportunities=green_opportunities,
             carbon_intelligence=carbon_summary,
             government_policy_assessment=policy_assessment,
+            data_gaps=data_gaps,
             audience_summary=audience_summary,
             metadata={
                 "sector": profile.sector,
                 "audience": request.audience.value,
                 "data_sources": self._data_sources(fd, carbon_data),
+                "data_gap_count": len(data_gaps),
+                "high_priority_gaps": sum(1 for g in data_gaps if g.severity == "high"),
             },
         )
 
@@ -1313,6 +1321,388 @@ class ScoringEngine:
             financing_opportunities=financing_opportunities[:5],
         )
 
+    def _score_credit_history_debt_servicing(self, credit, acct) -> DimensionScore:
+        """Score past debts, repayment track record, CRISIL rating, and debt servicing capacity."""
+        insights: list[EvidenceInsight] = []
+        scores: list[float] = []
+        confidence = ConfidenceLevel.LOW
+
+        if not credit:
+            return DimensionScore(
+                dimension="credit_history_debt_servicing",
+                score=52.0,
+                weight=self.DIMENSION_WEIGHTS["credit_history_debt_servicing"],
+                risk_level=RiskLevel.MODERATE,
+                confidence=ConfidenceLevel.LOW,
+                insights=[
+                    EvidenceInsight(
+                        indicator="Credit Bureau Data",
+                        category="credit_history",
+                        value="not provided",
+                        benchmark=None,
+                        impact="neutral",
+                        narrative=(
+                            "No credit bureau data (CRISIL rating, past debts, repayment history). "
+                            "Request commercial credit report for accurate debt servicing assessment."
+                        ),
+                        confidence=ConfidenceLevel.LOW,
+                        data_source="inferred",
+                    )
+                ],
+            )
+
+        # CRISIL / agency rating
+        if credit.crisil_rating:
+            crisil_score = crisil_rating_to_score(credit.crisil_rating, credit.crisil_outlook)
+            scores.append(crisil_score)
+            outlook_text = f" ({credit.crisil_outlook} outlook)" if credit.crisil_outlook else ""
+            agency = credit.rating_agency or "CRISIL"
+            insights.append(
+                EvidenceInsight(
+                    indicator=f"{agency} Rating",
+                    category="credit_rating",
+                    value=f"{credit.crisil_rating}{outlook_text}",
+                    benchmark="BBB+",
+                    impact="positive" if crisil_score >= 68 else "negative" if crisil_score < 55 else "neutral",
+                    narrative=(
+                        f"{agency} rating of {credit.crisil_rating}{outlook_text} "
+                        f"reflects {'strong' if crisil_score >= 77 else 'adequate' if crisil_score >= 63 else 'weak'} "
+                        "creditworthiness for MSME lending."
+                    ),
+                    confidence=ConfidenceLevel.HIGH,
+                    data_source="credit_rating_agency",
+                )
+            )
+            confidence = ConfidenceLevel.HIGH
+        elif credit.crisil_score is not None:
+            scores.append(credit.crisil_score)
+            insights.append(
+                EvidenceInsight(
+                    indicator="CRISIL-Equivalent Score",
+                    category="credit_rating",
+                    value=f"{credit.crisil_score:.0f}/100",
+                    benchmark=65,
+                    impact="positive" if credit.crisil_score >= 65 else "negative",
+                    narrative=f"Numeric credit score of {credit.crisil_score:.0f}/100 from bureau assessment.",
+                    confidence=ConfidenceLevel.HIGH,
+                    data_source="credit_bureau",
+                )
+            )
+            confidence = ConfidenceLevel.HIGH
+
+        # CIBIL MSME Rank (CMR 1=best, 10=worst)
+        if credit.commercial_credit_score is not None:
+            cmr_score = _clamp(100 - (credit.commercial_credit_score - 1) * 10, 0, 100)
+            scores.append(cmr_score)
+            insights.append(
+                EvidenceInsight(
+                    indicator="CIBIL MSME Rank (CMR)",
+                    category="credit_bureau",
+                    value=credit.commercial_credit_score,
+                    benchmark="1-3",
+                    impact="positive" if credit.commercial_credit_score <= 3 else "negative" if credit.commercial_credit_score >= 7 else "neutral",
+                    narrative=(
+                        f"CIBIL MSME Rank CMR-{credit.commercial_credit_score} "
+                        f"({'low risk' if credit.commercial_credit_score <= 3 else 'elevated risk' if credit.commercial_credit_score >= 7 else 'moderate risk'})."
+                    ),
+                    confidence=ConfidenceLevel.HIGH,
+                    data_source="cibil_commercial",
+                )
+            )
+            confidence = ConfidenceLevel.HIGH
+
+        # Past debt repayment track record
+        if credit.past_debts:
+            closed = [d for d in credit.past_debts if d.status == "closed"]
+            active = [d for d in credit.past_debts if d.status == "active"]
+            distressed = [d for d in credit.past_debts if d.status in ("restructured", "written_off", "npa", "substandard")]
+
+            if closed:
+                repay_pcts = [d.repayment_completed_pct for d in closed if d.repayment_completed_pct is not None]
+                avg_repay = sum(repay_pcts) / len(repay_pcts) if repay_pcts else 100
+                closed_score = _clamp(avg_repay, 0, 100)
+                scores.append(closed_score)
+                insights.append(
+                    EvidenceInsight(
+                        indicator="Past Debt Repayment",
+                        category="repayment_history",
+                        value=f"{avg_repay:.0f}% avg completion",
+                        benchmark="100%",
+                        impact="positive" if avg_repay >= 95 else "negative",
+                        narrative=(
+                            f"{len(closed)} closed loan(s) with average {avg_repay:.0f}% principal repaid — "
+                            f"{'strong' if avg_repay >= 95 else 'incomplete'} repayment track record."
+                        ),
+                        confidence=ConfidenceLevel.HIGH,
+                        data_source="loan_history",
+                    )
+                )
+
+            if active:
+                total_outstanding = sum(d.outstanding_inr or 0 for d in active)
+                insights.append(
+                    EvidenceInsight(
+                        indicator="Active Debt Facilities",
+                        category="debt_profile",
+                        value=f"{len(active)} loans, ₹{total_outstanding:,.0f} outstanding",
+                        benchmark=None,
+                        impact="neutral",
+                        narrative=f"{len(active)} active loan facility(ies) with ₹{total_outstanding:,.0f} total outstanding.",
+                        confidence=ConfidenceLevel.HIGH,
+                        data_source="loan_history",
+                    )
+                )
+
+            if distressed:
+                distress_score = _clamp(40 - len(distressed) * 15, 0, 100)
+                scores.append(distress_score)
+                insights.append(
+                    EvidenceInsight(
+                        indicator="Distressed Debt History",
+                        category="credit_risk",
+                        value=len(distressed),
+                        benchmark=0,
+                        impact="negative",
+                        narrative=(
+                            f"{len(distressed)} loan(s) with restructured/NPA/written-off status — "
+                            "material credit history concern."
+                        ),
+                        confidence=ConfidenceLevel.HIGH,
+                        data_source="loan_history",
+                    )
+                )
+
+        # EMI repayment history
+        if credit.repayment_history:
+            total_emis = len(credit.repayment_history)
+            on_time = sum(1 for r in credit.repayment_history if r.status == "on_time")
+            missed = sum(1 for r in credit.repayment_history if r.status == "missed")
+            on_time_pct = on_time / total_emis * 100 if total_emis > 0 else 0
+            emi_score = _clamp(on_time_pct - missed * 10, 0, 100)
+            scores.append(emi_score)
+            insights.append(
+                EvidenceInsight(
+                    indicator="EMI Repayment Discipline",
+                    category="repayment_history",
+                    value=f"{on_time_pct:.0f}% on-time ({total_emis} EMIs)",
+                    benchmark="95%",
+                    impact="positive" if on_time_pct >= 95 else "negative" if on_time_pct < 80 else "neutral",
+                    narrative=(
+                        f"{on_time_pct:.0f}% of {total_emis} EMIs paid on time"
+                        f"{f'; {missed} missed payment(s)' if missed else ''}."
+                    ),
+                    confidence=ConfidenceLevel.HIGH,
+                    data_source="repayment_records",
+                )
+            )
+            confidence = ConfidenceLevel.HIGH
+        elif credit.emi_on_time_pct_12m is not None:
+            emi_score = _clamp(credit.emi_on_time_pct_12m, 0, 100)
+            scores.append(emi_score)
+            insights.append(
+                EvidenceInsight(
+                    indicator="EMI On-Time Rate (12M)",
+                    category="repayment_history",
+                    value=f"{credit.emi_on_time_pct_12m:.0f}%",
+                    benchmark="95%",
+                    impact="positive" if credit.emi_on_time_pct_12m >= 95 else "negative",
+                    narrative=f"{credit.emi_on_time_pct_12m:.0f}% EMI on-time payment rate over trailing 12 months.",
+                    confidence=ConfidenceLevel.HIGH,
+                    data_source="bank_repayment_data",
+                )
+            )
+
+        # Debt Service Coverage Ratio
+        dscr = credit.debt_service_coverage_ratio
+        if dscr is None and acct.net_profit_inr and credit.past_debts:
+            annual_emi = sum(
+                (d.emi_amount_inr or 0) * 12
+                for d in credit.past_debts
+                if d.status == "active" and d.emi_amount_inr
+            )
+            if annual_emi > 0:
+                dscr = acct.net_profit_inr / annual_emi
+
+        if dscr is not None:
+            dscr_score = _clamp(30 + dscr * 25, 0, 100)
+            scores.append(dscr_score)
+            insights.append(
+                EvidenceInsight(
+                    indicator="Debt Service Coverage Ratio",
+                    category="debt_servicing",
+                    value=round(dscr, 2),
+                    benchmark=1.25,
+                    impact="positive" if dscr >= 1.25 else "negative" if dscr < 1.0 else "neutral",
+                    narrative=(
+                        f"DSCR of {dscr:.2f}x indicates "
+                        f"{'comfortable' if dscr >= 1.5 else 'adequate' if dscr >= 1.25 else 'tight' if dscr >= 1.0 else 'insufficient'} "
+                        "debt servicing capacity."
+                    ),
+                    confidence=ConfidenceLevel.HIGH,
+                    data_source="financial_analysis",
+                )
+            )
+
+        # Restructuring / NPA / write-off counters
+        if credit.restructured_loans_count > 0:
+            scores.append(_clamp(50 - credit.restructured_loans_count * 12, 0, 100))
+            insights.append(
+                EvidenceInsight(
+                    indicator="Restructured Loans",
+                    category="credit_risk",
+                    value=credit.restructured_loans_count,
+                    benchmark=0,
+                    impact="negative",
+                    narrative=f"{credit.restructured_loans_count} restructured loan(s) in credit history.",
+                    confidence=ConfidenceLevel.HIGH,
+                    data_source="loan_history",
+                )
+            )
+
+        if credit.written_off_loans_count > 0:
+            scores.append(20)
+            insights.append(
+                EvidenceInsight(
+                    indicator="Written-Off Loans",
+                    category="credit_risk",
+                    value=credit.written_off_loans_count,
+                    benchmark=0,
+                    impact="negative",
+                    narrative=f"{credit.written_off_loans_count} written-off loan(s) — severe credit history flag.",
+                    confidence=ConfidenceLevel.HIGH,
+                    data_source="loan_history",
+                )
+            )
+
+        if credit.npa_incidents_5y > 0:
+            scores.append(_clamp(45 - credit.npa_incidents_5y * 18, 0, 100))
+            insights.append(
+                EvidenceInsight(
+                    indicator="NPA Incidents (5Y)",
+                    category="credit_risk",
+                    value=credit.npa_incidents_5y,
+                    benchmark=0,
+                    impact="negative",
+                    narrative=f"{credit.npa_incidents_5y} NPA/substandard incident(s) in past 5 years.",
+                    confidence=ConfidenceLevel.HIGH,
+                    data_source="rbi_cibil_records",
+                )
+            )
+
+        score = sum(scores) / len(scores) if scores else 52
+        return DimensionScore(
+            dimension="credit_history_debt_servicing",
+            score=round(score, 1),
+            weight=self.DIMENSION_WEIGHTS["credit_history_debt_servicing"],
+            risk_level=_score_to_risk(score),
+            confidence=confidence,
+            insights=insights,
+        )
+
+    def _identify_data_gaps(self, fd, carbon_data) -> list[DataGap]:
+        """Identify missing or incomplete inputs that reduce assessment confidence."""
+        gaps: list[DataGap] = []
+
+        def gap(field: str, category: str, severity: str, message: str, rec: str, dims: list[str]):
+            gaps.append(DataGap(
+                field=field, category=category, severity=severity,
+                message=message, recommendation=rec, impacts_dimensions=dims,
+            ))
+
+        if not fd.credit_bureau:
+            gap("credit_bureau", "credit_data", "high",
+                "No CRISIL rating or debt repayment history provided.",
+                "Obtain commercial credit report with CRISIL/ICRA rating and loan repayment track record.",
+                ["credit_history_debt_servicing", "financial_resilience"])
+        else:
+            cb = fd.credit_bureau
+            if not cb.crisil_rating and cb.crisil_score is None:
+                gap("credit_bureau.crisil_rating", "credit_data", "high",
+                    "CRISIL or equivalent credit rating missing.",
+                    "Request CRISIL/ICRA/CARE rating for the borrowing entity.",
+                    ["credit_history_debt_servicing"])
+            if not cb.past_debts and not cb.repayment_history:
+                gap("credit_bureau.past_debts", "credit_data", "medium",
+                    "No past debt or loan repayment records submitted.",
+                    "Provide loan history including closed, active, and any restructured facilities.",
+                    ["credit_history_debt_servicing"])
+            if cb.debt_service_coverage_ratio is None and not cb.past_debts:
+                gap("credit_bureau.debt_service_coverage_ratio", "credit_data", "medium",
+                    "Debt Service Coverage Ratio (DSCR) not available.",
+                    "Calculate DSCR from EBITDA and annual debt service obligations.",
+                    ["credit_history_debt_servicing", "financial_resilience"])
+
+        if not fd.founder:
+            gap("founder", "management", "medium",
+                "Founder profile not provided for key-person risk assessment.",
+                "Submit founder experience, CIBIL score, and management team details.",
+                ["founder_capability"])
+        elif fd.founder.cibil_score is None:
+            gap("founder.cibil_score", "management", "medium",
+                "Founder personal CIBIL score missing.",
+                "Pull founder CIBIL report for key-person credit assessment.",
+                ["founder_capability"])
+
+        if not fd.market_sentiment:
+            gap("market_sentiment", "reputation", "medium",
+                "Market sentiment and reputation data not provided.",
+                "Collect NPS, online reviews, and media sentiment metrics.",
+                ["market_sentiment"])
+        elif fd.market_sentiment.customer_nps is None and fd.market_sentiment.overall_sentiment_score is None:
+            gap("market_sentiment.nps", "reputation", "low",
+                "No quantitative sentiment score (NPS or composite) available.",
+                "Run customer NPS survey or aggregate review sentiment.",
+                ["market_sentiment"])
+
+        if not fd.product_market or not fd.product_market.products:
+            gap("product_market", "market_demand", "medium",
+                "Product portfolio and market demand data missing.",
+                "Submit product lines, order book depth, and sector demand outlook.",
+                ["product_demand_outlook"])
+        elif fd.product_market.order_book_months is None:
+            gap("product_market.order_book_months", "market_demand", "low",
+                "Order book depth not specified.",
+                "Provide confirmed order pipeline in months of production.",
+                ["product_demand_outlook"])
+
+        if not fd.cash_flows and not (carbon_data and carbon_data.get("transactions_summary")):
+            gap("cash_flows", "financial", "medium",
+                "No cash flow data or CI transaction analytics available.",
+                "Submit monthly cash flows or link Carbon Intelligence MSME ID.",
+                ["cash_flow_health"])
+
+        if not fd.payment_records and not (carbon_data and carbon_data.get("transactions_summary")):
+            gap("payment_records", "financial", "low",
+                "Trade payment behaviour records not submitted.",
+                "Provide supplier/customer payment history for behaviour scoring.",
+                ["payment_behaviour"])
+
+        if not fd.profile.msme_id or not carbon_data:
+            gap("carbon_intelligence", "sustainability", "medium",
+                "Carbon Intelligence data not linked.",
+                "Register MSME on ci.sustainow.in and provide msme_id for carbon risk enrichment.",
+                ["carbon_transition_risk", "cash_flow_health"])
+
+        if not fd.government_policy and not fd.profile.udyam_number:
+            gap("government_policy", "policy", "low",
+                "Government scheme enrollment status unknown.",
+                "Confirm Udyam registration and enrolled schemes (CGTMSE, CLCSS, etc.).",
+                ["government_policy_alignment"])
+
+        if not fd.bank_statement_summary:
+            gap("bank_statement_summary", "alternative_data", "low",
+                "Bank statement aggregates not provided.",
+                "Submit average balance and bounce count for liquidity cross-check.",
+                ["alternative_data_signals"])
+
+        if fd.accounting.net_profit_inr is None:
+            gap("accounting.net_profit_inr", "financial", "low",
+                "Net profit not provided — DSCR and margin analysis limited.",
+                "Include net profit in accounting snapshot.",
+                ["financial_resilience", "credit_history_debt_servicing"])
+
+        return gaps
+
     def _build_risk_indicators(
         self, dimensions: list[DimensionScore], acct, carbon_data, fd=None
     ) -> list[RiskIndicator]:
@@ -1409,7 +1799,60 @@ class ScoringEngine:
                 )
             )
 
-        return indicators[:10]
+        if fd and fd.credit_bureau:
+            cb = fd.credit_bureau
+            if cb.crisil_rating:
+                crisil_s = crisil_rating_to_score(cb.crisil_rating, cb.crisil_outlook)
+                if crisil_s < 55:
+                    indicators.append(
+                        RiskIndicator(
+                            code="RISK_LOW_CRISIL",
+                            label="Low CRISIL Rating",
+                            severity=RiskLevel.HIGH if crisil_s < 45 else RiskLevel.ELEVATED,
+                            description=f"CRISIL rating {cb.crisil_rating} indicates below-investment-grade credit risk.",
+                            evidence=[f"CRISIL: {cb.crisil_rating}", f"Outlook: {cb.crisil_outlook or 'N/A'}"],
+                            recommended_action="Enhanced credit monitoring and collateral requirements recommended.",
+                        )
+                    )
+            if cb.npa_incidents_5y > 0 or cb.written_off_loans_count > 0:
+                indicators.append(
+                    RiskIndicator(
+                        code="RISK_NPA_HISTORY",
+                        label="NPA / Write-Off History",
+                        severity=RiskLevel.HIGH,
+                        description="Prior NPA or loan write-off incidents in credit history.",
+                        evidence=[
+                            f"NPA incidents: {cb.npa_incidents_5y}",
+                            f"Written off: {cb.written_off_loans_count}",
+                        ],
+                        recommended_action="Obtain detailed explanation and recovery plan before sanction.",
+                    )
+                )
+            if cb.commercial_credit_score and cb.commercial_credit_score >= 7:
+                indicators.append(
+                    RiskIndicator(
+                        code="RISK_HIGH_CMR",
+                        label="High CIBIL MSME Rank",
+                        severity=RiskLevel.ELEVATED,
+                        description=f"CIBIL MSME Rank CMR-{cb.commercial_credit_score} indicates elevated commercial credit risk.",
+                        evidence=[f"CMR: {cb.commercial_credit_score}"],
+                        recommended_action="Review bureau report for delinquencies and overdue facilities.",
+                    )
+                )
+            distressed = [d for d in cb.past_debts if d.status in ("restructured", "npa", "substandard")]
+            if distressed:
+                indicators.append(
+                    RiskIndicator(
+                        code="RISK_DISTRESSED_DEBT",
+                        label="Distressed Debt Facilities",
+                        severity=RiskLevel.HIGH,
+                        description=f"{len(distressed)} loan(s) currently or previously in distressed status.",
+                        evidence=[d.lender_name for d in distressed[:3]],
+                        recommended_action="Verify current SMA/NPA classification with lending banks.",
+                    )
+                )
+
+        return indicators[:12]
 
     def _recommendation(self, dimension: str) -> str:
         recs = {
@@ -1423,6 +1866,7 @@ class ScoringEngine:
             "market_sentiment": "Address customer satisfaction gaps and monitor public reputation.",
             "product_demand_outlook": "Diversify product portfolio and secure long-term order commitments.",
             "government_policy_alignment": "Enroll in eligible government schemes (CGTMSE, CLCSS, PLI) to reduce financing cost.",
+            "credit_history_debt_servicing": "Improve EMI discipline and reduce leverage to strengthen CRISIL rating outlook.",
         }
         return recs.get(dimension, "Conduct detailed due diligence.")
 
@@ -1558,8 +2002,10 @@ class ScoringEngine:
             sources.extend(["sentiment_analysis", "public_reviews", "gst_portal"])
         if fd.product_market and fd.product_market.products:
             sources.append("product_catalog")
-        if fd.government_policy or profile.udyam_number:
+        if fd.government_policy or fd.profile.udyam_number:
             sources.append("government_policy_catalog")
+        if fd.credit_bureau:
+            sources.extend(["credit_rating_agency", "cibil_commercial", "loan_history", "repayment_records"])
         return sources
 
 

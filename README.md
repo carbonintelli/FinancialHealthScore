@@ -99,20 +99,34 @@ curl http://localhost:8080/api/v1/assess/demo?audience=credit_team
 
 ## Scoring Model
 
-The overall Financial Health Score (0–100) is a weighted composite of **10 dimensions**:
+The overall Financial Health Score (0–100) is a weighted composite of **11 dimensions**:
 
 | Dimension | Weight | Data Sources |
 |---|---|---|
-| Financial Resilience | 20% | Accounting records (liquidity, leverage, margins) |
-| Cash Flow Health | 12% | Cash flows + CI transaction analytics |
-| Operational Stability | 10% | Opex ratios, utility bills, business tenure |
-| Payment Behaviour | 10% | Payment records + CI late-payment rates |
-| Carbon Transition Risk | 8% | CI carbon summary, energy exposure |
-| Alternative Data Signals | 8% | Supplier/customer concentration, bank balances |
-| **Founder Capability** | 12% | Experience, CIBIL, management depth, succession |
-| **Market Sentiment** | 8% | NPS, reviews, media, retention, litigation |
-| **Product Demand Outlook** | 7% | Products, order book, capacity, sector growth |
-| **Government Policy Alignment** | 5% | Udyam, CGTMSE, PLI, CLCSS, ZED, sector schemes |
+| Financial Resilience | 17% | Accounting records (liquidity, leverage, margins) |
+| Cash Flow Health | 11% | Cash flows + CI transaction analytics |
+| Operational Stability | 9% | Opex ratios, utility bills, business tenure |
+| Payment Behaviour | 9% | Payment records + CI late-payment rates |
+| Carbon Transition Risk | 7% | CI carbon summary, energy exposure |
+| Alternative Data Signals | 7% | Supplier/customer concentration, bank balances |
+| Founder Capability | 11% | Experience, CIBIL, management depth, succession |
+| Market Sentiment | 7% | NPS, reviews, media, retention, litigation |
+| Product Demand Outlook | 6% | Products, order book, capacity, sector growth |
+| Government Policy Alignment | 5% | Udyam, CGTMSE, PLI, CLCSS, ZED, sector schemes |
+| **Credit History & Debt Servicing** | 11% | CRISIL rating, past debts, EMI repayment, DSCR, CMR |
+
+### Credit History & Debt Servicing
+
+- **CRISIL / ICRA / CARE rating** with outlook (positive/stable/negative)
+- **Past debt records** — active, closed, restructured, NPA, written-off
+- **EMI repayment history** — on-time, late, missed payments
+- **CIBIL MSME Rank (CMR)** — commercial bureau score
+- **Debt Service Coverage Ratio (DSCR)** — debt servicing capacity
+- **NPA / restructuring / write-off** incident tracking
+
+### Data Gap Analysis
+
+Every assessment returns a `data_gaps` array identifying missing inputs that reduce confidence, with severity (`high`/`medium`/`low`), impacted dimensions, and recommendations to close each gap.
 
 ### New Assessment Parameters
 

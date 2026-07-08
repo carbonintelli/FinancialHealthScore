@@ -160,6 +160,82 @@ class GovernmentPolicyEnrollment(BaseModel):
     received_govt_subsidy_inr: float | None = Field(None, ge=0)
 
 
+class PastDebtRecord(BaseModel):
+    """Historical or active loan/debt facility."""
+
+    lender_name: str
+    loan_type: str = Field(..., description="e.g. term_loan, working_capital, cc_od, mudra, equipment_finance")
+    principal_inr: float = Field(..., ge=0)
+    outstanding_inr: float | None = Field(None, ge=0)
+    interest_rate_pct: float | None = Field(None, ge=0)
+    tenure_months: int | None = Field(None, ge=1)
+    start_date: date | None = None
+    closed_date: date | None = None
+    status: str = Field(
+        ...,
+        pattern="^(active|closed|restructured|written_off|npa|substandard)$",
+    )
+    repayment_completed_pct: float | None = Field(
+        None, ge=0, le=100, description="Percentage of principal repaid"
+    )
+    emi_amount_inr: float | None = Field(None, ge=0)
+    collateral_type: str | None = Field(None, description="e.g. none, property, cgtsme, hypothecation")
+
+
+class LoanRepaymentRecord(BaseModel):
+    """Monthly loan EMI repayment tracking."""
+
+    month: str = Field(..., description="YYYY-MM format")
+    lender_name: str
+    emi_amount_inr: float = Field(..., ge=0)
+    due_date: date
+    paid_date: date | None = None
+    status: str = Field(..., pattern="^(on_time|late|missed|partial)$")
+    outstanding_after_inr: float | None = Field(None, ge=0)
+
+
+class CreditBureauProfile(BaseModel):
+    """Business credit bureau data including CRISIL rating and debt repayment history."""
+
+    crisil_rating: str | None = Field(
+        None, description="CRISIL long/short-term rating e.g. A-, BBB+, A2+"
+    )
+    crisil_outlook: str | None = Field(
+        None, description="positive, stable, negative, developing"
+    )
+    crisil_rating_date: date | None = None
+    crisil_score: float | None = Field(
+        None, ge=0, le=100, description="Numeric CRISIL-equivalent score if rating unavailable"
+    )
+    rating_agency: str | None = Field("CRISIL", description="CRISIL, ICRA, CARE, India Ratings")
+    commercial_credit_score: int | None = Field(
+        None, ge=1, le=10, description="CIBIL MSME Rank (CMR 1=best, 10=worst)"
+    )
+    past_debts: list[PastDebtRecord] = Field(default_factory=list)
+    repayment_history: list[LoanRepaymentRecord] = Field(default_factory=list)
+    total_active_debt_inr: float | None = Field(None, ge=0)
+    debt_service_coverage_ratio: float | None = Field(
+        None, ge=0, description="EBITDA or net cash flow / total debt service"
+    )
+    emi_on_time_pct_12m: float | None = Field(
+        None, ge=0, le=100, description="Percentage of EMIs paid on time in trailing 12 months"
+    )
+    restructured_loans_count: int = Field(0, ge=0)
+    written_off_loans_count: int = Field(0, ge=0)
+    npa_incidents_5y: int = Field(0, ge=0, description="NPA/substandard classifications in 5 years")
+
+
+class DataGap(BaseModel):
+    """Identified gap in assessment input data affecting score confidence."""
+
+    field: str
+    category: str
+    severity: str = Field(..., description="high, medium, low")
+    message: str
+    recommendation: str
+    impacts_dimensions: list[str] = Field(default_factory=list)
+
+
 class PolicyAlignmentInsight(BaseModel):
     code: str
     name: str
@@ -192,6 +268,7 @@ class FinancialDataInput(BaseModel):
     market_sentiment: MarketSentiment | None = None
     product_market: ProductMarketProfile | None = None
     government_policy: GovernmentPolicyEnrollment | None = None
+    credit_bureau: CreditBureauProfile | None = None
 
 
 class AssessmentRequest(BaseModel):
@@ -265,6 +342,10 @@ class FinancialHealthScoreResult(BaseModel):
     green_finance_opportunities: list[str] = Field(default_factory=list)
     carbon_intelligence: CarbonIntelligenceSummary | None = None
     government_policy_assessment: GovernmentPolicyAssessment | None = None
+    data_gaps: list[DataGap] = Field(
+        default_factory=list,
+        description="Missing or incomplete data fields that reduce assessment confidence",
+    )
     audience_summary: str
     metadata: dict[str, Any] = Field(default_factory=dict)
 
