@@ -44,15 +44,27 @@ python run.py
 
 Server starts at **http://localhost:8080**
 
+- **Platform Login**: http://localhost:8080/app/index.html
 - **API Docs**: http://localhost:8080/docs
 - **Demo Assessment**: http://localhost:8080/api/v1/assess/demo
 - **Health Check**: http://localhost:8080/api/v1/health
 - **Integrations Status**: http://localhost:8080/api/v1/integrations/status
 
+### Demo Logins
+
+| Portal | Email | Password |
+|---|---|---|
+| Bank Admin | `admin@idbi.bank.in` | `IDBI@2026` |
+| Credit Team | `credit@idbi.bank.in` | `IDBI@2026` |
+| MSME Owner | `rajesh@shreeganesh.in` | `MSME@2026` |
+
+See [docs/PLATFORM.md](docs/PLATFORM.md) for full credentials, roles, and workflows.
+
 ## Documentation
 
 | Document | Description |
 |---|---|
+| [docs/PLATFORM.md](docs/PLATFORM.md) | Login, bank & MSME portals, loan workflow, detailed reports |
 | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | System context, request flow, component map, testing strategy |
 | [docs/API.md](docs/API.md) | REST endpoint reference |
 | [docs/SCORING.md](docs/SCORING.md) | 20-dimension scoring model and grade bands |
@@ -87,6 +99,13 @@ Without an API key, the service runs in **demo mode** with realistic mock carbon
 | Method | Path | Description |
 |---|---|---|
 | `GET` | `/` | Service info |
+| `GET` | `/api/v1/auth/demo-credentials` | Demo bank & MSME logins |
+| `POST` | `/api/v1/auth/login` | JWT authentication |
+| `GET` | `/api/v1/bank/dashboard` | Bank portfolio stats (auth) |
+| `POST` | `/api/v1/bank/assess/{msme_id}` | Assess portfolio MSME (auth) |
+| `POST` | `/api/v1/msme/assess/quick` | MSME self-assessment (auth) |
+| `GET` | `/api/v1/reports/{id}` | Detailed JSON credit report (auth) |
+| `GET` | `/api/v1/reports/{id}/html` | Printable HTML report (auth) |
 | `GET` | `/api/v1/health` | Health check |
 | `GET` | `/api/v1/integration` | Carbon Intelligence integration details |
 | `GET` | `/api/v1/integrations/status` | Bureau, tax, legal, OCR integration status |
@@ -168,7 +187,14 @@ Women-led MSMEs receive a **governance score bonus** (up to +2.5 points on overa
 ## Project Structure
 
 ```
+├── frontend/                # Bank & MSME web portals
+│   ├── index.html           # Login
+│   ├── bank/                # Bank dashboard, portfolio, loans, reports
+│   └── msme/                # MSME dashboard, assess, loans, reports
 ├── app/
+│   ├── auth/                # JWT security & dependencies
+│   ├── db/                  # SQLAlchemy models, seed data
+│   ├── templates/           # HTML report templates
 │   ├── main.py              # FastAPI application
 │   ├── config.py            # Settings and environment
 │   ├── api/routes.py        # REST API endpoints
@@ -201,7 +227,7 @@ Women-led MSMEs receive a **governance score bonus** (up to +2.5 points on overa
 ## Running Tests
 
 ```bash
-# Full test suite (37 tests)
+# Full test suite (43 tests)
 pytest -v
 
 # Regenerate golden-file snapshots after API changes

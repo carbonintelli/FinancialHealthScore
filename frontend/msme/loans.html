@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Loan Applications — MSME Portal</title>
+  <link rel="stylesheet" href="/app/css/style.css" />
+</head>
+<body>
+  <div class="layout">
+    <aside class="sidebar" style="display:flex;flex-direction:column;min-height:100vh">
+      <div class="brand">Financial Health Score</div>
+      <nav>
+        <a href="/app/msme/dashboard.html">Dashboard</a>
+        <a href="/app/msme/assess.html">Run Assessment</a>
+        <a href="/app/msme/loans.html" class="active">Loan Applications</a>
+      </nav>
+      <div class="user-block"><button class="btn btn-outline btn-sm" style="color:#fff;border-color:rgba(255,255,255,.4)" onclick="logout()">Sign Out</button></div>
+    </aside>
+    <main class="main">
+      <h1 class="page-title">My Loan Applications</h1>
+      <div class="card" id="loans">Loading…</div>
+    </main>
+  </div>
+  <script src="/app/js/api.js"></script>
+  <script>
+    if (!requireAuth()) throw new Error('auth');
+    const user = getUser();
+    if (!isMsmeUser(user)) redirectByRole(user);
+
+    api('/api/v1/msme/loans').then(loans => {
+      if (!loans.length) {
+        document.getElementById('loans').innerHTML = '<p style="color:var(--muted)">No applications yet. <a href="/app/msme/assess.html">Submit one</a></p>';
+        return;
+      }
+      document.getElementById('loans').innerHTML = `
+        <table>
+          <thead><tr><th>Reference</th><th>Type</th><th>Amount</th><th>Status</th><th>Submitted</th><th>Notes</th></tr></thead>
+          <tbody>${loans.map(l => `
+            <tr>
+              <td>${l.application_ref}</td>
+              <td>${l.loan_type}</td>
+              <td>${formatInr(l.amount_inr)}</td>
+              <td><span class="badge">${l.status}</span></td>
+              <td>${formatDate(l.created_at)}</td>
+              <td>${l.reviewer_notes || '—'}</td>
+            </tr>
+          `).join('')}</tbody>
+        </table>`;
+    }).catch(e => alert(e.message));
+  </script>
+</body>
+</html>

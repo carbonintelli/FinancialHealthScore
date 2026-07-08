@@ -9,10 +9,23 @@ from pathlib import Path
 import pytest
 from httpx import ASGITransport, AsyncClient
 
+from app.db.seed import seed_platform_data
+from app.db.session import SessionLocal, init_db
 from app.main import app
 
 SNAPSHOT_DIR = Path(__file__).parent / "snapshots"
 VOLATILE_KEYS = {"assessment_id", "generated_at"}
+
+
+@pytest.fixture(scope="session", autouse=True)
+def _init_test_database():
+    Path("data").mkdir(exist_ok=True)
+    init_db()
+    db = SessionLocal()
+    try:
+        seed_platform_data(db)
+    finally:
+        db.close()
 
 
 def normalize_snapshot(obj, parent_key: str | None = None):

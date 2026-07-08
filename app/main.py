@@ -5,9 +5,16 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from pathlib import Path
 
 from app.api.routes import router
+from app.api.auth_routes import router as auth_router
+from app.api.platform_routes import router as platform_router
+from app.api.report_routes import router as report_router
 from app.config import settings
+from app.db.seed import seed_platform_data
+from app.db.session import SessionLocal, init_db
 
 logging.basicConfig(
     level=logging.DEBUG if settings.debug else logging.INFO,
@@ -18,8 +25,18 @@ logger = logging.getLogger(__name__)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    from pathlib import Path
+
+    Path("data").mkdir(exist_ok=True)
+    init_db()
+    db = SessionLocal()
+    try:
+        seed_platform_data(db)
+    finally:
+        db.close()
+
     logger.info(
-        "Starting %s v%s | Carbon Intelligence: %s",
+        "Starting %s v%s | Carbon Intelligence: %s | Platform: auth + bank + MSME portals",
         settings.app_name,
         settings.app_version,
         "connected" if settings.has_carbon_api_key else "mock mode",
@@ -74,6 +91,13 @@ app.add_middleware(
 )
 
 app.include_router(router)
+app.include_router(auth_router)
+app.include_router(platform_router)
+app.include_router(report_router)
+
+frontend_dir = Path(__file__).resolve().parent.parent / "frontend"
+if frontend_dir.exists():
+    app.mount("/app", StaticFiles(directory=str(frontend_dir), html=True), name="frontend")
 
 
 @app.get("/", tags=["System"])
@@ -83,6 +107,8 @@ async def root():
         "version": settings.app_version,
         "description": "AI-Powered Alternative Data Intelligence for MSME Credit Decisions",
         "dimension_count": 20,
+        "platform": "/app/",
+        "login": "/app/index.html",
         "docs": "/docs",
         "documentation": {
             "architecture": "docs/ARCHITECTURE.md",

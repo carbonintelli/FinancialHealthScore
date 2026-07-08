@@ -20,7 +20,11 @@ class Settings(BaseSettings):
     debug: bool = False
     use_mock_carbon_data: bool = True
     app_name: str = "Financial Health Score"
-    app_version: str = "1.1.0"
+    app_version: str = "1.2.0"
+    secret_key: str = "change-me-in-production-use-long-random-string"
+    jwt_expire_minutes: int = 480
+    database_url: str = "sqlite:///./data/financial_health.db"
+    frontend_url: str = "http://localhost:8080"
 
     @property
     def has_carbon_api_key(self) -> bool:

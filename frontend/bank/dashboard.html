@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Bank Dashboard — Financial Health Score</title>
+  <link rel="stylesheet" href="/app/css/style.css" />
+</head>
+<body>
+  <div class="layout">
+    <aside class="sidebar" style="display:flex;flex-direction:column;min-height:100vh">
+      <div class="brand">Financial Health Score</div>
+      <div class="sub">IDBI Bank — MSME Lending</div>
+      <nav>
+        <a href="/app/bank/dashboard.html" class="active">Dashboard</a>
+        <a href="/app/bank/portfolio.html">Portfolio</a>
+        <a href="/app/bank/loans.html">Loan Applications</a>
+        <a href="/docs" target="_blank">API Docs</a>
+      </nav>
+      <div class="user-block">
+        <div id="user-name"></div>
+        <div id="user-role" style="opacity:.8"></div>
+        <button class="btn btn-outline btn-sm" style="margin-top:.75rem;color:#fff;border-color:rgba(255,255,255,.4)" onclick="logout()">Sign Out</button>
+      </div>
+    </aside>
+    <main class="main">
+      <h1 class="page-title">Bank Dashboard</h1>
+      <div class="stats-grid" id="stats"></div>
+      <div class="card">
+        <h3>Recent Assessments</h3>
+        <div id="assessments-table">Loading…</div>
+      </div>
+    </main>
+  </div>
+  <script src="/app/js/api.js"></script>
+  <script>
+    if (!requireAuth()) throw new Error('auth');
+    const user = getUser();
+    if (!isBankUser(user)) { redirectByRole(user); }
+
+    document.getElementById('user-name').textContent = user.full_name;
+    document.getElementById('user-role').textContent = user.role.replace(/_/g, ' ');
+
+    async function load() {
+      const [stats, assessments] = await Promise.all([
+        api('/api/v1/bank/dashboard'),
+        api('/api/v1/bank/assessments'),
+      ]);
+
+      document.getElementById('stats').innerHTML = `
+        <div class="stat-card"><div class="label">Portfolio MSMEs</div><div class="value">${stats.portfolio_count}</div></div>
+        <div class="stat-card"><div class="label">Avg Score</div><div class="value">${stats.average_score ?? '—'}</div></div>
+        <div class="stat-card"><div class="label">High Risk</div><div class="value">${stats.high_risk_count}</div></div>
+        <div class="stat-card"><div class="label">Assessments (Month)</div><div class="value">${stats.assessments_this_month}</div></div>
+        <div class="stat-card"><div class="label">Pending Loans</div><div class="value">${stats.pending_loans}</div></div>
+        <div class="stat-card"><div class="label">Approved (INR)</div><div class="value" style="font-size:1.2rem">${formatInr(stats.approved_loans_inr)}</div></div>
+      `;
+
+      if (!assessments.length) {
+        document.getElementById('assessments-table').innerHTML = '<p style="color:var(--muted)">No assessments yet. Run one from the Portfolio page.</p>';
+        return;
+      }
+
+      document.getElementById('assessments-table').innerHTML = `
+        <table>
+          <thead><tr><th>Business</th><th>Score</th><th>Grade</th><th>Risk</th><th>Date</th><th></th></tr></thead>
+          <tbody>${assessments.slice(0, 10).map(a => `
+            <tr>
+              <td>${a.business_name}</td>
+              <td><strong>${a.overall_score.toFixed(1)}</strong></td>
+              <td>${a.grade}</td>
+              <td>${riskBadge(a.overall_risk_level)}</td>
+              <td>${formatDate(a.created_at)}</td>
+              <td><a class="btn btn-sm btn-primary" href="/app/bank/report.html?id=${a.assessment_id}">Report</a></td>
+            </tr>
+          `).join('')}</tbody>
+        </table>`;
+    }
+    load().catch(e => alert(e.message));
+  </script>
+</body>
+</html>

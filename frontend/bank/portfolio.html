@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Portfolio — Financial Health Score</title>
+  <link rel="stylesheet" href="/app/css/style.css" />
+</head>
+<body>
+  <div class="layout">
+    <aside class="sidebar" style="display:flex;flex-direction:column;min-height:100vh">
+      <div class="brand">Financial Health Score</div>
+      <div class="sub">IDBI Bank — MSME Lending</div>
+      <nav>
+        <a href="/app/bank/dashboard.html">Dashboard</a>
+        <a href="/app/bank/portfolio.html" class="active">Portfolio</a>
+        <a href="/app/bank/loans.html">Loan Applications</a>
+      </nav>
+      <div class="user-block">
+        <div id="user-name"></div>
+        <button class="btn btn-outline btn-sm" style="margin-top:.75rem;color:#fff;border-color:rgba(255,255,255,.4)" onclick="logout()">Sign Out</button>
+      </div>
+    </aside>
+    <main class="main">
+      <h1 class="page-title">MSME Portfolio</h1>
+      <div class="card" id="portfolio">Loading…</div>
+    </main>
+  </div>
+  <script src="/app/js/api.js"></script>
+  <script>
+    if (!requireAuth()) throw new Error('auth');
+    const user = getUser();
+    if (!isBankUser(user)) redirectByRole(user);
+    document.getElementById('user-name').textContent = user.full_name;
+
+    async function assess(msmeId, name) {
+      if (!confirm(`Run Financial Health Score assessment for ${name}?`)) return;
+      try {
+        const result = await api(`/api/v1/bank/assess/${msmeId}`, { method: 'POST' });
+        window.location.href = `/app/bank/report.html?id=${result.assessment_id}`;
+      } catch (e) { alert(e.message); }
+    }
+
+    api('/api/v1/bank/portfolio').then(items => {
+      document.getElementById('portfolio').innerHTML = `
+        <table>
+          <thead><tr><th>Business</th><th>Sector</th><th>Latest Score</th><th>Grade</th><th>Risk</th><th>Credit Limit</th><th>RM</th><th></th></tr></thead>
+          <tbody>${items.map(p => `
+            <tr>
+              <td><strong>${p.business_name}</strong><br><small style="color:var(--muted)">${p.msme_id}</small></td>
+              <td>${p.sector}</td>
+              <td>${p.latest_score != null ? p.latest_score.toFixed(1) : '—'}</td>
+              <td>${p.latest_grade || '—'}</td>
+              <td>${riskBadge(p.latest_risk_level)}</td>
+              <td>${formatInr(p.credit_limit_inr)}</td>
+              <td>${p.relationship_manager || '—'}</td>
+              <td>
+                <button class="btn btn-sm btn-accent" onclick="assess('${p.msme_id}','${p.business_name.replace(/'/g, "\\'")}')">Assess</button>
+                ${p.latest_score != null ? `<a class="btn btn-sm btn-outline" href="/app/bank/report.html?msme=${p.msme_id}">History</a>` : ''}
+              </td>
+            </tr>
+          `).join('')}</tbody>
+        </table>`;
+    }).catch(e => alert(e.message));
+  </script>
+</body>
+</html>

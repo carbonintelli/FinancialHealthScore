@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Detailed Report — MSME Portal</title>
+  <link rel="stylesheet" href="/app/css/style.css" />
+</head>
+<body>
+  <div class="layout">
+    <aside class="sidebar" style="display:flex;flex-direction:column;min-height:100vh">
+      <div class="brand">Financial Health Score</div>
+      <nav>
+        <a href="/app/msme/dashboard.html">Dashboard</a>
+        <a href="/app/msme/assess.html">Run Assessment</a>
+      </nav>
+      <div class="user-block"><button class="btn btn-outline btn-sm" style="color:#fff;border-color:rgba(255,255,255,.4)" onclick="logout()">Sign Out</button></div>
+    </aside>
+    <main class="main">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
+        <h1 class="page-title" style="margin:0">Your Detailed Report</h1>
+        <button class="btn btn-outline" onclick="window.print()">Print / Save PDF</button>
+      </div>
+      <div class="card" id="summary">Loading…</div>
+      <iframe class="report-frame" id="report-frame" title="Detailed Report"></iframe>
+    </main>
+  </div>
+  <script src="/app/js/api.js"></script>
+  <script>
+    if (!requireAuth()) throw new Error('auth');
+    const user = getUser();
+    if (!isMsmeUser(user)) redirectByRole(user);
+
+    async function load() {
+      let id = new URLSearchParams(location.search).get('id');
+      if (!id) {
+        const list = await api('/api/v1/msme/assessments');
+        if (list.length) id = list[0].assessment_id;
+      }
+      if (!id) {
+        document.getElementById('summary').innerHTML = '<p>No assessment found. <a href="/app/msme/assess.html">Run assessment</a></p>';
+        return;
+      }
+
+      const report = await api(`/api/v1/reports/${id}`);
+      document.getElementById('report-frame').src = `/api/v1/reports/${id}/html`;
+      document.getElementById('summary').innerHTML = `
+        <div class="score-hero">
+          <div class="score-ring" style="--pct:${report.overall_score}"><span>${report.overall_score.toFixed(1)}</span></div>
+          <div>
+            <h2>${report.business_name}</h2>
+            <p>Grade ${report.grade} · ${riskBadge(report.overall_risk_level)}</p>
+          </div>
+        </div>
+        <p style="margin-top:1rem">${report.executive_summary}</p>
+        <h3 style="margin-top:1.25rem;font-size:.95rem;color:var(--primary)">Recommended Improvements</h3>
+        <ul style="margin-top:.5rem;padding-left:1.25rem">${report.recommended_improvements.slice(0,5).map(i => `<li>${i}</li>`).join('')}</ul>`;
+    }
+    load().catch(e => { document.getElementById('summary').innerHTML = `<div class="alert alert-error">${e.message}</div>`; });
+  </script>
+</body>
+</html>
