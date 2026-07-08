@@ -1,6 +1,8 @@
 # Node.js Platform Server
 
-Primary runtime for Financial Health Score **v2.1** — multi-stakeholder MSME intelligence with **27-agent orchestration**.
+Primary runtime for Financial Health Score (FHS) **v2.1** — multi-stakeholder MSME credit intelligence with **27-agent orchestration**.
+
+UI terminology is centralised in `frontend/js/terminology.js`. See [TERMINOLOGY.md](./TERMINOLOGY.md).
 
 ## Quick Start
 
@@ -24,8 +26,8 @@ server/
 │   ├── routes/               # Auth + API routes
 │   ├── services/
 │   │   ├── agents/           # 27-agent orchestration (6 phases)
-│   │   ├── integrations/     # Bureau, tax mock clients
-│   │   ├── scoring/bridge.ts # Python scoring bridge
+│   │   ├── scoring/          # Node.js 20-dimension scoring engine (default)
+│   │   ├── integrations/     # Bureau, tax, Tally, Zoho, carbon clients
 │   │   ├── store.ts          # Assessment persistence + orchestration
 │   │   └── reports/          # HTML + JSON reports
 │   ├── data/
@@ -60,12 +62,12 @@ See [AGENTIC_ARCHITECTURE.md](./AGENTIC_ARCHITECTURE.md).
 
 ## Stakeholders & Roles
 
-| Stakeholder | Roles | Portal |
-|---|---|---|
-| **Bank** | bank_admin, bank_credit, bank_risk, bank_rm | `/app/bank/` |
-| **MSME** | msme_owner, msme_viewer | `/app/msme/` |
-| **Government** | govt_admin, govt_scheme_officer, govt_sidbi_officer | `/app/govt/` |
-| **Regulatory** | reg_rbi_supervisor, reg_gstn_officer, reg_mca_officer, reg_nbfc_reviewer | `/app/regulatory/` |
+| Stakeholder | Roles | Portal | UI label |
+|---|---|---|---|
+| **Lending Institution** | bank_admin, credit_team, risk_team, relationship_manager | `/app/bank/` | Lending Institution Portal |
+| **Enterprise (MSME)** | msme_owner, msme_viewer | `/app/msme/` | Enterprise Portal |
+| **Government** | govt_admin, scheme_officer, sidbi_officer | `/app/govt/` | MSME Policy Intelligence |
+| **Regulatory** | reg_rbi_supervisor, reg_gstn_officer, reg_mca_officer, reg_nbfc_reviewer | `/app/regulatory/` | Regulatory Supervisory Portal |
 
 ## Demo Credentials
 
@@ -73,8 +75,8 @@ Retrieve all credentials: `GET /api/v1/auth/demo-credentials`
 
 | Stakeholder | Email | Password |
 |---|---|---|
-| Bank | `credit@idbi.bank.in` | `IDBI@2026` |
-| MSME | `rajesh@shreeganesh.in` | `MSME@2026` |
+| Lending Institution | `credit@idbi.bank.in` | `IDBI@2026` |
+| Enterprise (MSME) | `rajesh@shreeganesh.in` | `MSME@2026` |
 | Government | `admin@msme.gov.in` | `GOVT@2026` |
 | Regulatory | `supervisor@rbi.org.in` | `REG@2026` |
 
@@ -122,7 +124,7 @@ PYTHON_PATH=python3          # Only needed when SCORING_ENGINE=python
 ## Tests & Snapshots
 
 ```bash
-cd server && npm test              # 33 tests (platform + snapshots + scoring parity)
+cd server && npm test              # 35 tests (platform + snapshots + scoring parity)
 npm run generate:snapshots         # Regenerate tests/snapshots/*.json
 ```
 
@@ -133,5 +135,7 @@ npm run generate:snapshots         # Regenerate tests/snapshots/*.json
 | `tests/scoring.test.ts` | Node scoring engine parity with Python |
 
 Snapshot catalog: [PRODUCT_SNAPSHOTS.md](./PRODUCT_SNAPSHOTS.md)
+
+Terminology reference: [TERMINOLOGY.md](./TERMINOLOGY.md)
 
 Python unit tests (`pytest`) still cover the scoring engine independently.

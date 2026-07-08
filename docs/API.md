@@ -3,6 +3,8 @@
 Base URL: `http://localhost:8080`  
 Platform: **Node.js Express v2.1** (primary)
 
+Display labels for statuses, risk ratings, and portal terminology: [TERMINOLOGY.md](./TERMINOLOGY.md).
+
 API root metadata: `GET /api`  
 Interactive OpenAPI docs are available on the **legacy Python server** only (`python run.py` → `/docs`).
 
@@ -20,7 +22,7 @@ Interactive OpenAPI docs are available on the **legacy Python server** only (`py
 | Method | Path | Auth | Description |
 |---|---|---|---|
 | `POST` | `/api/v1/auth/login` | — | Email/password → JWT bearer token |
-| `POST` | `/api/v1/auth/register` | — | MSME self-registration + optional Health Score |
+| `POST` | `/api/v1/auth/register` | — | MSME enterprise registration + optional FHS on signup |
 | `GET` | `/api/v1/auth/me` | JWT | Current user profile |
 
 **Login example:**
@@ -86,52 +88,62 @@ Stored assessments (bank/MSME quick assess) also return `agent_insights` with th
 
 See [AGENTIC_ARCHITECTURE.md](./AGENTIC_ARCHITECTURE.md).
 
-## Bank Portal
+## Lending Institution Portal
+
+Bank-facing endpoints for portfolio credit intelligence and credit application workflow.
 
 | Method | Path | Auth | Description |
 |---|---|---|---|
-| `GET` | `/api/v1/bank/dashboard` | Bank JWT | Portfolio stats, pending loans |
-| `GET` | `/api/v1/bank/portfolio` | Bank JWT | MSME list with latest scores |
-| `GET` | `/api/v1/bank/assessments` | Bank JWT | Assessment history |
-| `GET` | `/api/v1/bank/loans` | Bank JWT | Loan applications |
-| `PATCH` | `/api/v1/bank/loans/{loan_id}` | Bank JWT | Approve/reject/review loan |
+| `GET` | `/api/v1/bank/dashboard` | Bank JWT | Executive dashboard: portfolio stats, pending credit applications |
+| `GET` | `/api/v1/bank/portfolio` | Bank JWT | MSME lending portfolio with latest FHS and credit grades |
+| `GET` | `/api/v1/bank/assessments` | Bank JWT | Credit assessment history |
+| `POST` | `/api/v1/bank/assess/{msme_id}` | Bank JWT | Initiate credit assessment + agent orchestration |
+| `GET` | `/api/v1/bank/loans` | Bank JWT | Credit facility applications |
+| `PATCH` | `/api/v1/bank/loans/{loan_id}` | Bank JWT | Update application status (sanction / decline / review) |
 
-## MSME Portal
+**Credit application status values:** `submitted`, `under_review`, `approved`, `rejected`, `disbursed`  
+Display labels: see [TERMINOLOGY.md](./TERMINOLOGY.md#credit-application-status).
+
+## Enterprise Portal (MSME)
+
+Enterprise-facing endpoints for registration, financial data submission, credit assessment, and facility applications.
 
 | Method | Path | Auth | Description |
 |---|---|---|---|
-| `GET` | `/api/v1/msme/dashboard` | MSME JWT | Latest score summary + profile completeness |
-| `GET` | `/api/v1/msme/profile` | MSME JWT | Business profile & stored financial data |
-| `PUT` | `/api/v1/msme/profile` | MSME JWT | Update business profile & financial data |
-| `GET` | `/api/v1/msme/data-feeds` | MSME JWT | Data feed submission history |
-| `POST` | `/api/v1/msme/data-feed` | MSME JWT | Submit financial data feed + optional Health Score |
-| `POST` | `/api/v1/msme/assess` | MSME JWT | Assess from stored profile data |
-| `POST` | `/api/v1/msme/assess/quick` | MSME JWT | Quick assess (uses profile if available) |
-| `GET` | `/api/v1/msme/assessments` | MSME JWT | Assessment history |
-| `GET` | `/api/v1/msme/loans` | MSME JWT | List own loan applications |
-| `POST` | `/api/v1/msme/loans` | MSME JWT | Submit loan application |
+| `GET` | `/api/v1/msme/dashboard` | MSME JWT | Enterprise dashboard: latest FHS, credit grade, open applications |
+| `GET` | `/api/v1/msme/profile` | MSME JWT | Enterprise profile & stored financial statements |
+| `PUT` | `/api/v1/msme/profile` | MSME JWT | Update enterprise profile & financial data |
+| `GET` | `/api/v1/msme/data-feeds` | MSME JWT | Financial data submission log |
+| `POST` | `/api/v1/msme/data-feed` | MSME JWT | Submit financial data + optional FHS recalculation |
+| `POST` | `/api/v1/msme/assess` | MSME JWT | Credit assessment from stored profile data |
+| `POST` | `/api/v1/msme/assess/quick` | MSME JWT | Initiate credit assessment (uses profile if available) |
+| `POST` | `/api/v1/msme/assess/import` | MSME JWT | ERP import + credit assessment (Tally / Zoho) |
+| `POST` | `/api/v1/msme/assess/import/preview` | MSME JWT | Preview ERP import without persisting assessment |
+| `GET` | `/api/v1/msme/assessments` | MSME JWT | Credit assessment history |
+| `GET` | `/api/v1/msme/loans` | MSME JWT | List own credit facility applications |
+| `POST` | `/api/v1/msme/loans` | MSME JWT | Submit credit facility application |
 
 ## Government Portal
 
 | Method | Path | Auth | Description |
 |---|---|---|---|
-| `GET` | `/api/v1/govt/dashboard` | Govt JWT | Registered MSMEs, scheme stats |
-| `GET` | `/api/v1/govt/schemes/catalog` | Govt JWT | Available scheme codes |
-| `POST` | `/api/v1/govt/schemes/recommend/{msme_id}` | Govt JWT | Policy advisory agent |
+| `GET` | `/api/v1/govt/dashboard` | Govt JWT | National MSME registry, scheme statistics |
+| `GET` | `/api/v1/govt/schemes/catalog` | Govt JWT | Government schemes catalogue |
+| `POST` | `/api/v1/govt/schemes/recommend/{msme_id}` | Govt JWT | AI policy & scheme advisory agent |
 | `GET` | `/api/v1/govt/scheme-applications` | Govt JWT | Scheme application list |
 
-## Regulatory Portal
+## Regulatory Supervisory Portal
 
 | Method | Path | Auth | Description |
 |---|---|---|---|
-| `GET` | `/api/v1/regulatory/dashboard` | Reg JWT | Submissions, high-risk assessments |
-| `POST` | `/api/v1/regulatory/review/{msme_id}` | Reg JWT | Regulatory compliance agent review |
+| `GET` | `/api/v1/regulatory/dashboard` | Reg JWT | Elevated-risk assessments, regulatory submissions |
+| `POST` | `/api/v1/regulatory/review/{msme_id}` | Reg JWT | AI regulatory compliance review |
 
 ## Reports
 
 | Method | Path | Auth | Description |
 |---|---|---|---|
-| `GET` | `/api/v1/reports/{assessment_id}` | JWT | Detailed JSON report with agent orchestration |
+| `GET` | `/api/v1/reports/{assessment_id}` | JWT | Detailed JSON credit assessment report |
 | `GET` | `/api/v1/reports/{assessment_id}/html` | JWT | Printable HTML credit assessment report |
 
 ## Government Policy
@@ -183,11 +195,14 @@ Mock mode is the default (`USE_MOCK_INTEGRATIONS=true`). Set API keys in `.env` 
 | Status | Meaning |
 |---|---|
 | `200` | Success |
-| `401` | Invalid or missing JWT |
-| `403` | Role or ownership access denied |
-| `404` | Resource not found |
-| `500` | Server or scoring bridge error |
+| `401` | Invalid or missing JWT (e.g. *Invalid credentials. Please verify your email and password.*) |
+| `403` | Role or ownership access denied (e.g. *Read-only access: credit assessment is not permitted*) |
+| `404` | Resource not found (e.g. *Credit assessment not found*, *Credit application not found*) |
+| `422` | Registration validation failure |
+| `500` | Server or scoring engine error |
 | `503` | Integration unavailable (live mode without API key) |
+
+User-facing error messages use formal banking terminology. See [TERMINOLOGY.md](./TERMINOLOGY.md#api-error-messages).
 
 ## Legacy Python Endpoints
 
