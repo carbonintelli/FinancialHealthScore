@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Import Data — Financial Health Score</title>
+  <link rel="icon" href="/app/assets/favicon.svg" type="image/svg+xml" />
+  <link rel="stylesheet" href="/app/css/style.css" />
+</head>
+<body>
+  <div class="layout">
+    <aside class="sidebar"></aside>
+    <main class="main">
+      <div id="page-header"></div>
+
+      <div class="welcome-banner" style="margin-bottom:1.5rem">
+        <div class="welcome-banner-glow"></div>
+        <div class="welcome-banner-content">
+          <h2>Import & Assess</h2>
+          <p>Connect Tally or Zoho Books, enrich with Sustainow Carbon Intelligence (ci.sustainow.in), and calculate your 20-dimension Financial Health Score.</p>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header"><h3>Data Connector</h3></div>
+        <p class="card-desc">Choose your accounting system to import financial data.</p>
+        <div class="role-tabs" style="grid-template-columns:1fr 1fr;margin-bottom:1.25rem">
+          <div class="role-tab active" data-connector="tally">Tally ERP</div>
+          <div class="role-tab" data-connector="zoho">Zoho Books</div>
+        </div>
+        <div class="form-group">
+          <label>Financial year / period end</label>
+          <input type="text" id="period-end" value="2026-03-31" placeholder="YYYY-MM-DD" />
+        </div>
+        <label style="display:flex;align-items:center;gap:.5rem;font-size:.9rem;margin-bottom:1rem">
+          <input type="checkbox" id="include-ci" checked />
+          Include ci.sustainow.in carbon footprint & sustainability report
+        </label>
+        <div style="display:flex;flex-wrap:wrap;gap:.5rem">
+          <button class="btn btn-outline" id="preview-btn">Preview Import</button>
+          <button class="btn btn-accent btn-lg" id="assess-btn">Import & Calculate Score</button>
+        </div>
+      </div>
+
+      <div class="card" id="connectors-card">
+        <div class="card-header"><h3>Available Connectors</h3></div>
+        <div id="connectors-list"><div class="loading-pulse"></div></div>
+      </div>
+
+      <div class="card" id="preview-card" style="display:none">
+        <div class="card-header"><h3>Import Preview</h3></div>
+        <div id="preview-content"></div>
+      </div>
+
+      <div class="card" id="result-card" style="display:none">
+        <div class="card-header"><h3>Assessment Result</h3></div>
+        <div id="result-content"></div>
+      </div>
+    </main>
+  </div>
+  <script src="/app/js/api.js"></script>
+  <script src="/app/js/ui.js"></script>
+  <script>
+    if (!requireAuth()) throw new Error('auth');
+    const user = getUser();
+    if (!isMsmeUser(user)) redirectByRole(user);
+    FHS.mountLayout('msme', 'import');
+
+    let selectedConnector = 'tally';
+
+    document.getElementById('page-header').innerHTML = FHS.renderPageHeader({
+      title: 'Import Data & Assess',
+      subtitle: 'Tally · Zoho Books · Sustainow Carbon Intelligence',
+    });
+
+    document.querySelectorAll('[data-connector]').forEach(tab => {
+      tab.addEventListener('click', () => {
+        selectedConnector = tab.dataset.connector;
+        document.querySelectorAll('[data-connector]').forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+      });
+    });
+
+    function formatInrShort(n) {
+      if (n >= 1e7) return '₹' + (n / 1e7).toFixed(1) + ' Cr';
+      if (n >= 1e5) return '₹' + (n / 1e5).toFixed(1) + ' L';
+      return formatInr(n);
+    }
+
+    api('/api/v1/integrations/connectors').then(data => {
+      document.getElementById('connectors-list').innerHTML = `
+        <div class="stats-grid">${data.connectors.map(c => `
+          <div class="stat-card ${c.configured ? 'stat-success' : ''}">
+            <div class="stat-body">
+              <div class="stat-label">${c.name}</div>
+              <div class="stat-value" style="font-size:1rem">${c.configured ? 'Live' : 'Demo'}</div>
+              <div class="stat-trend">${c.description}</div>
+            </div>
+          </div>
+        `).join('')}</div>`;
+    });
+
+    function renderPreview(data) {
+      const imp = data.import_result;
+      const acc = imp.financial_data.accounting;
+      const sus = data.sustainability_report;
+      document.getElementById('preview-card').style.display = '';
+      document.getElementById('preview-content').innerHTML = `
+        <div class="alert alert-info">Imported from <strong>${imp.source.toUpperCase()}</strong>${imp.mock ? ' (demo mode)' : ''} · ${imp.period_label}</div>
+        <div class="stats-grid" style="margin-top:1rem">
+          ${FHS.renderStatCard('Revenue', formatInrShort(acc.revenue_inr), { icon: 'trend' })}
+          ${FHS.renderStatCard('Net Profit', formatInrShort(acc.net_profit_inr), { icon: 'score' })}
+          ${FHS.renderStatCard('Cash Flow Months', imp.financial_data.cash_flows.length, { icon: 'assess' })}
+          ${sus ? FHS.renderStatCard('Sustainability', sus.sustainability_score + ' / ' + sus.grade, { icon: 'check', variant: 'success' }) : ''}
+        </div>
+        ${sus ? `
+          <h4 style="margin:1.25rem 0 .5rem;font-size:.9rem;color:var(--primary)">Carbon Footprint (ci.sustainow.in)</h4>
+          <p style="color:var(--muted);font-size:.88rem">
+            ${sus.carbon_footprint.total_emissions_tco2e ?? '—'} tCO₂e total ·
+            Intensity ${sus.carbon_footprint.carbon_intensity_kg_per_revenue ?? '—'} kg/₹ ·
+            Reporting: ${sus.reporting.readiness ?? '—'}
+          </p>
+          <ul style="margin-top:.75rem;padding-left:1.25rem;color:var(--muted);font-size:.85rem">
+            ${sus.recommendations.map(r => `<li>${r}</li>`).join('')}
+          </ul>
+        ` : ''}`;
+    }
+
+    document.getElementById('preview-btn').addEventListener('click', async () => {
+      const btn = document.getElementById('preview-btn');
+      btn.disabled = true;
+      try {
+        const data = await api('/api/v1/msme/assess/import/preview', {
+          method: 'POST',
+          body: JSON.stringify({
+            connector: selectedConnector,
+            include_carbon_intelligence: document.getElementById('include-ci').checked,
+            options: { to_date: document.getElementById('period-end').value },
+          }),
+        });
+        renderPreview(data);
+      } catch (e) { alert(e.message); }
+      btn.disabled = false;
+    });
+
+    document.getElementById('assess-btn').addEventListener('click', async () => {
+      const btn = document.getElementById('assess-btn');
+      btn.disabled = true;
+      btn.textContent = 'Importing & scoring…';
+      document.getElementById('result-card').style.display = '';
+      document.getElementById('result-content').innerHTML = '<div class="alert alert-info">Running 20-dimension score with imported data + Carbon Intelligence…</div>';
+      try {
+        const data = await api('/api/v1/msme/assess/import', {
+          method: 'POST',
+          body: JSON.stringify({
+            connector: selectedConnector,
+            include_carbon_intelligence: document.getElementById('include-ci').checked,
+            options: { to_date: document.getElementById('period-end').value },
+          }),
+        });
+        renderPreview(data);
+        const a = data.assessment;
+        document.getElementById('result-content').innerHTML = `
+          ${FHS.renderScoreHero({
+            score: a.overall_score,
+            grade: a.grade,
+            riskLevel: a.overall_risk_level,
+            title: 'Financial Health Score',
+            subtitle: `Data: ${data.import_result.source.toUpperCase()} + ci.sustainow.in · ${data.sustainability_report ? 'Sustainability ' + data.sustainability_report.sustainability_score + '/100' : ''}`,
+            ctaHtml: `<a class="btn btn-primary" href="/app/msme/report.html?id=${a.assessment_id}">View Full Report</a>`,
+          })}
+          <div class="alert alert-success" style="margin-top:1rem">
+            27 AI agents orchestrated · Assessment ID: <code>${a.assessment_id}</code>
+          </div>`;
+      } catch (e) {
+        document.getElementById('result-content').innerHTML = `<div class="alert alert-error">${e.message}</div>`;
+      }
+      btn.disabled = false;
+      btn.textContent = 'Import & Calculate Score';
+    });
+  </script>
+</body>
+</html>

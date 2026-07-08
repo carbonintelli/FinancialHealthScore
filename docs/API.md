@@ -140,6 +140,16 @@ See [AGENTIC_ARCHITECTURE.md](./AGENTIC_ARCHITECTURE.md).
 |---|---|---|---|
 | `POST` | `/api/v1/integrations/bureau/pull` | — | `gstin`, `pan`, `business_name` |
 | `POST` | `/api/v1/integrations/tax/verify` | — | `gstin`, `pan` |
+| `GET` | `/api/v1/integrations/connectors` | — | List Tally, Zoho, Carbon Intelligence connectors |
+| `POST` | `/api/v1/integrations/tally/import` | JWT | `company_name`, `tally_company_id`, `from_date`, `to_date` |
+| `POST` | `/api/v1/integrations/zoho/import` | JWT | `organization_id`, `from_date`, `to_date` |
+| `GET` | `/api/v1/integrations/carbon/catalog` | — | ci.sustainow.in integration catalog |
+| `GET` | `/api/v1/integrations/carbon/{msme_id}` | JWT | Carbon footprint + transaction summary |
+| `GET` | `/api/v1/integrations/carbon/{msme_id}/sustainability-report` | JWT | Composite sustainability score & report |
+| `POST` | `/api/v1/msme/assess/import` | MSME JWT | `connector` (`tally` \| `zoho`), `include_carbon_intelligence` |
+| `POST` | `/api/v1/msme/assess/import/preview` | MSME JWT | Preview import without persisting assessment |
+
+See [DATA_CONNECTORS.md](./DATA_CONNECTORS.md) for connector setup and the import-to-score pipeline.
 
 Mock mode is the default (`USE_MOCK_INTEGRATIONS=true`). Set API keys in `.env` for live integrations.
 

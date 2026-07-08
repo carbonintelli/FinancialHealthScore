@@ -78,7 +78,7 @@ See [docs/NODE_PLATFORM.md](docs/NODE_PLATFORM.md) and [docs/PLATFORM.md](docs/P
 | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | System context, request flow, component map, testing strategy |
 | [docs/API.md](docs/API.md) | REST endpoint reference |
 | [docs/SCORING.md](docs/SCORING.md) | 20-dimension scoring model and grade bands |
-| [docs/PRODUCT_SNAPSHOTS.md](docs/PRODUCT_SNAPSHOTS.md) | Golden-file API snapshots and demo MSME baseline |
+| [docs/DATA_CONNECTORS.md](docs/DATA_CONNECTORS.md) | Tally, Zoho Books & ci.sustainow.in import pipeline |
 
 ## Carbon Intelligence Integration
 

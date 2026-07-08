@@ -197,4 +197,38 @@ describe("Node.js Platform", () => {
     expect(bankDash.status).toBe(200);
     expect(typeof bankDash.body.approved_loans_inr).toBe("number");
   });
+
+  it("lists data connectors including tally, zoho, and carbon", async () => {
+    const res = await request(app).get("/api/v1/integrations/connectors");
+    expect(res.status).toBe(200);
+    const ids = res.body.connectors.map((c: { id: string }) => c.id);
+    expect(ids).toContain("tally");
+    expect(ids).toContain("zoho");
+    expect(ids).toContain("carbon_intelligence");
+  });
+
+  it("preview import from tally with carbon intelligence", async () => {
+    const res = await request(app)
+      .post("/api/v1/msme/assess/import/preview")
+      .set("Authorization", `Bearer ${msmeToken}`)
+      .send({ connector: "tally", include_carbon_intelligence: true });
+    expect(res.status).toBe(200);
+    expect(res.body.import_result.source).toBe("tally");
+    expect(res.body.import_result.financial_data.accounting.revenue_inr).toBeGreaterThan(0);
+    expect(res.body.sustainability_report.sustainability_score).toBeGreaterThan(0);
+    expect(res.body.carbon_intelligence.source).toBe("ci.sustainow.in");
+  });
+
+  it("import from zoho and calculate financial health score", async () => {
+    const res = await request(app)
+      .post("/api/v1/msme/assess/import")
+      .set("Authorization", `Bearer ${msmeToken}`)
+      .send({ connector: "zoho", include_carbon_intelligence: true });
+    expect(res.status).toBe(200);
+    expect(res.body.import_result.source).toBe("zoho");
+    expect(res.body.assessment.overall_score).toBeGreaterThan(0);
+    expect(res.body.assessment.dimension_scores).toHaveLength(20);
+    expect(res.body.assessment.agent_insights.summary.total_agents_run).toBe(27);
+    expect(res.body.sustainability_report.carbon_footprint.total_emissions_tco2e).toBeGreaterThan(0);
+  }, 90000);
 });
