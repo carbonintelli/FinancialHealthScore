@@ -139,7 +139,7 @@ export async function importAndAssess(opts: ImportAndAssessOptions): Promise<Imp
   }
 
   const request = buildAssessmentRequest(profile, imported, opts.audience ?? "credit_team");
-  const applied = [opts.connector];
+  const applied: string[] = [opts.connector];
   if (carbon) applied.push("ci.sustainow.in");
   const enrichmentLog = {
     applied,
