@@ -4,50 +4,55 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Government Dashboard — Financial Health Score</title>
+  <link rel="icon" href="/app/assets/favicon.svg" type="image/svg+xml" />
   <link rel="stylesheet" href="/app/css/style.css" />
 </head>
 <body>
   <div class="layout">
-    <aside class="sidebar" style="display:flex;flex-direction:column;min-height:100vh;background:linear-gradient(180deg,#1a5f2a,#0d3d1a)">
-      <div class="brand">MSME Intelligence</div>
-      <div class="sub">Government Portal</div>
-      <nav>
-        <a href="/app/govt/dashboard.html" class="active">Dashboard</a>
-        <a href="/app/govt/schemes.html">Scheme Advisory</a>
-      </nav>
-      <div class="user-block"><button class="btn btn-outline btn-sm" style="color:#fff;border-color:rgba(255,255,255,.4)" onclick="logout()">Sign Out</button></div>
-    </aside>
+    <aside class="sidebar"></aside>
     <main class="main">
-      <h1 class="page-title">Government MSME Dashboard</h1>
+      <div id="page-header"></div>
+      <div id="welcome"></div>
       <div class="stats-grid" id="stats"></div>
       <div class="card">
-        <h3>Registered MSME Portfolio (National View)</h3>
-        <div id="msmes">Loading…</div>
+        <div class="card-header"><h3>Registered MSME Portfolio (National View)</h3></div>
+        <div id="msmes"><div class="loading-pulse"></div></div>
       </div>
     </main>
   </div>
   <script src="/app/js/api.js"></script>
+  <script src="/app/js/ui.js"></script>
   <script>
     if (!requireAuth()) throw new Error('auth');
     const user = getUser();
     if (user.organization_type !== 'government') redirectByRole(user);
+    FHS.mountLayout('govt', 'dashboard');
+
+    document.getElementById('page-header').innerHTML = FHS.renderPageHeader({
+      title: 'Government MSME Dashboard',
+      subtitle: 'MSME Ministry · National registry & scheme intelligence',
+    });
+    document.getElementById('welcome').innerHTML = FHS.renderWelcomeBanner('govt');
 
     api('/api/v1/govt/dashboard').then(data => {
-      document.getElementById('stats').innerHTML = `
-        <div class="stat-card"><div class="label">Registered MSMEs</div><div class="value">${data.registered_msmes}</div></div>
-        <div class="stat-card"><div class="label">Scheme Applications</div><div class="value">${data.scheme_applications}</div></div>
-        <div class="stat-card"><div class="label">Avg Portfolio Score</div><div class="value">${data.avg_portfolio_score ?? '—'}</div></div>
-      `;
+      document.getElementById('stats').innerHTML = [
+        FHS.renderStatCard('Registered MSMEs', data.registered_msmes, { icon: 'users' }),
+        FHS.renderStatCard('Scheme Applications', data.scheme_applications, { icon: 'schemes' }),
+        FHS.renderStatCard('Avg Portfolio Score', data.avg_portfolio_score ?? '—', { icon: 'score', variant: 'success' }),
+      ].join('');
+
       const msmes = data.msmes || [];
       document.getElementById('msmes').innerHTML = msmes.length ? `
-        <table><thead><tr><th>Business</th><th>Sector</th><th>Score</th><th>Grade</th><th></th></tr></thead>
-        <tbody>${msmes.map(m => `<tr>
-          <td>${m.business_name}<br><small>${m.msme_id}</small></td>
-          <td>${m.sector || '—'}</td>
-          <td>${m.latest_score?.toFixed?.(1) ?? '—'}</td>
-          <td>${m.latest_grade || '—'}</td>
-          <td><a class="btn btn-sm btn-accent" href="/app/govt/schemes.html?msme=${m.msme_id}">AI Scheme Advisory</a></td>
-        </tr>`).join('')}</tbody></table>` : '<p>No MSMEs registered.</p>';
+        <div class="table-wrap"><table>
+          <thead><tr><th>Business</th><th>Sector</th><th>Score</th><th>Grade</th><th></th></tr></thead>
+          <tbody>${msmes.map(m => `<tr>
+            <td><strong>${m.business_name}</strong><br><small style="color:var(--muted)">${m.msme_id}</small></td>
+            <td>${m.sector || '—'}</td>
+            <td>${m.latest_score != null ? `<span class="score-cell">${m.latest_score.toFixed(1)}</span>` : '—'}</td>
+            <td>${m.latest_grade ? `<span class="${FHS.gradeClass(m.latest_grade)}">${m.latest_grade}</span>` : '—'}</td>
+            <td><a class="btn btn-sm btn-accent" href="/app/govt/schemes.html?msme=${m.msme_id}">AI Scheme Advisory</a></td>
+          </tr>`).join('')}</tbody>
+        </table></div>` : '<div class="empty-state"><p>No MSMEs registered.</p></div>';
     }).catch(e => alert(e.message));
   </script>
 </body>

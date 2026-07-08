@@ -4,35 +4,40 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Detailed Report — Financial Health Score</title>
+  <link rel="icon" href="/app/assets/favicon.svg" type="image/svg+xml" />
   <link rel="stylesheet" href="/app/css/style.css" />
 </head>
 <body>
   <div class="layout">
-    <aside class="sidebar" style="display:flex;flex-direction:column;min-height:100vh">
-      <div class="brand">Financial Health Score</div>
-      <nav>
-        <a href="/app/bank/dashboard.html">Dashboard</a>
-        <a href="/app/bank/portfolio.html">Portfolio</a>
-      </nav>
-      <div class="user-block"><button class="btn btn-outline btn-sm" style="color:#fff;border-color:rgba(255,255,255,.4)" onclick="logout()">Sign Out</button></div>
-    </aside>
+    <aside class="sidebar"></aside>
     <main class="main">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
-        <h1 class="page-title" style="margin:0">Detailed Credit Report</h1>
-        <div>
-          <button class="btn btn-outline" onclick="window.print()">Print</button>
-          <a class="btn btn-primary" id="html-link" target="_blank">Open Full HTML</a>
-        </div>
-      </div>
-      <div class="card" id="summary">Loading report…</div>
+      <div id="page-header"></div>
+      <div class="card" id="summary"><div class="loading-pulse" style="height:140px"></div></div>
       <iframe class="report-frame" id="report-frame" title="Detailed Report"></iframe>
     </main>
   </div>
   <script src="/app/js/api.js"></script>
+  <script src="/app/js/ui.js"></script>
   <script>
     if (!requireAuth()) throw new Error('auth');
+    const user = getUser();
+    if (!isBankUser(user)) redirectByRole(user);
+    FHS.mountLayout('bank', 'dashboard');
+
     const params = new URLSearchParams(location.search);
     let assessmentId = params.get('id');
+
+    document.getElementById('page-header').innerHTML = `
+      <header class="page-header">
+        <div class="page-header-text">
+          <p class="page-eyebrow">Credit Assessment Report</p>
+          <h1 class="page-title">Detailed Credit Report</h1>
+        </div>
+        <div style="display:flex;gap:.5rem;flex-wrap:wrap">
+          <button class="btn btn-outline" onclick="window.print()">Print</button>
+          <a class="btn btn-primary" id="html-link" target="_blank">Open Full HTML</a>
+        </div>
+      </header>`;
 
     async function load() {
       if (!assessmentId && params.get('msme')) {
@@ -41,7 +46,7 @@
         if (match) assessmentId = match.assessment_id;
       }
       if (!assessmentId) {
-        document.getElementById('summary').innerHTML = '<p>No assessment selected.</p>';
+        document.getElementById('summary').innerHTML = '<div class="empty-state"><p>No assessment selected.</p></div>';
         return;
       }
 
@@ -50,17 +55,14 @@
       document.getElementById('report-frame').src = `/api/v1/reports/${assessmentId}/html`;
 
       document.getElementById('summary').innerHTML = `
-        <div class="score-hero">
-          <div class="score-ring" style="--pct:${report.overall_score}">
-            <span>${report.overall_score.toFixed(1)}</span>
-          </div>
-          <div>
-            <h2 style="font-size:1.4rem;margin-bottom:.25rem">${report.business_name}</h2>
-            <p>Grade <strong>${report.grade}</strong> · Risk ${riskBadge(report.overall_risk_level)}</p>
-            <p style="margin-top:.75rem;color:var(--muted)">${report.executive_summary}</p>
-          </div>
-        </div>
-        <div style="margin-top:1.25rem;padding:1rem;background:var(--accent-light);border-radius:8px">
+        ${FHS.renderScoreHero({
+          score: report.overall_score,
+          grade: report.grade,
+          riskLevel: report.overall_risk_level,
+          title: report.business_name,
+          subtitle: report.executive_summary,
+        })}
+        <div class="alert alert-success" style="margin-top:1.25rem">
           <strong>Credit Decision:</strong> ${report.credit_decision_recommendation}
         </div>`;
     }

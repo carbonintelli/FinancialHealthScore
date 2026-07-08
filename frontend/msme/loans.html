@@ -4,49 +4,55 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Loan Applications — MSME Portal</title>
+  <link rel="icon" href="/app/assets/favicon.svg" type="image/svg+xml" />
   <link rel="stylesheet" href="/app/css/style.css" />
 </head>
 <body>
   <div class="layout">
-    <aside class="sidebar" style="display:flex;flex-direction:column;min-height:100vh">
-      <div class="brand">Financial Health Score</div>
-      <nav>
-        <a href="/app/msme/dashboard.html">Dashboard</a>
-        <a href="/app/msme/assess.html">Run Assessment</a>
-        <a href="/app/msme/loans.html" class="active">Loan Applications</a>
-      </nav>
-      <div class="user-block"><button class="btn btn-outline btn-sm" style="color:#fff;border-color:rgba(255,255,255,.4)" onclick="logout()">Sign Out</button></div>
-    </aside>
+    <aside class="sidebar"></aside>
     <main class="main">
-      <h1 class="page-title">My Loan Applications</h1>
-      <div class="card" id="loans">Loading…</div>
+      <div id="page-header"></div>
+      <div class="card" id="loans"><div class="loading-pulse"></div></div>
     </main>
   </div>
   <script src="/app/js/api.js"></script>
+  <script src="/app/js/ui.js"></script>
   <script>
     if (!requireAuth()) throw new Error('auth');
     const user = getUser();
     if (!isMsmeUser(user)) redirectByRole(user);
+    FHS.mountLayout('msme', 'loans');
+
+    document.getElementById('page-header').innerHTML = FHS.renderPageHeader({
+      title: 'My Loan Applications',
+      subtitle: 'Track your loan requests to IDBI Bank',
+    });
 
     api('/api/v1/msme/loans').then(loans => {
       if (!loans.length) {
-        document.getElementById('loans').innerHTML = '<p style="color:var(--muted)">No applications yet. <a href="/app/msme/assess.html">Submit one</a></p>';
+        document.getElementById('loans').innerHTML = `
+          <div class="empty-state">
+            <div class="empty-state-icon">${FHS.ICONS.loans}</div>
+            <h4>No applications yet</h4>
+            <p style="margin-bottom:1rem">Complete an assessment first, then apply for MSME financing.</p>
+            <a class="btn btn-accent" href="/app/msme/assess.html">Run Assessment & Apply</a>
+          </div>`;
         return;
       }
       document.getElementById('loans').innerHTML = `
-        <table>
+        <div class="table-wrap"><table>
           <thead><tr><th>Reference</th><th>Type</th><th>Amount</th><th>Status</th><th>Submitted</th><th>Notes</th></tr></thead>
           <tbody>${loans.map(l => `
             <tr>
-              <td>${l.application_ref}</td>
-              <td>${l.loan_type}</td>
+              <td><code>${l.application_ref}</code></td>
+              <td>${l.loan_type.replace(/_/g, ' ')}</td>
               <td>${formatInr(l.amount_inr)}</td>
-              <td><span class="badge">${l.status}</span></td>
+              <td><span class="badge badge-moderate">${l.status}</span></td>
               <td>${formatDate(l.created_at)}</td>
               <td>${l.reviewer_notes || '—'}</td>
             </tr>
           `).join('')}</tbody>
-        </table>`;
+        </table></div>`;
     }).catch(e => alert(e.message));
   </script>
 </body>

@@ -4,38 +4,71 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Login — Financial Health Score</title>
+  <link rel="icon" href="/app/assets/favicon.svg" type="image/svg+xml" />
   <link rel="stylesheet" href="/app/css/style.css" />
 </head>
 <body>
   <div class="login-page">
-    <div class="login-card" style="max-width:520px">
-      <h1>Financial Health Score</h1>
-      <p class="tagline">IDBI Innovate 2026 · Multi-Stakeholder MSME Intelligence Platform</p>
-
-      <div class="role-tabs" style="flex-wrap:wrap">
-        <div class="role-tab active" data-role="bank">Bank</div>
-        <div class="role-tab" data-role="msme">MSME</div>
-        <div class="role-tab" data-role="government">Government</div>
-        <div class="role-tab" data-role="regulatory">Regulatory</div>
+    <div class="login-brand-panel">
+      <div class="login-brand-content">
+        <div class="login-logo-wrap">
+          <img src="/app/assets/logo.svg" alt="Financial Health Score" width="72" height="72" />
+          <div>
+            <div class="login-brand-title">Financial Health Score</div>
+            <p class="login-brand-tagline">AI-powered 20-dimension MSME intelligence for banks, businesses, government & regulators</p>
+          </div>
+        </div>
+        <ul class="login-features">
+          <li>
+            <span class="login-feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20V10"/><path d="M18 20V4"/><path d="M6 20v-4"/></svg></span>
+            <span><strong>20-Dimension Scoring</strong> — liquidity, compliance, carbon risk, alternative data & more</span>
+          </li>
+          <li>
+            <span class="login-feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg></span>
+            <span><strong>27 AI Agents</strong> — multi-phase orchestration for credit, risk & reporting</span>
+          </li>
+          <li>
+            <span class="login-feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg></span>
+            <span><strong>4 Stakeholder Portals</strong> — Bank, MSME, Government & Regulatory access</span>
+          </li>
+        </ul>
+        <div class="login-competition">IDBI Innovate 2026 · SUSTAINOW TECHNOLOGIES</div>
       </div>
+    </div>
 
-      <div id="alert"></div>
-
-      <form id="login-form">
-        <div class="form-group">
-          <label for="email">Email</label>
-          <input type="email" id="email" required />
+    <div class="login-form-panel">
+      <div class="login-card">
+        <div class="login-card-header">
+          <img src="/app/assets/logo.svg" alt="" width="52" height="52" class="login-mobile-logo" />
+          <h1>Welcome back</h1>
+          <p class="tagline">Sign in to your stakeholder portal</p>
         </div>
-        <div class="form-group">
-          <label for="password">Password</label>
-          <input type="password" id="password" required />
-        </div>
-        <button type="submit" class="btn btn-primary" style="width:100%;margin-top:.5rem">Sign In</button>
-      </form>
 
-      <div class="demo-creds" id="demo-creds">
-        <strong>Demo credentials</strong>
-        <div id="cred-list" style="margin-top:.5rem"></div>
+        <div class="role-tabs">
+          <div class="role-tab active" data-role="bank">Bank</div>
+          <div class="role-tab" data-role="msme">MSME</div>
+          <div class="role-tab" data-role="government">Government</div>
+          <div class="role-tab" data-role="regulatory">Regulatory</div>
+        </div>
+
+        <div id="alert"></div>
+
+        <form id="login-form">
+          <div class="form-group">
+            <label for="email">Email address</label>
+            <input type="email" id="email" placeholder="you@company.in" required autocomplete="username" />
+          </div>
+          <div class="form-group">
+            <label for="password">Password</label>
+            <input type="password" id="password" placeholder="••••••••" required autocomplete="current-password" />
+          </div>
+          <button type="submit" class="btn btn-primary btn-lg" style="width:100%;margin-top:.25rem">Sign In</button>
+        </form>
+
+        <div class="demo-creds" id="demo-creds">
+          <strong>Demo credentials</strong>
+          <div id="cred-list"></div>
+        </div>
       </div>
     </div>
   </div>
@@ -64,9 +97,9 @@
 
     function renderDemoCreds() {
       const list = (demos[selectedRole] || []).map(d =>
-        `<div style="margin:.35rem 0"><code>${d.email}</code> / <code>${d.password}</code> — ${d.role}</div>`
+        `<div class="demo-cred-item"><code>${d.email}</code> · <code>${d.password}</code><br><small>${d.role}</small></div>`
       ).join('');
-      document.getElementById('cred-list').innerHTML = list;
+      document.getElementById('cred-list').innerHTML = list || '<div class="demo-cred-item">Loading…</div>';
     }
 
     fetch(`${API_BASE}/api/v1/auth/demo-credentials`)
@@ -74,14 +107,19 @@
       .then(data => {
         Object.assign(demos, data);
         renderDemoCreds();
-        document.getElementById('email').value = demos.bank[0].email;
-        document.getElementById('password').value = demos.bank[0].password;
+        if (demos.bank[0]) {
+          document.getElementById('email').value = demos.bank[0].email;
+          document.getElementById('password').value = demos.bank[0].password;
+        }
       });
 
     document.getElementById('login-form').addEventListener('submit', async e => {
       e.preventDefault();
       const alert = document.getElementById('alert');
       alert.innerHTML = '';
+      const btn = e.target.querySelector('button[type=submit]');
+      btn.disabled = true;
+      btn.textContent = 'Signing in…';
       try {
         const res = await api('/api/v1/auth/login', {
           method: 'POST',
@@ -94,6 +132,8 @@
         redirectByRole(res.user);
       } catch (err) {
         alert.innerHTML = `<div class="alert alert-error">${err.message}</div>`;
+        btn.disabled = false;
+        btn.textContent = 'Sign In';
       }
     });
   </script>

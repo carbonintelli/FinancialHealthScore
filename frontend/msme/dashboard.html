@@ -4,42 +4,37 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>MSME Dashboard — Financial Health Score</title>
+  <link rel="icon" href="/app/assets/favicon.svg" type="image/svg+xml" />
   <link rel="stylesheet" href="/app/css/style.css" />
 </head>
 <body>
   <div class="layout">
-    <aside class="sidebar" style="display:flex;flex-direction:column;min-height:100vh">
-      <div class="brand">Financial Health Score</div>
-      <div class="sub">MSME Portal</div>
-      <nav>
-        <a href="/app/msme/dashboard.html" class="active">Dashboard</a>
-        <a href="/app/msme/assess.html">Run Assessment</a>
-        <a href="/app/msme/loans.html">Loan Applications</a>
-      </nav>
-      <div class="user-block">
-        <div id="user-name"></div>
-        <button class="btn btn-outline btn-sm" style="margin-top:.75rem;color:#fff;border-color:rgba(255,255,255,.4)" onclick="logout()">Sign Out</button>
-      </div>
-    </aside>
+    <aside class="sidebar"></aside>
     <main class="main">
-      <h1 class="page-title" id="biz-name">MSME Dashboard</h1>
+      <div id="page-header"></div>
+      <div id="welcome"></div>
       <div class="stats-grid" id="stats"></div>
-      <div class="card">
-        <h3>Your Financial Health Score</h3>
-        <div id="score-block">Loading…</div>
+      <div class="card" id="score-card">
+        <div class="card-header"><h3>Your Financial Health Score</h3></div>
+        <div id="score-block"><div class="loading-pulse" style="height:120px"></div></div>
+      </div>
+      <div class="card" id="dims-card" style="display:none">
+        <div class="card-header"><h3>Dimension Breakdown</h3></div>
+        <div id="dim-bars"></div>
       </div>
       <div class="card">
-        <h3>Assessment History</h3>
-        <div id="history">Loading…</div>
+        <div class="card-header"><h3>Assessment History</h3></div>
+        <div id="history"><div class="loading-pulse"></div></div>
       </div>
     </main>
   </div>
   <script src="/app/js/api.js"></script>
+  <script src="/app/js/ui.js"></script>
   <script>
     if (!requireAuth()) throw new Error('auth');
     const user = getUser();
     if (!isMsmeUser(user)) redirectByRole(user);
-    document.getElementById('user-name').textContent = user.full_name;
+    FHS.mountLayout('msme', 'dashboard');
 
     async function load() {
       const [dash, history] = await Promise.all([
@@ -47,47 +42,72 @@
         api('/api/v1/msme/assessments'),
       ]);
 
-      document.getElementById('biz-name').textContent = dash.business_name;
-      document.getElementById('stats').innerHTML = `
-        <div class="stat-card"><div class="label">Latest Score</div><div class="value">${dash.latest_score?.toFixed(1) ?? '—'}</div></div>
-        <div class="stat-card"><div class="label">Grade</div><div class="value">${dash.latest_grade ?? '—'}</div></div>
-        <div class="stat-card"><div class="label">Open Loans</div><div class="value">${dash.open_loan_applications}</div></div>
-        <div class="stat-card"><div class="label">Improvements</div><div class="value">${dash.improvement_count}</div></div>
-      `;
+      document.getElementById('page-header').innerHTML = FHS.renderPageHeader({
+        title: dash.business_name,
+        subtitle: `MSME ID: ${dash.msme_id || user.msme_id || '—'}`,
+        badge: dash.latest_grade ? `<span class="${FHS.gradeClass(dash.latest_grade)}">${dash.latest_grade}</span>` : '',
+      });
+      document.getElementById('welcome').innerHTML = FHS.renderWelcomeBanner('msme');
+
+      document.getElementById('stats').innerHTML = [
+        FHS.renderStatCard('Latest Score', dash.latest_score?.toFixed(1) ?? '—', { icon: 'score', variant: dash.latest_score >= 70 ? 'success' : '' }),
+        FHS.renderStatCard('Grade', dash.latest_grade ?? '—', { icon: 'check' }),
+        FHS.renderStatCard('Risk Level', dash.latest_risk_level ?? '—', { icon: 'risk', variant: ['elevated','high','critical'].includes(dash.latest_risk_level) ? 'risk' : '' }),
+        FHS.renderStatCard('Open Loans', dash.open_loan_applications, { icon: 'loans' }),
+        FHS.renderStatCard('Improvements', dash.improvement_count, { icon: 'trend' }),
+      ].join('');
 
       if (dash.latest_score != null) {
-        document.getElementById('score-block').innerHTML = `
-          <div class="score-hero">
-            <div class="score-ring" style="--pct:${dash.latest_score}"><span>${dash.latest_score.toFixed(1)}</span></div>
-            <div>
-              <p>Grade <strong>${dash.latest_grade}</strong> · ${riskBadge(dash.latest_risk_level)}</p>
-              <p style="color:var(--muted);margin-top:.5rem">Last assessed ${formatDate(dash.last_assessed_at)}</p>
-              <a class="btn btn-primary" style="margin-top:1rem" href="/app/msme/report.html">View Detailed Report</a>
-            </div>
-          </div>`;
+        document.getElementById('score-block').innerHTML = FHS.renderScoreHero({
+          score: dash.latest_score,
+          grade: dash.latest_grade,
+          riskLevel: dash.latest_risk_level,
+          title: 'Your Financial Health Score',
+          subtitle: `Last assessed ${formatDate(dash.last_assessed_at)} · 20 dimensions analysed with AI agent validation`,
+          ctaHtml: `<div style="display:flex;flex-wrap:wrap;gap:.5rem;margin-top:.5rem">
+            <a class="btn btn-primary" href="/app/msme/report.html">View Detailed Report</a>
+            <a class="btn btn-outline" href="/app/msme/assess.html">Run New Assessment</a>
+          </div>`,
+        });
+
+        const latest = history[0];
+        if (latest) {
+          try {
+            const full = await api(`/api/v1/reports/${latest.assessment_id}`);
+            const dims = full.dimension_scores || full.dimension_breakdown;
+            if (dims?.length) {
+              document.getElementById('dims-card').style.display = '';
+              document.getElementById('dim-bars').innerHTML = FHS.renderDimensionBars(dims);
+            }
+          } catch (_) { /* optional */ }
+        }
       } else {
         document.getElementById('score-block').innerHTML = `
-          <p style="color:var(--muted);margin-bottom:1rem">No assessment yet. Run your first Financial Health Score.</p>
-          <a class="btn btn-accent" href="/app/msme/assess.html">Run Assessment</a>`;
+          <div class="empty-state">
+            <div class="empty-state-icon">${FHS.ICONS.assess}</div>
+            <h4>No assessment yet</h4>
+            <p style="margin-bottom:1rem">Run your first 20-dimension Financial Health Score to unlock credit insights and loan applications.</p>
+            <a class="btn btn-accent btn-lg" href="/app/msme/assess.html">Run Assessment</a>
+          </div>`;
       }
 
       if (!history.length) {
-        document.getElementById('history').innerHTML = '<p style="color:var(--muted)">No history yet.</p>';
+        document.getElementById('history').innerHTML = '<p class="card-desc">No assessment history yet.</p>';
         return;
       }
       document.getElementById('history').innerHTML = `
-        <table>
+        <div class="table-wrap"><table>
           <thead><tr><th>Date</th><th>Score</th><th>Grade</th><th>Risk</th><th></th></tr></thead>
           <tbody>${history.map(a => `
             <tr>
               <td>${formatDate(a.created_at)}</td>
-              <td><strong>${a.overall_score.toFixed(1)}</strong></td>
-              <td>${a.grade}</td>
+              <td><span class="score-cell">${a.overall_score.toFixed(1)}</span></td>
+              <td><span class="${FHS.gradeClass(a.grade)}">${a.grade}</span></td>
               <td>${riskBadge(a.overall_risk_level)}</td>
               <td><a class="btn btn-sm btn-primary" href="/app/msme/report.html?id=${a.assessment_id}">Report</a></td>
             </tr>
           `).join('')}</tbody>
-        </table>`;
+        </table></div>`;
     }
     load().catch(e => alert(e.message));
   </script>
