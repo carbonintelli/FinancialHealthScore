@@ -24,13 +24,13 @@ Each dimension produces a score (0–100), risk level, confidence, and evidence-
 
 ### Target Users
 
-- **Credit Teams** — Complement traditional MSME credit assessment
-- **Risk Teams** — Identify early financial and operational risk signals
-- **Relationship Managers** — Discover green-finance opportunities
-- **Portfolio Analysts** — Improve credit monitoring and portfolio intelligence
-- **MSME Owners** — Self-assessment, improvement guidance, loan applications
-- **Government & SIDBI** — Scheme recommendations and MSME registry oversight
-- **Regulatory Bodies** — RBI, GSTN, MCA compliance review workflows
+- **Credit Analysts** — Complement traditional MSME credit underwriting
+- **Risk Officers** — Identify early financial and operational risk signals
+- **Relationship Managers** — Discover ESG-linked and green-finance opportunities
+- **Portfolio Analysts** — Monitor lending book credit health and FHS trends
+- **Enterprise Proprietors (MSME)** — Self-assessment, improvement guidance, credit facility applications
+- **Government & SIDBI** — Scheme eligibility advisory and national MSME registry oversight
+- **Regulatory Supervisors** — RBI, GSTN, MCA compliance review workflows
 
 ## Quick Start (Node.js — recommended)
 
@@ -49,7 +49,7 @@ Legacy Python-only server: `python run.py`
 
 Server starts at **http://localhost:8080**
 
-- **Platform Login**: http://localhost:8080/app/index.html
+- **Platform Sign In**: http://localhost:8080/app/index.html
 - **API Root**: http://localhost:8080/api
 - **Demo Assessment**: http://localhost:8080/api/v1/assess/demo
 - **Health Check**: http://localhost:8080/api/v1/health
@@ -60,9 +60,9 @@ Server starts at **http://localhost:8080**
 
 | Portal | Email | Password |
 |---|---|---|
-| Bank Admin | `admin@idbi.bank.in` | `IDBI@2026` |
-| Credit Team | `credit@idbi.bank.in` | `IDBI@2026` |
-| MSME Owner | `rajesh@shreeganesh.in` | `MSME@2026` |
+| Lending Institution (Admin) | `admin@idbi.bank.in` | `IDBI@2026` |
+| Credit Analyst | `credit@idbi.bank.in` | `IDBI@2026` |
+| Enterprise Proprietor | `rajesh@shreeganesh.in` | `MSME@2026` |
 | MSME Ministry | `admin@msme.gov.in` | `GOVT@2026` |
 | RBI Supervisor | `supervisor@rbi.org.in` | `REG@2026` |
 
@@ -72,9 +72,10 @@ See [docs/NODE_PLATFORM.md](docs/NODE_PLATFORM.md) and [docs/PLATFORM.md](docs/P
 
 | Document | Description |
 |---|---|
+| [docs/TERMINOLOGY.md](docs/TERMINOLOGY.md) | Banking & MSME terminology, portal labels, status mappings |
 | [docs/AGENTIC_ARCHITECTURE.md](docs/AGENTIC_ARCHITECTURE.md) | Multi-phase agentic AI orchestration (27 agents, 6 phases) |
 | [docs/NODE_PLATFORM.md](docs/NODE_PLATFORM.md) | Node.js server, AI agents, multi-stakeholder architecture |
-| [docs/PLATFORM.md](docs/PLATFORM.md) | Login, bank & MSME portals, loan workflow, detailed reports |
+| [docs/PLATFORM.md](docs/PLATFORM.md) | Sign-in, stakeholder portals, credit workflow, assessment reports |
 | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | System context, request flow, component map, testing strategy |
 | [docs/API.md](docs/API.md) | REST endpoint reference |
 | [docs/SCORING.md](docs/SCORING.md) | 20-dimension scoring model and grade bands |
@@ -113,9 +114,11 @@ Without an API key, the service runs in **demo mode** with realistic mock carbon
 | `GET` | `/api/v1/auth/demo-credentials` | Demo logins (all stakeholders) |
 | `POST` | `/api/v1/auth/login` | JWT authentication |
 | `GET` | `/api/v1/agents/architecture` | 27-agent orchestration metadata |
-| `GET` | `/api/v1/bank/dashboard` | Bank portfolio stats (auth) |
-| `POST` | `/api/v1/bank/assess/{msme_id}` | Assess portfolio MSME + agents (auth) |
-| `POST` | `/api/v1/msme/assess/quick` | MSME self-assessment + agents (auth) |
+| `POST` | `/api/v1/auth/register` | MSME enterprise registration + optional FHS on signup |
+| `GET` | `/api/v1/bank/dashboard` | Lending portfolio stats (auth) |
+| `POST` | `/api/v1/bank/assess/{msme_id}` | Initiate credit assessment for portfolio MSME (auth) |
+| `POST` | `/api/v1/msme/assess/quick` | Enterprise credit assessment (auth) |
+| `POST` | `/api/v1/msme/data-feed` | Submit financial data + optional FHS recalculation (auth) |
 | `GET` | `/api/v1/govt/dashboard` | Government MSME registry (auth) |
 | `POST` | `/api/v1/regulatory/review/{msme_id}` | Regulatory compliance review (auth) |
 | `GET` | `/api/v1/reports/{id}` | Detailed JSON credit report (auth) |
@@ -202,6 +205,7 @@ Women-led MSMEs receive a **governance score bonus** (up to +2.5 points on overa
 │   │   ├── index.ts         # Express entry
 │   │   ├── app.ts           # App factory (tests + snapshots)
 │   │   ├── routes/          # Auth + API routes
+│   │   ├── services/scoring/ # Node.js 20-dimension scoring engine (default)
 │   │   ├── services/agents/ # 27-agent orchestration
 │   │   ├── db/              # SQLite + seed data
 │   │   └── data/            # Government policy catalog
@@ -210,11 +214,15 @@ Women-led MSMEs receive a **governance score bonus** (up to +2.5 points on overa
 │   ├── scoring_bridge.py    # Python scoring bridge
 │   └── tests/               # Vitest (platform + snapshots)
 ├── frontend/                # Multi-stakeholder web portals
-│   ├── index.html           # Login (bank / MSME / govt / regulatory)
-│   ├── bank/                # Bank dashboard, portfolio, loans, reports
-│   ├── msme/                # MSME dashboard, assess, loans, reports
-│   ├── govt/                # Government scheme portal
-│   └── regulatory/          # Regulatory compliance portal
+│   ├── index.html           # Sign-in (lending institution / enterprise / govt / regulatory)
+│   ├── js/
+│   │   ├── terminology.js   # Banking & MSME label registry
+│   │   ├── api.js             # API client + formatters
+│   │   └── ui.js              # Shared layout & components
+│   ├── bank/                # Executive dashboard, lending portfolio, credit applications
+│   ├── msme/                # Enterprise dashboard, credit assessment, registration
+│   ├── govt/                # National MSME dashboard & scheme advisory
+│   └── regulatory/          # Supervisory dashboard & compliance review
 ├── app/                     # Python scoring engine + legacy FastAPI
 │   ├── services/scoring_engine.py
 │   ├── services/integrations.py
@@ -232,7 +240,7 @@ Women-led MSMEs receive a **governance score bonus** (up to +2.5 points on overa
 ## Running Tests
 
 ```bash
-# Node.js platform + snapshot regression (23 tests)
+# Node.js platform + snapshot regression (35 tests)
 cd server && npm test
 
 # Regenerate golden-file snapshots after API changes

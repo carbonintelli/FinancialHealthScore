@@ -1,6 +1,6 @@
 # Agentic AI Architecture
 
-Multi-phase agentic orchestration for the 20-dimension Financial Health Score platform.
+Multi-phase agentic orchestration for the 20-dimension Financial Health Score (FHS) credit intelligence platform.
 
 ## Overview
 
@@ -23,7 +23,7 @@ flowchart TB
         R[risk_synthesis]
     end
 
-    subgraph Phase4["Phase 4: Health Score Validation"]
+    subgraph Phase4["Phase 4: FHS Validation"]
         H[health_score_synthesis]
     end
 
@@ -51,14 +51,14 @@ Each scoring dimension has a dedicated agent with a specialized role:
 | Dimension | Agent Role | Weight |
 |---|---|---|
 | financial_resilience | Liquidity & leverage analyst | 9% |
-| founder_capability | Key-person risk analyst | 8% |
+| founder_capability | Promoter capability analyst | 8% |
 | cash_flow_health | Cash flow analyst | 7% |
-| payment_behaviour | Payment behaviour analyst | 7% |
+| payment_behaviour | Payment discipline analyst | 7% |
 | credit_history_debt_servicing | Credit bureau analyst | 6% |
 | operational_stability | Operations analyst | 6% |
 | legal_compliance | Legal compliance analyst | 6% |
 | carbon_transition_risk | Carbon transition analyst | 5% |
-| alternative_data_signals | Alternative data analyst | 5% |
+| alternative_data_signals | Alternative credit signals analyst | 5% |
 | market_sentiment | Market sentiment analyst | 5% |
 | tax_compliance | Tax compliance analyst | 4% |
 | operational_certifications | Certification analyst | 4% |
@@ -66,9 +66,9 @@ Each scoring dimension has a dedicated agent with a specialized role:
 | product_demand_outlook | Demand forecast analyst | 4% |
 | esg_disclosure | ESG disclosure analyst | 4% |
 | supply_chain_resilience | Supply chain stress analyst | 4% |
-| governance_diversity | Governance analyst | 3% |
+| governance_diversity | Corporate governance analyst | 3% |
 | insurance_business_continuity | Insurance adequacy analyst | 3% |
-| geographic_risk | Geographic risk analyst | 3% |
+| geographic_risk | Geographic concentration risk analyst | 3% |
 | peer_benchmark | Peer benchmarking analyst | 3% |
 
 ### Dimension Agent Output
@@ -87,12 +87,12 @@ Each dimension agent produces:
 
 Aggregates all 20 dimension agents into a composite risk profile:
 
-- `composite_risk_level` — low / moderate / elevated / high / critical
+- `composite_risk_level` — credit risk rating (`low` … `critical`; display labels in [TERMINOLOGY.md](./TERMINOLOGY.md))
 - `flagged_dimensions` — dimensions below thresholds
 - `mitigation_priorities` — ordered remediation actions
 - Aligns with system `risk_indicators`
 
-### Health Score Synthesis Agent
+### FHS Synthesis Agent (`health_score_synthesis`)
 
 Validates the computed Financial Health Score:
 
@@ -107,7 +107,7 @@ Generates the final credit assessment report:
 
 - Executive summary (LLM-enhanced)
 - Credit decision recommendation
-- Stakeholder-specific summaries (bank, MSME, government, regulatory)
+- Stakeholder-specific summaries (lending institution, enterprise, government, regulatory)
 - 9 report sections
 
 ## API Endpoints

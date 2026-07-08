@@ -1,8 +1,8 @@
 # Architecture
 
-Financial Health Score is a **Node.js Express** platform (v2.1) that ingests consented MSME financial, operational, and alternative data, enriches it via external integrations and AI agents, and produces an explainable **20-dimension Financial Health Score** for banks, MSMEs, government bodies, and regulators.
+Financial Health Score (FHS) is a **Node.js Express** platform (v2.1) that ingests consented MSME financial, operational, and alternative data, enriches it via external integrations and AI agents, and produces an explainable **20-dimension Financial Health Score** for lending institutions, enterprises, government bodies, and regulators.
 
-The scoring engine runs in **Python** (`app/services/scoring_engine.py`) and is invoked by the Node server via `server/scoring_bridge.py` for dimension parity. A legacy **FastAPI** server (`python run.py`) remains available for Python-only deployments.
+The **Node.js scoring engine** (`server/src/services/scoring/`) is the default runtime (`SCORING_ENGINE=node`). A legacy **Python** bridge (`server/scoring_bridge.py` → `app/services/scoring_engine.py`) remains available for comparison. A legacy **FastAPI** server (`python run.py`) is also available for Python-only deployments.
 
 Developed for **IDBI Innovate 2026** by SUSTAINOW TECHNOLOGIES.
 
@@ -11,21 +11,22 @@ Developed for **IDBI Innovate 2026** by SUSTAINOW TECHNOLOGIES.
 ```mermaid
 flowchart TB
     subgraph Clients
-        BANK[Bank Credit / Risk / RM]
-        MSME[MSME Owners]
+        BANK[Lending Institution — Credit / Risk / RM]
+        MSME[Enterprise Proprietors]
         GOVT[Government / SIDBI]
-        REG[Regulatory Bodies]
+        REG[Regulatory Supervisors]
     end
 
     subgraph Node[Node.js Platform — port 8080]
         WEB[Express REST API]
+        SCORE[Node Scoring Engine — 20 dimensions]
         AGENTS[Agentic Orchestrator — 27 agents]
         STORE[SQLite Assessment Store]
         FE[Static Frontend /app/]
     end
 
-    subgraph Python[Python Scoring Bridge]
-        SE[Scoring Engine — 20 dimensions]
+    subgraph Python[Python Scoring — optional fallback]
+        SE[scoring_engine.py]
     end
 
     subgraph External
@@ -51,14 +52,14 @@ flowchart TB
 sequenceDiagram
     participant Client
     participant API as Express API
-    participant Bridge as Python Scoring Bridge
+    participant Score as Node Scoring Engine
     participant Orch as Agent Orchestrator
     participant CI as Carbon Intelligence
     participant DB as SQLite Store
 
     Client->>API: POST /api/v1/msme/assess/quick (JWT)
-    API->>Bridge: assess_demo / assess_request
-    Bridge-->>API: FinancialHealthScoreResult (20 dims)
+    API->>Score: assess() — 20 parallel dimension agents
+    Score-->>API: FinancialHealthScoreResult (20 dims)
     API->>Orch: orchestrateAssessment (27 agents, 6 phases)
     Orch-->>API: agent_insights
     API->>DB: persist assessment + agent_insights
@@ -73,13 +74,15 @@ sequenceDiagram
 | **Auth** | `server/src/routes/auth.ts` | JWT login, demo credentials |
 | **App** | `server/src/app.ts` | Express factory (tests + snapshots) |
 | **Agents** | `server/src/services/agents/` | 27-agent orchestration pipeline |
-| **Scoring** | `server/scoring_bridge.py` → `app/services/scoring_engine.py` | 20-dimension composite score |
-| **Integrations** | `server/src/services/integrations/` | Bureau, tax mock clients |
+| **Scoring** | `server/src/services/scoring/` | Node.js 20-dimension FHS engine (default) |
+| **Scoring (legacy)** | `server/scoring_bridge.py` → `app/services/scoring_engine.py` | Python fallback (`SCORING_ENGINE=python`) |
+| **Integrations** | `server/src/services/integrations/` | Bureau, tax, Tally, Zoho, carbon clients |
+| **MSME** | `server/src/services/msme-*.ts` | Enterprise registration, profile, data feeds |
 | **Policies** | `server/src/data/government-policies.ts` | Scheme catalog by sector |
 | **Store** | `server/src/services/store.ts` | Assessment persistence |
 | **Reports** | `server/src/services/reports/` | JSON + HTML credit reports |
 | **DB** | `server/src/db/` | SQLite schema + seed data |
-| **Frontend** | `frontend/` | Bank, MSME, govt, regulatory portals |
+| **Frontend** | `frontend/` | Stakeholder portals + `js/terminology.js` label registry |
 | **Legacy API** | `app/api/routes.py` | FastAPI endpoints (optional) |
 
 ## Agentic Orchestration
@@ -164,8 +167,9 @@ Every assessment returns:
 
 | Field | Description |
 |---|---|
-| `overall_score` | Weighted 0–100 composite |
-| `grade` | Letter grade A+ to F |
+| `overall_score` | FHS — weighted 0–100 composite |
+| `grade` | Credit grade (A+ to F) |
+| `overall_risk_level` | Credit risk rating (`low` … `critical`) |
 | `dimension_scores` | 20 scored dimensions with insights |
 | `risk_indicators` | Actionable risk flags |
 | `key_insights` | Top narrative insights |
@@ -194,7 +198,7 @@ Legacy Python server: `python run.py` (FastAPI with `/docs` OpenAPI UI).
 
 | Suite | Command | Coverage |
 |---|---|---|
-| Node platform + agents | `cd server && npm test` | 23 Vitest tests (platform + snapshots) |
+| Node platform + agents | `cd server && npm test` | 35 Vitest tests (platform + snapshots + scoring) |
 | Python scoring unit | `pytest tests/test_scoring.py -v` | Dimension scorers, engine |
 | Python advanced | `pytest tests/test_advanced.py -v` | ESG, peer, geo, supply chain |
 | Python integrations | `pytest tests/test_integrations.py -v` | Bureau, tax, legal clients |

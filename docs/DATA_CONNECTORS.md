@@ -1,6 +1,6 @@
 # Data Connectors & Carbon Intelligence
 
-Import MSME financial data from **Tally** or **Zoho Books**, enrich with **Sustainow Carbon Intelligence** (ci.sustainow.in), and calculate the 20-dimension Financial Health Score.
+Import MSME financial data from **Tally ERP** or **Zoho Books**, enrich with **Sustainow Carbon Intelligence** (ci.sustainow.in), and compute the 20-dimension **Financial Health Score (FHS)**.
 
 ## Architecture
 
@@ -15,7 +15,7 @@ flowchart LR
     subgraph Node Platform
         IMP[Data Import Service]
         SUS[Sustainability Report]
-        BR[Python Scoring Bridge]
+        SCORE[Node Scoring Engine]
         AG[27-Agent Orchestration]
     end
 
@@ -23,8 +23,8 @@ flowchart LR
     Z --> IMP
     CI --> IMP
     IMP --> SUS
-    IMP --> BR
-    BR --> AG
+    IMP --> SCORE
+    SCORE --> AG
 ```
 
 ## Connectors
@@ -83,13 +83,13 @@ Content-Type: application/json
 POST /api/v1/msme/assess/import
 ```
 
-1. Pull accounting data from Tally or Zoho
+1. Pull accounting data from Tally ERP or Zoho Books
 2. Fetch ci.sustainow.in carbon + transaction + reporting data
 3. Build sustainability report
 4. Merge into assessment request
-5. Run Python 20-dimension scoring engine
+5. Run Node.js 20-dimension FHS scoring engine
 6. Run 27-agent orchestration
-7. Persist assessment + return score
+7. Persist credit assessment + return FHS
 
 ### Standalone imports
 
@@ -100,17 +100,19 @@ POST /api/v1/msme/assess/import
 | `GET` | `/api/v1/integrations/carbon/{msme_id}` | Full CI intelligence bundle |
 | `GET` | `/api/v1/integrations/carbon/catalog` | CI partner API catalog |
 
-## MSME Portal
+## Enterprise Portal — ERP Data Integration
 
-**Import Data** page: `/app/msme/import.html`
+**ERP Data Integration** page: `/app/msme/import.html`
 
-1. Select Tally or Zoho
+1. Select Tally ERP or Zoho Books connector
 2. Preview imported P&L, cash flows, and sustainability metrics
-3. Run full Financial Health Score calculation
+3. Initiate full Financial Health Score credit assessment
 
-## Why Python bridge for scoring?
+## Scoring Engine
 
-The scoring engine (`app/services/scoring_engine.py`) remains in Python. Imported data is passed to `scoring_bridge.py` together with Carbon Intelligence payloads — same path as manual assessments. See [NODE_PLATFORM.md](./NODE_PLATFORM.md).
+Imported data is passed to the **Node.js scoring engine** (`server/src/services/scoring/`) together with Carbon Intelligence payloads — the same path as manual assessments and financial data submissions.
+
+Set `SCORING_ENGINE=python` to use the legacy Python bridge instead. See [NODE_PLATFORM.md](./NODE_PLATFORM.md).
 
 ## Environment
 

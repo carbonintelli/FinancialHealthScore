@@ -1,54 +1,58 @@
 # Platform — Multi-Stakeholder Portals
 
-Full-stack Financial Health Score platform with JWT authentication, role-based access, **27-agent orchestration**, assessment persistence, loan workflow, and detailed HTML credit reports.
+Full-stack Financial Health Score (FHS) platform with JWT authentication, role-based access, **27-agent orchestration**, credit assessment persistence, credit facility workflow, and detailed HTML credit assessment reports.
 
 **Runtime:** Node.js Express v2.1 (`cd server && npm run dev`)
 
+UI copy uses formal banking and MSME terminology. See [TERMINOLOGY.md](./TERMINOLOGY.md).
+
 ## Access
 
-| Portal | URL |
-|---|---|
-| **Login** | http://localhost:8080/app/index.html |
-| **Bank Dashboard** | http://localhost:8080/app/bank/dashboard.html |
-| **MSME Portal** | http://localhost:8080/app/msme/dashboard.html |
-| **Government Portal** | http://localhost:8080/app/govt/dashboard.html |
-| **Regulatory Portal** | http://localhost:8080/app/regulatory/dashboard.html |
-| **API Reference** | [API.md](./API.md) |
+| Portal | URL | Description |
+|---|---|---|
+| **Sign In** | http://localhost:8080/app/index.html | Stakeholder authentication |
+| **Lending Institution** | http://localhost:8080/app/bank/dashboard.html | Executive dashboard, lending portfolio, credit applications |
+| **Enterprise (MSME)** | http://localhost:8080/app/msme/dashboard.html | Enterprise dashboard, credit assessment, registration |
+| **Government** | http://localhost:8080/app/govt/dashboard.html | National MSME registry & scheme advisory |
+| **Regulatory** | http://localhost:8080/app/regulatory/dashboard.html | Supervisory dashboard & compliance review |
+| **API Reference** | [API.md](./API.md) | REST endpoint reference |
 
 ## Demo Login Credentials
 
-### Bank (IDBI MSME Lending)
+### Lending Institution (IDBI MSME Lending)
 
-| Email | Password | Role |
+| Email | Password | Role (display) |
 |---|---|---|
-| `admin@idbi.bank.in` | `IDBI@2026` | Bank Admin |
-| `credit@idbi.bank.in` | `IDBI@2026` | Credit Team |
-| `risk@idbi.bank.in` | `IDBI@2026` | Risk Team |
+| `admin@idbi.bank.in` | `IDBI@2026` | Bank Administrator |
+| `credit@idbi.bank.in` | `IDBI@2026` | Credit Analyst |
+| `risk@idbi.bank.in` | `IDBI@2026` | Risk Officer |
 | `rm@idbi.bank.in` | `IDBI@2026` | Relationship Manager |
 
-### MSME
+### Enterprise (MSME)
 
-| Email | Password | Business |
+| Email | Password | Enterprise |
 |---|---|---|
 | `rajesh@shreeganesh.in` | `MSME@2026` | Shree Ganesh Auto Components |
 | `founder@greenfab.in` | `MSME@2026` | GreenFab Textiles LLP |
 
+New enterprises can self-register at `/app/msme/register.html` (3-step onboarding wizard).
+
 ### Government
 
-| Email | Password | Role |
+| Email | Password | Role (display) |
 |---|---|---|
-| `admin@msme.gov.in` | `GOVT@2026` | MSME Ministry Admin |
+| `admin@msme.gov.in` | `GOVT@2026` | Ministry Administrator |
 | `schemes@msme.gov.in` | `GOVT@2026` | Scheme Officer |
-| `officer@sidbi.in` | `GOVT@2026` | SIDBI Officer |
+| `officer@sidbi.in` | `GOVT@2026` | SIDBI Credit Officer |
 
 ### Regulatory
 
-| Email | Password | Role |
+| Email | Password | Role (display) |
 |---|---|---|
-| `supervisor@rbi.org.in` | `REG@2026` | RBI Supervisor |
+| `supervisor@rbi.org.in` | `REG@2026` | RBI Supervisory Officer |
 | `compliance@gstn.gov.in` | `REG@2026` | GSTN Compliance Officer |
 | `filings@mca.gov.in` | `REG@2026` | MCA Filing Officer |
-| `nbfc@rbi.org.in` | `REG@2026` | NBFC Reviewer |
+| `nbfc@rbi.org.in` | `REG@2026` | NBFC Credit Reviewer |
 
 Retrieve all credentials via API: `GET /api/v1/auth/demo-credentials`  
 Snapshot: `tests/snapshots/demo_credentials.json`
@@ -57,15 +61,15 @@ Snapshot: `tests/snapshots/demo_credentials.json`
 
 | Role | Access |
 |---|---|
-| `bank_admin` | Full portfolio, assessments, loan decisions |
-| `bank_credit` | Credit-focused assessments and reports |
-| `bank_risk` | Risk-focused assessments |
-| `bank_rm` | Portfolio and relationship management |
-| `msme_owner` | Self-assessment, reports, loan applications |
-| `msme_viewer` | Read-only dashboard and reports |
-| `govt_admin` | MSME registry, scheme recommendations |
-| `govt_scheme_officer` | Scheme catalog and applications |
-| `reg_rbi_supervisor` | Regulatory dashboard and compliance review |
+| `bank_admin` | Full lending portfolio, credit assessments, application decisions |
+| `credit_team` | Credit-focused assessments and credit assessment reports |
+| `risk_team` | Risk-focused assessments and elevated-risk monitoring |
+| `relationship_manager` | Lending portfolio and borrower relationship management |
+| `msme_owner` | Credit assessment, reports, credit facility applications, financial data submission |
+| `msme_viewer` | Read-only enterprise dashboard and reports |
+| `govt_admin` | National MSME registry, scheme advisory |
+| `scheme_officer` | Schemes catalogue and applications |
+| `reg_rbi_supervisor` | Regulatory supervisory dashboard and compliance review |
 | `reg_gstn_officer` / `reg_mca_officer` | Sector-specific regulatory review |
 
 ## Platform Services
@@ -73,26 +77,26 @@ Snapshot: `tests/snapshots/demo_credentials.json`
 ```mermaid
 flowchart LR
     subgraph Frontend
-        LOGIN[Login Portal]
-        BANK[Bank Dashboard]
-        MSME[MSME Portal]
+        LOGIN[Sign In]
+        BANK[Lending Institution Portal]
+        MSME[Enterprise Portal]
         GOVT[Government Portal]
         REG[Regulatory Portal]
     end
 
     subgraph Backend
         AUTH[JWT Auth]
-        ASSESS[Python Scoring Bridge]
+        SCORE[Node Scoring Engine]
         AGENTS[27-Agent Orchestrator]
         STORE[Assessment Store]
-        LOAN[Loan Workflow]
-        REPORT[Report Generator]
+        LOAN[Credit Application Workflow]
+        REPORT[Credit Assessment Reports]
     end
 
     LOGIN --> AUTH
     BANK & MSME & GOVT & REG --> AUTH
-    AUTH --> ASSESS
-    ASSESS --> AGENTS
+    AUTH --> SCORE
+    SCORE --> AGENTS
     AGENTS --> STORE
     STORE --> REPORT
     MSME --> LOAN
@@ -107,24 +111,28 @@ flowchart LR
 | `GET` | `/me` | Current user profile |
 | `GET` | `/demo-credentials` | Demo login list (all stakeholders) |
 
-### Bank (`/api/v1/bank`)
+### Lending Institution (`/api/v1/bank`)
 
 | Method | Path | Description |
 |---|---|---|
-| `GET` | `/dashboard` | Portfolio stats |
-| `GET` | `/portfolio` | MSME list with latest scores |
-| `GET` | `/assessments` | Assessment history |
-| `POST` | `/assess/{msme_id}` | Run assessment + agent orchestration |
-| `GET` | `/loans` | Loan applications |
+| `GET` | `/dashboard` | Executive dashboard stats |
+| `GET` | `/portfolio` | MSME lending portfolio with latest FHS |
+| `GET` | `/assessments` | Credit assessment history |
+| `POST` | `/assess/{msme_id}` | Initiate credit assessment + agent orchestration |
+| `GET` | `/loans` | Credit facility applications |
+| `PATCH` | `/loans/{loan_id}` | Sanction / decline / update application status |
 
-### MSME (`/api/v1/msme`)
+### Enterprise (`/api/v1/msme`)
 
 | Method | Path | Description |
 |---|---|---|
-| `GET` | `/dashboard` | Score summary and stats |
-| `GET` | `/assessments` | Assessment history |
-| `POST` | `/assess/quick` | Quick assessment + 27-agent orchestration |
-| `POST` | `/loans` | Submit loan application |
+| `GET` | `/dashboard` | FHS summary and enterprise stats |
+| `GET` | `/profile` | Enterprise profile & financial statements |
+| `POST` | `/data-feed` | Submit financial data + optional FHS recalculation |
+| `GET` | `/assessments` | Credit assessment history |
+| `POST` | `/assess/quick` | Initiate credit assessment + 27-agent orchestration |
+| `POST` | `/assess/import` | ERP data integration + credit assessment |
+| `POST` | `/loans` | Submit credit facility application |
 
 ### Government (`/api/v1/govt`)
 
@@ -152,7 +160,8 @@ flowchart LR
 | `GET` | `/orchestration/{orchestration_id}` | Retrieve result |
 | `GET` | `/dimension/{dimension_id}` | Single dimension agent output |
 
-See [AGENTIC_ARCHITECTURE.md](./AGENTIC_ARCHITECTURE.md).
+See [AGENTIC_ARCHITECTURE.md](./AGENTIC_ARCHITECTURE.md).  
+Terminology: [TERMINOLOGY.md](./TERMINOLOGY.md).
 
 ### Reports (`/api/v1/reports`)
 
@@ -163,26 +172,26 @@ See [AGENTIC_ARCHITECTURE.md](./AGENTIC_ARCHITECTURE.md).
 
 ## Detailed Report Output
 
-Each stored assessment produces a **Detailed Credit Assessment Report** containing:
+Each stored assessment produces a **Credit Assessment Report** containing:
 
-1. **Executive Summary** — overall score, grade, confidence, strongest/weakest dimensions
+1. **Executive Summary** — FHS, credit grade, confidence, key credit strengths and weaknesses
 2. **Credit Decision Recommendation** — APPROVE / CONDITIONAL / ENHANCED DD / DECLINE
-3. **Agent Orchestration** — 27-agent synthesis (risk, health score, reporting)
-4. **20-Dimension Score Breakdown** — score, weight, risk, confidence per dimension
+3. **Agent Orchestration** — 27-agent synthesis (risk, FHS validation, reporting)
+4. **20-Dimension Credit Analysis** — score, weight, risk rating, confidence per dimension
 5. **Risk Indicators** — severity, evidence, recommended actions
 6. **Key Insights** — evidence-linked narratives
 7. **Data Gaps** — missing fields and remediation
-8. **Recommended Improvements** — actionable MSME guidance
-9. **Green Finance Opportunities** — sustainability-linked lending options
+8. **Recommended Credit Improvement Actions** — actionable enterprise guidance
+9. **Green Finance Opportunities** — ESG-linked lending options
 10. **Carbon Intelligence Summary** — emissions and transition metrics
 
-Access via portal **Report** button, or API endpoints above.
+Access via portal **Credit Assessment Report** view, or API endpoints above.
 
 ## Database
 
 SQLite database at `data/financial_health_node.db` (configurable via `DATABASE_URL`).
 
-Tables: `organizations`, `users`, `portfolio_links`, `assessment_records`, `loan_applications`, `scheme_applications`, `regulatory_submissions`, `agent_runs`, `notifications`.
+Tables: `organizations`, `users`, `msme_profiles`, `msme_data_feeds`, `portfolio_links`, `assessment_records`, `loan_applications`, `scheme_applications`, `regulatory_submissions`, `agent_runs`, `notifications`.
 
 Seeded on startup with IDBI bank, portfolio MSMEs, and demo users across all four stakeholder types.
 

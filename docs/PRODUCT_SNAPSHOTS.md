@@ -4,6 +4,7 @@ Golden-file snapshots of API responses for regression testing against the **Node
 
 Related documentation:
 
+- [TERMINOLOGY.md](./TERMINOLOGY.md) — banking & MSME display labels
 - [ARCHITECTURE.md](./ARCHITECTURE.md) — system design and testing strategy
 - [API.md](./API.md) — full endpoint reference
 - [AGENTIC_ARCHITECTURE.md](./AGENTIC_ARCHITECTURE.md) — 27-agent orchestration
@@ -26,15 +27,15 @@ Legacy Python snapshot generation (`python scripts/generate_snapshots.py`) is de
 | Field | Value |
 |---|---|
 | Business | Shree Ganesh Auto Components Pvt Ltd |
-| Overall Score | 77.3 |
-| Grade | B+ |
-| Risk Level | low |
+| Overall Score (FHS) | 77.3 |
+| Credit Grade | B+ |
+| Credit Risk Rating | `low` (Low Credit Risk) |
 | Dimensions | 20 |
 | Governance Bonus | +1.1 |
 
 ### Dimension Scores (Demo MSME)
 
-| Dimension | Score | Risk |
+| Dimension | Score | Risk rating |
 |---|---|---|
 | financial_resilience | 64.4 | moderate |
 | cash_flow_health | 57.7 | elevated |
