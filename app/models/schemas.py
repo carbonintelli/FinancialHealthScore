@@ -75,6 +75,7 @@ class FounderProfile(BaseModel):
     """Founder/management capability and key-person risk indicators."""
 
     name: str | None = None
+    is_female: bool | None = Field(None, description="Female founder flag for governance diversity scoring")
     years_industry_experience: float | None = Field(None, ge=0, description="Years in the same industry")
     years_entrepreneurship: float | None = Field(None, ge=0, description="Years running own business")
     education_level: str | None = Field(
@@ -108,10 +109,100 @@ class MarketSentiment(BaseModel):
     positive_media_pct: float | None = Field(None, ge=0, le=100)
     customer_retention_rate_pct: float | None = Field(None, ge=0, le=100)
     supplier_trust_score: float | None = Field(None, ge=0, le=100)
-    litigation_count_3y: int = Field(0, ge=0, description="Active or recent litigation cases")
+    litigation_count_3y: int = Field(0, ge=0, description="Deprecated: use legal_compliance for detailed cases")
     gst_compliance_rating: str | None = Field(
         None, description="e.g. excellent, good, average, poor"
     )
+
+
+class LegalCaseRecord(BaseModel):
+    """Individual legal case against company or founder."""
+
+    case_type: str = Field(..., description="civil, criminal, tax, labour, ip, regulatory, arbitration")
+    party: str = Field(..., description="company or founder name")
+    filed_against: str = Field(..., pattern="^(company|founder|director)$")
+    status: str = Field(..., pattern="^(pending|resolved_favorable|resolved_unfavorable|dismissed|appeal)$")
+    amount_at_stake_inr: float | None = Field(None, ge=0)
+    filing_date: date | None = None
+    description: str | None = None
+
+
+class LegalComplianceProfile(BaseModel):
+    """Legal lawsuits and regulatory actions against company and founders."""
+
+    company_lawsuits: list[LegalCaseRecord] = Field(default_factory=list)
+    founder_lawsuits: list[LegalCaseRecord] = Field(default_factory=list)
+    pending_cases_company: int = Field(0, ge=0)
+    pending_cases_founders: int = Field(0, ge=0)
+    resolved_favorable_pct: float | None = Field(None, ge=0, le=100)
+    regulatory_penalties_3y: int = Field(0, ge=0)
+    regulatory_penalty_amount_inr: float | None = Field(None, ge=0)
+    criminal_cases_pending: int = Field(0, ge=0)
+    arbitration_cases_pending: int = Field(0, ge=0)
+
+
+class TaxComplianceProfile(BaseModel):
+    """Income tax and statutory tax payment compliance."""
+
+    itr_filed_on_time_3y: int | None = Field(None, ge=0, le=3, description="ITRs filed on time in last 3 years")
+    income_tax_paid_inr_12m: float | None = Field(None, ge=0)
+    advance_tax_compliance_pct: float | None = Field(None, ge=0, le=100)
+    tds_compliance_pct: float | None = Field(None, ge=0, le=100)
+    gst_filing_compliance_pct: float | None = Field(None, ge=0, le=100)
+    tax_demand_outstanding_inr: float | None = Field(None, ge=0)
+    tax_litigation_pending: bool = False
+    last_itr_acknowledgement: str | None = None
+    tax_clearance_certificate: bool = False
+
+
+class OperationalCertification(BaseModel):
+    name: str
+    certifying_body: str | None = None
+    valid_until: date | None = None
+    scope: str | None = None
+
+
+class OperationalCertificationProfile(BaseModel):
+    """ISO and operational quality/safety certifications."""
+
+    certifications: list[OperationalCertification] = Field(default_factory=list)
+    iso_certifications: list[str] = Field(default_factory=list, description="Legacy: e.g. ISO 9001:2015")
+    last_quality_audit_date: date | None = None
+    quality_audit_passed: bool | None = None
+    certification_coverage_pct: float | None = Field(
+        None, ge=0, le=100, description="% of production lines/processes covered"
+    )
+
+
+class GovernmentComplianceProfile(BaseModel):
+    """Regulatory and statutory government compliance beyond scheme enrollment."""
+
+    labour_law_compliance_pct: float | None = Field(None, ge=0, le=100)
+    pf_esi_compliance_pct: float | None = Field(None, ge=0, le=100)
+    environmental_clearance_valid: bool | None = None
+    pollution_control_board_consent: bool | None = None
+    factory_act_registered: bool | None = None
+    shops_establishment_valid: bool | None = None
+    statutory_audit_completed: bool | None = None
+    mca_annual_filings_current: bool | None = None
+    msme_samadhaan_registered: bool | None = None
+    fire_safety_noc_valid: bool | None = None
+    overall_compliance_score: float | None = Field(None, ge=0, le=100)
+
+
+class GovernanceDiversityProfile(BaseModel):
+    """Board and founder diversity — female leadership improves credit risk profile per RBI/MSME research."""
+
+    female_founders_count: int = Field(0, ge=0)
+    female_directors_count: int = Field(0, ge=0)
+    total_directors: int | None = Field(None, ge=1)
+    women_led_enterprise: bool = Field(
+        False, description="Udyam women-owned enterprise or >=51% women ownership"
+    )
+    women_entrepreneur_scheme_enrolled: bool = Field(
+        False, description="Enrolled in Stand-Up India, MUDRA Mahila, or similar"
+    )
+    board_independence_pct: float | None = Field(None, ge=0, le=100)
 
 
 class ProductLine(BaseModel):
@@ -269,6 +360,11 @@ class FinancialDataInput(BaseModel):
     product_market: ProductMarketProfile | None = None
     government_policy: GovernmentPolicyEnrollment | None = None
     credit_bureau: CreditBureauProfile | None = None
+    legal_compliance: LegalComplianceProfile | None = None
+    tax_compliance: TaxComplianceProfile | None = None
+    operational_certifications: OperationalCertificationProfile | None = None
+    government_compliance: GovernmentComplianceProfile | None = None
+    governance_diversity: GovernanceDiversityProfile | None = None
 
 
 class AssessmentRequest(BaseModel):
@@ -345,6 +441,10 @@ class FinancialHealthScoreResult(BaseModel):
     data_gaps: list[DataGap] = Field(
         default_factory=list,
         description="Missing or incomplete data fields that reduce assessment confidence",
+    )
+    recommended_improvements: list[str] = Field(
+        default_factory=list,
+        description="Actionable recommendations to strengthen Financial Health Score",
     )
     audience_summary: str
     metadata: dict[str, Any] = Field(default_factory=dict)

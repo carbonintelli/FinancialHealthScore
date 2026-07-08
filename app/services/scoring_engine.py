@@ -22,6 +22,7 @@ from app.models.schemas import (
 )
 from app.data.government_policies import get_applicable_policies, get_policy_by_code
 from app.services.credit_ratings import crisil_rating_to_score
+from app.data.certifications import certification_value
 
 
 def _clamp(value: float, low: float = 0.0, high: float = 100.0) -> float:
@@ -74,18 +75,25 @@ class ScoringEngine:
     """Computes explainable Financial Health Scores from financial and carbon data."""
 
     DIMENSION_WEIGHTS = {
-        "financial_resilience": 0.17,
-        "cash_flow_health": 0.11,
-        "operational_stability": 0.09,
-        "payment_behaviour": 0.09,
-        "carbon_transition_risk": 0.07,
-        "alternative_data_signals": 0.07,
-        "founder_capability": 0.11,
-        "market_sentiment": 0.07,
-        "product_demand_outlook": 0.06,
+        "financial_resilience": 0.12,
+        "cash_flow_health": 0.08,
+        "operational_stability": 0.07,
+        "payment_behaviour": 0.08,
+        "carbon_transition_risk": 0.06,
+        "alternative_data_signals": 0.06,
+        "founder_capability": 0.09,
+        "market_sentiment": 0.06,
+        "product_demand_outlook": 0.05,
         "government_policy_alignment": 0.05,
-        "credit_history_debt_servicing": 0.11,
+        "credit_history_debt_servicing": 0.08,
+        "legal_compliance": 0.07,
+        "tax_compliance": 0.05,
+        "operational_certifications": 0.05,
+        "governance_diversity": 0.03,
     }
+
+    # Max overall score uplift for strong women-led governance (research-backed lower NPA correlation)
+    GOVERNANCE_SCORE_BONUS_CAP = 2.5
 
     def assess(
         self,
@@ -108,8 +116,14 @@ class ScoringEngine:
         dimensions.append(self._score_product_demand(fd.product_market, profile))
         dimensions.append(self._score_government_policy_alignment(fd, profile))
         dimensions.append(self._score_credit_history_debt_servicing(fd.credit_bureau, fd.accounting))
+        dimensions.append(self._score_legal_compliance(fd.legal_compliance, fd.market_sentiment))
+        dimensions.append(self._score_tax_compliance(fd.tax_compliance, fd.government_policy))
+        dimensions.append(self._score_operational_certifications(fd.operational_certifications, fd.government_policy))
+        dimensions.append(self._score_governance_diversity(fd.governance_diversity, fd.founder))
 
         overall = sum(d.score * d.weight for d in dimensions)
+        governance_bonus = self._governance_overall_bonus(fd.governance_diversity, dimensions)
+        overall = _clamp(overall + governance_bonus, 0, 100)
         confidences = [d.confidence for d in dimensions]
         overall_confidence = _avg_confidence(confidences)
 
@@ -119,6 +133,7 @@ class ScoringEngine:
         green_opportunities = self._identify_green_finance_opportunities(dimensions, carbon_data)
         carbon_summary = self._build_carbon_summary(carbon_data, profile.msme_id)
         policy_assessment = self._build_government_policy_assessment(fd, profile)
+        recommended = self._build_recommended_improvements(dimensions, data_gaps, fd, policy_assessment)
         audience_summary = self._audience_summary(request.audience, overall, risk_indicators)
 
         return FinancialHealthScoreResult(
@@ -137,6 +152,7 @@ class ScoringEngine:
             carbon_intelligence=carbon_summary,
             government_policy_assessment=policy_assessment,
             data_gaps=data_gaps,
+            recommended_improvements=recommended,
             audience_summary=audience_summary,
             metadata={
                 "sector": profile.sector,
@@ -144,6 +160,8 @@ class ScoringEngine:
                 "data_sources": self._data_sources(fd, carbon_data),
                 "data_gap_count": len(data_gaps),
                 "high_priority_gaps": sum(1 for g in data_gaps if g.severity == "high"),
+                "governance_score_bonus": round(governance_bonus, 2),
+                "dimension_count": len(dimensions),
             },
         )
 
@@ -1239,6 +1257,40 @@ class ScoringEngine:
             )
 
         score = policy_assessment.overall_alignment_score
+        if fd.government_compliance:
+            gc = fd.government_compliance
+            compliance_scores: list[float] = []
+            if gc.overall_compliance_score is not None:
+                compliance_scores.append(gc.overall_compliance_score)
+            else:
+                for val in (gc.labour_law_compliance_pct, gc.pf_esi_compliance_pct):
+                    if val is not None:
+                        compliance_scores.append(val)
+                for flag in (gc.environmental_clearance_valid, gc.factory_act_registered,
+                             gc.statutory_audit_completed, gc.mca_annual_filings_current):
+                    if flag is True:
+                        compliance_scores.append(90)
+                    elif flag is False:
+                        compliance_scores.append(40)
+            if compliance_scores:
+                comp_avg = sum(compliance_scores) / len(compliance_scores)
+                score = (score * 0.6 + comp_avg * 0.4)
+                insights.append(
+                    EvidenceInsight(
+                        indicator="Statutory Compliance",
+                        category="government_compliance",
+                        value=f"{comp_avg:.0f}/100",
+                        benchmark="80",
+                        impact="positive" if comp_avg >= 80 else "negative",
+                        narrative=(
+                            f"Regulatory compliance score {comp_avg:.0f}/100 covering labour, "
+                            "environmental, PF/ESI, and statutory filings."
+                        ),
+                        confidence=ConfidenceLevel.HIGH,
+                        data_source="compliance_records",
+                    )
+                )
+
         return DimensionScore(
             dimension="government_policy_alignment",
             score=round(score, 1),
@@ -1599,6 +1651,653 @@ class ScoringEngine:
             insights=insights,
         )
 
+    def _score_legal_compliance(self, legal, sentiment) -> DimensionScore:
+        insights: list[EvidenceInsight] = []
+        scores: list[float] = []
+        confidence = ConfidenceLevel.LOW
+
+        if not legal:
+            lit_count = sentiment.litigation_count_3y if sentiment else 0
+            if lit_count > 0:
+                lit_score = _clamp(60 - lit_count * 20, 0, 100)
+                scores.append(lit_score)
+                insights.append(
+                    EvidenceInsight(
+                        indicator="Litigation Count",
+                        category="legal_risk",
+                        value=lit_count,
+                        benchmark=0,
+                        impact="negative",
+                        narrative=f"{lit_count} litigation case(s) reported — submit detailed legal compliance profile.",
+                        confidence=ConfidenceLevel.MEDIUM,
+                        data_source="market_sentiment",
+                    )
+                )
+                score = sum(scores) / len(scores)
+                return DimensionScore(
+                    dimension="legal_compliance",
+                    score=round(score, 1),
+                    weight=self.DIMENSION_WEIGHTS["legal_compliance"],
+                    risk_level=_score_to_risk(score),
+                    confidence=ConfidenceLevel.MEDIUM,
+                    insights=insights,
+                )
+            return DimensionScore(
+                dimension="legal_compliance",
+                score=70.0,
+                weight=self.DIMENSION_WEIGHTS["legal_compliance"],
+                risk_level=RiskLevel.MODERATE,
+                confidence=ConfidenceLevel.LOW,
+                insights=[
+                    EvidenceInsight(
+                        indicator="Legal Compliance Profile",
+                        category="legal_risk",
+                        value="not provided",
+                        benchmark=None,
+                        impact="neutral",
+                        narrative="No legal compliance data — obtain litigation search for company and founders/directors.",
+                        confidence=ConfidenceLevel.LOW,
+                        data_source="inferred",
+                    )
+                ],
+            )
+
+        all_cases = legal.company_lawsuits + legal.founder_lawsuits
+        pending_co = legal.pending_cases_company or len([c for c in legal.company_lawsuits if c.status == "pending"])
+        pending_fo = legal.pending_cases_founders or len([c for c in legal.founder_lawsuits if c.status == "pending"])
+        total_pending = pending_co + pending_fo
+
+        if total_pending == 0 and not all_cases:
+            scores.append(92)
+            insights.append(
+                EvidenceInsight(
+                    indicator="Litigation Status",
+                    category="legal_risk",
+                    value="no cases",
+                    benchmark=0,
+                    impact="positive",
+                    narrative="No pending or historical lawsuits against company or founders.",
+                    confidence=ConfidenceLevel.HIGH,
+                    data_source="legal_records",
+                )
+            )
+        else:
+            pending_score = _clamp(85 - total_pending * 12, 0, 100)
+            scores.append(pending_score)
+            insights.append(
+                EvidenceInsight(
+                    indicator="Pending Lawsuits",
+                    category="legal_risk",
+                    value=f"{pending_co} company, {pending_fo} founder/director",
+                    benchmark=0,
+                    impact="negative" if total_pending > 0 else "positive",
+                    narrative=f"{total_pending} pending legal case(s): {pending_co} against company, {pending_fo} against founders/directors.",
+                    confidence=ConfidenceLevel.HIGH,
+                    data_source="legal_records",
+                )
+            )
+
+        if legal.criminal_cases_pending > 0:
+            scores.append(_clamp(30 - legal.criminal_cases_pending * 15, 0, 100))
+            insights.append(
+                EvidenceInsight(
+                    indicator="Criminal Cases",
+                    category="legal_risk",
+                    value=legal.criminal_cases_pending,
+                    benchmark=0,
+                    impact="negative",
+                    narrative=f"{legal.criminal_cases_pending} pending criminal case(s) — material credit risk flag.",
+                    confidence=ConfidenceLevel.HIGH,
+                    data_source="legal_records",
+                )
+            )
+
+        if legal.regulatory_penalties_3y > 0:
+            scores.append(_clamp(50 - legal.regulatory_penalties_3y * 15, 0, 100))
+            insights.append(
+                EvidenceInsight(
+                    indicator="Regulatory Penalties",
+                    category="regulatory_action",
+                    value=f"{legal.regulatory_penalties_3y} penalties, ₹{legal.regulatory_penalty_amount_inr or 0:,.0f}",
+                    benchmark=0,
+                    impact="negative",
+                    narrative=f"{legal.regulatory_penalties_3y} regulatory penalty(ies) in past 3 years.",
+                    confidence=ConfidenceLevel.HIGH,
+                    data_source="regulatory_records",
+                )
+            )
+
+        if legal.resolved_favorable_pct is not None:
+            scores.append(_clamp(legal.resolved_favorable_pct, 0, 100))
+            insights.append(
+                EvidenceInsight(
+                    indicator="Favorable Resolutions",
+                    category="legal_track_record",
+                    value=f"{legal.resolved_favorable_pct:.0f}%",
+                    benchmark="80%",
+                    impact="positive" if legal.resolved_favorable_pct >= 80 else "neutral",
+                    narrative=f"{legal.resolved_favorable_pct:.0f}% of resolved cases had favorable outcomes.",
+                    confidence=ConfidenceLevel.MEDIUM,
+                    data_source="legal_records",
+                )
+            )
+
+        high_stake = [c for c in all_cases if c.amount_at_stake_inr and c.amount_at_stake_inr > 5_000_000 and c.status == "pending"]
+        if high_stake:
+            scores.append(40)
+            insights.append(
+                EvidenceInsight(
+                    indicator="High-Value Pending Claims",
+                    category="legal_risk",
+                    value=len(high_stake),
+                    benchmark=0,
+                    impact="negative",
+                    narrative=f"{len(high_stake)} pending case(s) with claims exceeding ₹50 lakh.",
+                    confidence=ConfidenceLevel.HIGH,
+                    data_source="legal_records",
+                )
+            )
+
+        score = sum(scores) / len(scores) if scores else 70
+        confidence = ConfidenceLevel.HIGH if all_cases or total_pending >= 0 else ConfidenceLevel.LOW
+        return DimensionScore(
+            dimension="legal_compliance",
+            score=round(score, 1),
+            weight=self.DIMENSION_WEIGHTS["legal_compliance"],
+            risk_level=_score_to_risk(score),
+            confidence=confidence,
+            insights=insights,
+        )
+
+    def _score_tax_compliance(self, tax, govt_policy) -> DimensionScore:
+        insights: list[EvidenceInsight] = []
+        scores: list[float] = []
+        confidence = ConfidenceLevel.LOW
+
+        if not tax:
+            return DimensionScore(
+                dimension="tax_compliance",
+                score=58.0,
+                weight=self.DIMENSION_WEIGHTS["tax_compliance"],
+                risk_level=RiskLevel.MODERATE,
+                confidence=ConfidenceLevel.LOW,
+                insights=[
+                    EvidenceInsight(
+                        indicator="Tax Compliance",
+                        category="statutory_compliance",
+                        value="not provided",
+                        benchmark=None,
+                        impact="neutral",
+                        narrative="Income tax and statutory tax compliance data not submitted.",
+                        confidence=ConfidenceLevel.LOW,
+                        data_source="inferred",
+                    )
+                ],
+            )
+
+        if tax.itr_filed_on_time_3y is not None:
+            itr_score = _clamp(tax.itr_filed_on_time_3y / 3 * 100, 0, 100)
+            scores.append(itr_score)
+            insights.append(
+                EvidenceInsight(
+                    indicator="ITR Filing Compliance",
+                    category="income_tax",
+                    value=f"{tax.itr_filed_on_time_3y}/3 years on time",
+                    benchmark="3/3",
+                    impact="positive" if tax.itr_filed_on_time_3y == 3 else "negative",
+                    narrative=f"Income tax returns filed on time for {tax.itr_filed_on_time_3y} of last 3 years.",
+                    confidence=ConfidenceLevel.HIGH,
+                    data_source="income_tax_department",
+                )
+            )
+            confidence = ConfidenceLevel.HIGH
+
+        if tax.income_tax_paid_inr_12m is not None:
+            scores.append(75 if tax.income_tax_paid_inr_12m > 0 else 30)
+            insights.append(
+                EvidenceInsight(
+                    indicator="Income Tax Paid (12M)",
+                    category="income_tax",
+                    value=f"₹{tax.income_tax_paid_inr_12m:,.0f}",
+                    benchmark=">0",
+                    impact="positive" if tax.income_tax_paid_inr_12m > 0 else "negative",
+                    narrative=f"₹{tax.income_tax_paid_inr_12m:,.0f} income tax paid in trailing 12 months.",
+                    confidence=ConfidenceLevel.HIGH,
+                    data_source="income_tax_department",
+                )
+            )
+
+        if tax.advance_tax_compliance_pct is not None:
+            scores.append(_clamp(tax.advance_tax_compliance_pct, 0, 100))
+            insights.append(
+                EvidenceInsight(
+                    indicator="Advance Tax Compliance",
+                    category="income_tax",
+                    value=f"{tax.advance_tax_compliance_pct:.0f}%",
+                    benchmark="100%",
+                    impact="positive" if tax.advance_tax_compliance_pct >= 95 else "negative",
+                    narrative=f"Advance tax compliance at {tax.advance_tax_compliance_pct:.0f}%.",
+                    confidence=ConfidenceLevel.HIGH,
+                    data_source="income_tax_department",
+                )
+            )
+
+        if tax.tds_compliance_pct is not None:
+            scores.append(_clamp(tax.tds_compliance_pct, 0, 100))
+            insights.append(
+                EvidenceInsight(
+                    indicator="TDS Compliance",
+                    category="statutory_tax",
+                    value=f"{tax.tds_compliance_pct:.0f}%",
+                    benchmark="95%",
+                    impact="positive" if tax.tds_compliance_pct >= 95 else "negative",
+                    narrative=f"TDS deposit and filing compliance at {tax.tds_compliance_pct:.0f}%.",
+                    confidence=ConfidenceLevel.MEDIUM,
+                    data_source="income_tax_department",
+                )
+            )
+
+        gst_pct = tax.gst_filing_compliance_pct
+        if gst_pct is None and govt_policy:
+            gst_pct = govt_policy.gst_filing_compliance_pct
+        if gst_pct is not None:
+            scores.append(_clamp(gst_pct, 0, 100))
+            insights.append(
+                EvidenceInsight(
+                    indicator="GST Filing Compliance",
+                    category="indirect_tax",
+                    value=f"{gst_pct:.0f}%",
+                    benchmark="95%",
+                    impact="positive" if gst_pct >= 95 else "negative",
+                    narrative=f"GST return filing compliance at {gst_pct:.0f}%.",
+                    confidence=ConfidenceLevel.HIGH,
+                    data_source="gst_portal",
+                )
+            )
+
+        if tax.tax_demand_outstanding_inr and tax.tax_demand_outstanding_inr > 0:
+            demand_penalty = _clamp(60 - min(tax.tax_demand_outstanding_inr / 1_000_000, 30) * 2, 0, 100)
+            scores.append(demand_penalty)
+            insights.append(
+                EvidenceInsight(
+                    indicator="Outstanding Tax Demand",
+                    category="income_tax",
+                    value=f"₹{tax.tax_demand_outstanding_inr:,.0f}",
+                    benchmark=0,
+                    impact="negative",
+                    narrative=f"₹{tax.tax_demand_outstanding_inr:,.0f} outstanding tax demand — verify dispute status.",
+                    confidence=ConfidenceLevel.HIGH,
+                    data_source="income_tax_department",
+                )
+            )
+
+        if tax.tax_litigation_pending:
+            scores.append(35)
+            insights.append(
+                EvidenceInsight(
+                    indicator="Tax Litigation",
+                    category="income_tax",
+                    value="pending",
+                    benchmark="none",
+                    impact="negative",
+                    narrative="Pending income tax litigation — obtain legal opinion on materiality.",
+                    confidence=ConfidenceLevel.HIGH,
+                    data_source="legal_records",
+                )
+            )
+
+        if tax.tax_clearance_certificate:
+            scores.append(90)
+            insights.append(
+                EvidenceInsight(
+                    indicator="Tax Clearance Certificate",
+                    category="income_tax",
+                    value="held",
+                    benchmark="held",
+                    impact="positive",
+                    narrative="Valid tax clearance certificate on file.",
+                    confidence=ConfidenceLevel.HIGH,
+                    data_source="income_tax_department",
+                )
+            )
+
+        score = sum(scores) / len(scores) if scores else 58
+        return DimensionScore(
+            dimension="tax_compliance",
+            score=round(score, 1),
+            weight=self.DIMENSION_WEIGHTS["tax_compliance"],
+            risk_level=_score_to_risk(score),
+            confidence=confidence,
+            insights=insights,
+        )
+
+    def _score_operational_certifications(self, certs, govt_policy) -> DimensionScore:
+        insights: list[EvidenceInsight] = []
+        scores: list[float] = []
+        confidence = ConfidenceLevel.LOW
+
+        all_cert_names: list[str] = []
+        if certs:
+            all_cert_names.extend(certs.iso_certifications)
+            all_cert_names.extend(c.name for c in certs.certifications)
+        if govt_policy and govt_policy.iso_certifications:
+            all_cert_names.extend(govt_policy.iso_certifications)
+        if govt_policy and govt_policy.zed_certification_level:
+            all_cert_names.append(f"ZED {govt_policy.zed_certification_level}")
+
+        if not all_cert_names:
+            return DimensionScore(
+                dimension="operational_certifications",
+                score=50.0,
+                weight=self.DIMENSION_WEIGHTS["operational_certifications"],
+                risk_level=RiskLevel.MODERATE,
+                confidence=ConfidenceLevel.LOW,
+                insights=[
+                    EvidenceInsight(
+                        indicator="Operational Certifications",
+                        category="quality_compliance",
+                        value="none reported",
+                        benchmark="ISO 9001",
+                        impact="neutral",
+                        narrative="No ISO or operational certifications reported — consider ISO 9001 and sector-specific standards.",
+                        confidence=ConfidenceLevel.LOW,
+                        data_source="inferred",
+                    )
+                ],
+            )
+
+        cert_scores = [certification_value(name) for name in all_cert_names]
+        base = _clamp(40 + sum(cert_scores), 0, 100)
+        scores.append(base)
+        insights.append(
+            EvidenceInsight(
+                indicator="Certification Portfolio",
+                category="quality_compliance",
+                value=", ".join(all_cert_names[:5]),
+                benchmark="ISO 9001 + sector standard",
+                impact="positive",
+                narrative=f"{len(all_cert_names)} operational certification(s) including {all_cert_names[0]}.",
+                confidence=ConfidenceLevel.HIGH,
+                data_source="certification_records",
+            )
+        )
+
+        if certs and certs.quality_audit_passed is True:
+            scores.append(88)
+            insights.append(
+                EvidenceInsight(
+                    indicator="Quality Audit",
+                    category="quality_compliance",
+                    value="passed",
+                    benchmark="passed",
+                    impact="positive",
+                    narrative="Most recent quality audit passed successfully.",
+                    confidence=ConfidenceLevel.HIGH,
+                    data_source="audit_reports",
+                )
+            )
+        elif certs and certs.quality_audit_passed is False:
+            scores.append(35)
+            insights.append(
+                EvidenceInsight(
+                    indicator="Quality Audit",
+                    category="quality_compliance",
+                    value="failed",
+                    benchmark="passed",
+                    impact="negative",
+                    narrative="Recent quality audit failure — remedial action required.",
+                    confidence=ConfidenceLevel.HIGH,
+                    data_source="audit_reports",
+                )
+            )
+
+        if certs and certs.certification_coverage_pct is not None:
+            scores.append(_clamp(certs.certification_coverage_pct, 0, 100))
+            insights.append(
+                EvidenceInsight(
+                    indicator="Certification Coverage",
+                    category="quality_compliance",
+                    value=f"{certs.certification_coverage_pct:.0f}%",
+                    benchmark="80%",
+                    impact="positive" if certs.certification_coverage_pct >= 80 else "neutral",
+                    narrative=f"Certifications cover {certs.certification_coverage_pct:.0f}% of production processes.",
+                    confidence=ConfidenceLevel.MEDIUM,
+                    data_source="certification_records",
+                )
+            )
+
+        score = sum(scores) / len(scores) if scores else 50
+        return DimensionScore(
+            dimension="operational_certifications",
+            score=round(score, 1),
+            weight=self.DIMENSION_WEIGHTS["operational_certifications"],
+            risk_level=_score_to_risk(score),
+            confidence=ConfidenceLevel.HIGH,
+            insights=insights,
+        )
+
+    def _score_governance_diversity(self, governance, founder) -> DimensionScore:
+        insights: list[EvidenceInsight] = []
+        scores: list[float] = []
+        confidence = ConfidenceLevel.LOW
+
+        female_founders = governance.female_founders_count if governance else 0
+        female_directors = governance.female_directors_count if governance else 0
+        if founder and founder.is_female and female_founders == 0:
+            female_founders = 1
+
+        if not governance and not (founder and founder.is_female):
+            return DimensionScore(
+                dimension="governance_diversity",
+                score=60.0,
+                weight=self.DIMENSION_WEIGHTS["governance_diversity"],
+                risk_level=RiskLevel.MODERATE,
+                confidence=ConfidenceLevel.LOW,
+                insights=[
+                    EvidenceInsight(
+                        indicator="Governance Diversity",
+                        category="governance",
+                        value="not provided",
+                        benchmark=None,
+                        impact="neutral",
+                        narrative="Governance diversity data not submitted. Women-led MSMEs show lower NPA correlation per RBI studies.",
+                        confidence=ConfidenceLevel.LOW,
+                        data_source="inferred",
+                    )
+                ],
+            )
+
+        base = 55.0
+        scores.append(base)
+
+        if female_founders > 0:
+            founder_bonus = min(12, 6 + female_founders * 4)
+            scores.append(_clamp(60 + founder_bonus, 0, 100))
+            insights.append(
+                EvidenceInsight(
+                    indicator="Female Founders",
+                    category="governance_diversity",
+                    value=female_founders,
+                    benchmark=">=1",
+                    impact="positive",
+                    narrative=(
+                        f"{female_founders} female founder(s) — associated with lower credit risk and "
+                        "eligibility for Stand-Up India / MUDRA Mahila programs."
+                    ),
+                    confidence=ConfidenceLevel.MEDIUM,
+                    data_source="governance_records",
+                )
+            )
+
+        if female_directors > 0:
+            dir_bonus = min(10, 5 + female_directors * 3)
+            scores.append(_clamp(58 + dir_bonus, 0, 100))
+            diversity_pct = None
+            if governance and governance.total_directors:
+                diversity_pct = female_directors / governance.total_directors * 100
+            insights.append(
+                EvidenceInsight(
+                    indicator="Female Directors",
+                    category="governance_diversity",
+                    value=f"{female_directors}" + (f" ({diversity_pct:.0f}% of board)" if diversity_pct else ""),
+                    benchmark=">=1",
+                    impact="positive",
+                    narrative=(
+                        f"{female_directors} female director(s) on board — strengthens governance "
+                        "and diversity-linked finance eligibility."
+                    ),
+                    confidence=ConfidenceLevel.MEDIUM,
+                    data_source="governance_records",
+                )
+            )
+
+        if governance and governance.women_led_enterprise:
+            scores.append(85)
+            insights.append(
+                EvidenceInsight(
+                    indicator="Women-Led Enterprise",
+                    category="governance_diversity",
+                    value="confirmed",
+                    benchmark="Udyam women enterprise",
+                    impact="positive",
+                    narrative=(
+                        "Udyam-registered women-led enterprise — qualifies for preferential schemes "
+                        "and demonstrates lower historical NPA rates in MSME portfolios."
+                    ),
+                    confidence=ConfidenceLevel.HIGH,
+                    data_source="udyam_portal",
+                )
+            )
+
+        if governance and governance.women_entrepreneur_scheme_enrolled:
+            scores.append(82)
+            insights.append(
+                EvidenceInsight(
+                    indicator="Women Entrepreneur Scheme",
+                    category="governance_diversity",
+                    value="enrolled",
+                    benchmark="Stand-Up India / MUDRA Mahila",
+                    impact="positive",
+                    narrative="Enrolled in women entrepreneur financing scheme — positive governance signal.",
+                    confidence=ConfidenceLevel.HIGH,
+                    data_source="government_schemes",
+                )
+            )
+
+        if governance and governance.board_independence_pct is not None:
+            indep_score = _clamp(50 + governance.board_independence_pct * 0.5, 0, 100)
+            scores.append(indep_score)
+            insights.append(
+                EvidenceInsight(
+                    indicator="Board Independence",
+                    category="governance",
+                    value=f"{governance.board_independence_pct:.0f}%",
+                    benchmark="33%",
+                    impact="positive" if governance.board_independence_pct >= 33 else "neutral",
+                    narrative=f"{governance.board_independence_pct:.0f}% independent board representation.",
+                    confidence=ConfidenceLevel.MEDIUM,
+                    data_source="governance_records",
+                )
+            )
+
+        if female_founders == 0 and female_directors == 0:
+            insights.append(
+                EvidenceInsight(
+                    indicator="Gender Diversity",
+                    category="governance_diversity",
+                    value="none reported",
+                    benchmark=None,
+                    impact="neutral",
+                    narrative="No female founders or directors reported — neutral scoring applied.",
+                    confidence=ConfidenceLevel.LOW,
+                    data_source="governance_records",
+                )
+            )
+
+        score = sum(scores) / len(scores) if scores else 60
+        confidence = ConfidenceLevel.HIGH if (governance and governance.women_led_enterprise) else ConfidenceLevel.MEDIUM
+        return DimensionScore(
+            dimension="governance_diversity",
+            score=round(score, 1),
+            weight=self.DIMENSION_WEIGHTS["governance_diversity"],
+            risk_level=_score_to_risk(score),
+            confidence=confidence,
+            insights=insights,
+        )
+
+    def _governance_overall_bonus(self, governance, dimensions: list[DimensionScore]) -> float:
+        """Apply modest overall score bonus for women-led MSMEs (research-backed lower NPA correlation)."""
+        if not governance and not any(
+            d.dimension == "governance_diversity" and d.score >= 75 for d in dimensions
+        ):
+            return 0.0
+
+        bonus = 0.0
+        if governance:
+            if governance.women_led_enterprise:
+                bonus += 1.5
+            if governance.female_founders_count > 0:
+                bonus += min(1.0, governance.female_founders_count * 0.5)
+            if governance.female_directors_count > 0:
+                bonus += min(0.8, governance.female_directors_count * 0.3)
+            if governance.women_entrepreneur_scheme_enrolled:
+                bonus += 0.5
+
+        gov_dim = next((d for d in dimensions if d.dimension == "governance_diversity"), None)
+        if gov_dim and gov_dim.score >= 80:
+            bonus += 0.5
+
+        return min(bonus, self.GOVERNANCE_SCORE_BONUS_CAP)
+
+    def _build_recommended_improvements(
+        self,
+        dimensions: list[DimensionScore],
+        gaps: list[DataGap],
+        fd,
+        policy: GovernmentPolicyAssessment | None,
+    ) -> list[str]:
+        """Generate actionable recommendations to improve Financial Health Score."""
+        recs: list[str] = []
+
+        worst = sorted(dimensions, key=lambda d: d.score)[:3]
+        for dim in worst:
+            if dim.score < 65:
+                recs.append(
+                    f"Improve {dim.dimension.replace('_', ' ')} (current: {dim.score}/100): "
+                    f"{self._recommendation(dim.dimension)}"
+                )
+
+        for gap in gaps:
+            if gap.severity == "high":
+                recs.append(f"[Gap] {gap.recommendation}")
+
+        if policy:
+            for pi in policy.policy_insights:
+                if pi.status == "eligible" and pi.action_recommendation:
+                    recs.append(f"[Scheme] {pi.action_recommendation}")
+
+        if fd.governance_diversity and fd.governance_diversity.female_founders_count == 0:
+            recs.append(
+                "Consider women entrepreneur scheme enrollment (Stand-Up India) if applicable — "
+                "improves governance score and access to preferential credit."
+            )
+
+        if not fd.operational_certifications and not (fd.government_policy and fd.government_policy.iso_certifications):
+            recs.append("Obtain ISO 9001 certification to strengthen operational credibility and export readiness.")
+
+        if not fd.tax_compliance:
+            recs.append("Submit ITR filing history and advance tax compliance for statutory assessment.")
+
+        if not fd.legal_compliance:
+            recs.append("Conduct litigation search (company + directors) via e-Courts / MCA for legal compliance scoring.")
+
+        # Future enhancements
+        recs.append(
+            "[Future] Integrate live CIBIL/CRISIL bureau pull, GSTN API, and e-Courts for automated verification."
+        )
+
+        return recs[:10]
+
     def _identify_data_gaps(self, fd, carbon_data) -> list[DataGap]:
         """Identify missing or incomplete inputs that reduce assessment confidence."""
         gaps: list[DataGap] = []
@@ -1700,6 +2399,36 @@ class ScoringEngine:
                 "Net profit not provided — DSCR and margin analysis limited.",
                 "Include net profit in accounting snapshot.",
                 ["financial_resilience", "credit_history_debt_servicing"])
+
+        if not fd.legal_compliance:
+            gap("legal_compliance", "legal", "high",
+                "No legal compliance profile — company and founder litigation unknown.",
+                "Submit e-Courts litigation search for company and all directors/founders.",
+                ["legal_compliance"])
+
+        if not fd.tax_compliance:
+            gap("tax_compliance", "statutory", "high",
+                "Income tax payment and ITR compliance data missing.",
+                "Provide ITR acknowledgements, advance tax payment proof, and TDS compliance.",
+                ["tax_compliance"])
+
+        if not fd.operational_certifications and not (fd.government_policy and fd.government_policy.iso_certifications):
+            gap("operational_certifications", "quality", "medium",
+                "ISO and operational certifications not reported.",
+                "List ISO, IATF, BIS, FSSAI or sector-specific certifications with validity dates.",
+                ["operational_certifications"])
+
+        if not fd.government_compliance:
+            gap("government_compliance", "regulatory", "medium",
+                "Statutory government compliance (labour, environmental, PF/ESI) not verified.",
+                "Confirm factory license, pollution consent, PF/ESI, and statutory audit status.",
+                ["government_policy_alignment"])
+
+        if not fd.governance_diversity:
+            gap("governance_diversity", "governance", "low",
+                "Board and founder diversity data not provided.",
+                "Report female founders/directors for governance scoring and scheme eligibility.",
+                ["governance_diversity"])
 
         return gaps
 
@@ -1852,7 +2581,31 @@ class ScoringEngine:
                     )
                 )
 
-        return indicators[:12]
+        if fd and fd.legal_compliance and fd.legal_compliance.criminal_cases_pending > 0:
+            indicators.append(
+                RiskIndicator(
+                    code="RISK_CRIMINAL_LITIGATION",
+                    label="Criminal Litigation Pending",
+                    severity=RiskLevel.HIGH,
+                    description=f"{fd.legal_compliance.criminal_cases_pending} pending criminal case(s) against company or founders.",
+                    evidence=[f"Criminal cases: {fd.legal_compliance.criminal_cases_pending}"],
+                    recommended_action="Obtain legal due diligence report before credit sanction.",
+                )
+            )
+
+        if fd and fd.tax_compliance and fd.tax_compliance.tax_litigation_pending:
+            indicators.append(
+                RiskIndicator(
+                    code="RISK_TAX_LITIGATION",
+                    label="Income Tax Litigation",
+                    severity=RiskLevel.ELEVATED,
+                    description="Pending income tax litigation may result in contingent liabilities.",
+                    evidence=["Tax litigation: pending"],
+                    recommended_action="Verify disputed demand amount and provision in financials.",
+                )
+            )
+
+        return indicators[:14]
 
     def _recommendation(self, dimension: str) -> str:
         recs = {
@@ -1867,6 +2620,10 @@ class ScoringEngine:
             "product_demand_outlook": "Diversify product portfolio and secure long-term order commitments.",
             "government_policy_alignment": "Enroll in eligible government schemes (CGTMSE, CLCSS, PLI) to reduce financing cost.",
             "credit_history_debt_servicing": "Improve EMI discipline and reduce leverage to strengthen CRISIL rating outlook.",
+            "legal_compliance": "Resolve pending litigation and obtain legal opinion on material cases.",
+            "tax_compliance": "Clear outstanding tax demands and maintain timely ITR and advance tax payments.",
+            "operational_certifications": "Obtain ISO 9001 and sector-specific certifications (IATF, BIS, FSSAI).",
+            "governance_diversity": "Strengthen board governance and explore women entrepreneur scheme benefits.",
         }
         return recs.get(dimension, "Conduct detailed due diligence.")
 
@@ -2006,6 +2763,16 @@ class ScoringEngine:
             sources.append("government_policy_catalog")
         if fd.credit_bureau:
             sources.extend(["credit_rating_agency", "cibil_commercial", "loan_history", "repayment_records"])
+        if fd.legal_compliance:
+            sources.append("legal_records")
+        if fd.tax_compliance:
+            sources.append("income_tax_department")
+        if fd.operational_certifications or (fd.government_policy and fd.government_policy.iso_certifications):
+            sources.append("certification_records")
+        if fd.government_compliance:
+            sources.append("compliance_records")
+        if fd.governance_diversity:
+            sources.append("governance_records")
         return sources
 
 

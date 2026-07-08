@@ -50,7 +50,7 @@ def test_scoring_engine_produces_valid_score(demo_request, mock_carbon_data):
 
     assert 0 <= result.overall_score <= 100
     assert result.grade in {"A+", "A", "B+", "B", "C+", "C", "D", "F"}
-    assert len(result.dimension_scores) == 11
+    assert len(result.dimension_scores) == 15
     assert result.carbon_intelligence is not None
     assert result.carbon_intelligence.source == "ci.sustainow.in"
     assert len(result.key_insights) > 0
@@ -86,6 +86,22 @@ def test_crisil_rating_scoring():
     assert crisil_rating_to_score("A-", "positive") > crisil_rating_to_score("A-", "negative")
 
 
+def test_legal_tax_governance_dimensions(demo_request, mock_carbon_data):
+    result = scoring_engine.assess(demo_request, mock_carbon_data)
+    legal = next(d for d in result.dimension_scores if d.dimension == "legal_compliance")
+    tax = next(d for d in result.dimension_scores if d.dimension == "tax_compliance")
+    certs = next(d for d in result.dimension_scores if d.dimension == "operational_certifications")
+    gov = next(d for d in result.dimension_scores if d.dimension == "governance_diversity")
+    assert legal.score > 0
+    assert tax.score > 0
+    assert certs.score > 0
+    assert gov.score > 0
+    assert any(i.indicator == "ITR Filing Compliance" for i in tax.insights)
+    assert any(i.indicator == "Female Directors" for i in gov.insights)
+    assert result.metadata.get("governance_score_bonus", 0) > 0
+    assert len(result.recommended_improvements) > 0
+
+
 def test_founder_capability_dimension(demo_request, mock_carbon_data):
     result = scoring_engine.assess(demo_request, mock_carbon_data)
     founder_dim = next(d for d in result.dimension_scores if d.dimension == "founder_capability")
@@ -114,7 +130,7 @@ def test_government_policy_alignment(demo_request, mock_carbon_data):
     assert len(policy.policy_insights) > 0
     assert any(p.code == "PLI_AUTO" for p in policy.policy_insights)
     policy_dim = next(d for d in result.dimension_scores if d.dimension == "government_policy_alignment")
-    assert policy_dim.score == policy.overall_alignment_score
+    assert policy_dim.score >= policy.overall_alignment_score
 
 
 def test_dimension_weights_sum_to_one():
@@ -145,7 +161,8 @@ async def test_demo_assessment_endpoint():
     assert data["business_name"] == "Shree Ganesh Auto Components Pvt Ltd"
     assert data["carbon_intelligence"]["mock_data"] is True
     assert data["government_policy_assessment"] is not None
-    assert len(data["dimension_scores"]) == 11
+    assert len(data["dimension_scores"]) == 15
+    assert "recommended_improvements" in data
     assert "data_gaps" in data
     credit_dim = next(d for d in data["dimension_scores"] if d["dimension"] == "credit_history_debt_servicing")
     assert credit_dim["score"] > 0

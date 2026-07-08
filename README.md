@@ -99,34 +99,45 @@ curl http://localhost:8080/api/v1/assess/demo?audience=credit_team
 
 ## Scoring Model
 
-The overall Financial Health Score (0–100) is a weighted composite of **11 dimensions**:
+The overall Financial Health Score (0–100) is a weighted composite of **15 dimensions**:
 
 | Dimension | Weight | Data Sources |
 |---|---|---|
-| Financial Resilience | 17% | Accounting records (liquidity, leverage, margins) |
-| Cash Flow Health | 11% | Cash flows + CI transaction analytics |
-| Operational Stability | 9% | Opex ratios, utility bills, business tenure |
-| Payment Behaviour | 9% | Payment records + CI late-payment rates |
-| Carbon Transition Risk | 7% | CI carbon summary, energy exposure |
-| Alternative Data Signals | 7% | Supplier/customer concentration, bank balances |
-| Founder Capability | 11% | Experience, CIBIL, management depth, succession |
-| Market Sentiment | 7% | NPS, reviews, media, retention, litigation |
-| Product Demand Outlook | 6% | Products, order book, capacity, sector growth |
-| Government Policy Alignment | 5% | Udyam, CGTMSE, PLI, CLCSS, ZED, sector schemes |
-| **Credit History & Debt Servicing** | 11% | CRISIL rating, past debts, EMI repayment, DSCR, CMR |
+| Financial Resilience | 12% | Liquidity, leverage, margins |
+| Cash Flow Health | 8% | Cash flows + CI transaction analytics |
+| Operational Stability | 7% | Opex, utility bills, tenure |
+| Payment Behaviour | 8% | Payment records + CI data |
+| Carbon Transition Risk | 6% | ci.sustainow.in carbon intelligence |
+| Alternative Data Signals | 6% | Concentration, bank balances |
+| Founder Capability | 9% | Experience, CIBIL, management depth |
+| Market Sentiment | 6% | NPS, reviews, media, retention |
+| Product Demand Outlook | 5% | Products, order book, sector growth |
+| Government Policy Alignment | 5% | Schemes + statutory compliance |
+| Credit History & Debt Servicing | 8% | CRISIL, past debts, EMI, DSCR |
+| **Legal Compliance** | 7% | Company/founder lawsuits, criminal cases |
+| **Tax Compliance** | 5% | ITR, income tax paid, advance tax, TDS |
+| **Operational Certifications** | 5% | ISO, IATF, BIS, ZED, quality audits |
+| **Governance Diversity** | 3% | Female founders/directors, women-led enterprise |
 
-### Credit History & Debt Servicing
+### Governance Diversity Credit Benefit
 
-- **CRISIL / ICRA / CARE rating** with outlook (positive/stable/negative)
-- **Past debt records** — active, closed, restructured, NPA, written-off
-- **EMI repayment history** — on-time, late, missed payments
-- **CIBIL MSME Rank (CMR)** — commercial bureau score
-- **Debt Service Coverage Ratio (DSCR)** — debt servicing capacity
-- **NPA / restructuring / write-off** incident tracking
+Women-led MSMEs receive a **governance score bonus** (up to +2.5 points on overall score) based on RBI-observed lower NPA correlation. Female founders/directors improve the governance dimension and unlock Stand-Up India / MUDRA Mahila eligibility insights.
 
-### Data Gap Analysis
+### Recommended Improvements
 
-Every assessment returns a `data_gaps` array identifying missing inputs that reduce confidence, with severity (`high`/`medium`/`low`), impacted dimensions, and recommendations to close each gap.
+Every assessment returns `recommended_improvements` — actionable steps to close data gaps and improve weak dimensions.
+
+### Suggested Future Enhancements
+
+| Enhancement | Benefit |
+|---|---|
+| Live CIBIL/CRISIL bureau API | Automated credit rating pull |
+| GSTN / Income Tax API | Real-time tax compliance verification |
+| e-Courts / MCA integration | Automated litigation search |
+| Document intelligence (ITR, audit) | OCR validation of financials |
+| Peer portfolio benchmarking | Percentile rank vs sector cohort |
+| ESG disclosure scoring | BRSR-lite readiness beyond carbon |
+| Supply chain stress testing | Shock scenario for key customers |
 
 ### New Assessment Parameters
 
