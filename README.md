@@ -236,9 +236,8 @@ Women-led MSMEs receive a **governance score bonus** (up to +2.5 points on overa
 # Full test suite (43 tests)
 pytest -v
 
-# Regenerate golden-file snapshots after API changes
-python3 scripts/generate_snapshots.py
-pytest tests/test_snapshots.py -v
+# Regenerate golden-file snapshots after API changes (Node.js platform)
+cd server && npm run generate:snapshots && npm test
 ```
 
 ## License

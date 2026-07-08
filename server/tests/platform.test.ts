@@ -1,14 +1,11 @@
 import { describe, it, expect, beforeAll } from "vitest";
 import request from "supertest";
-import express from "express";
-import cors from "cors";
 import { initDatabase } from "../src/db/index.js";
-import { authRouter } from "../src/routes/auth.js";
-import { apiRouter } from "../src/routes/api.js";
+import { createApp } from "../src/app.js";
 import { getArchitecture } from "../src/services/agents/orchestrator.js";
 import { DIMENSION_CATALOG, validateWeights } from "../src/services/agents/catalog.js";
 
-let app: express.Application;
+let app: ReturnType<typeof createApp>;
 let bankToken: string;
 let msmeToken: string;
 let govtToken: string;
@@ -16,11 +13,7 @@ let regToken: string;
 
 beforeAll(async () => {
   initDatabase();
-  app = express();
-  app.use(cors());
-  app.use(express.json());
-  app.use("/api/v1/auth", authRouter);
-  app.use("/api/v1", apiRouter);
+  app = createApp();
 
   const bankLogin = await request(app).post("/api/v1/auth/login").send({ email: "credit@idbi.bank.in", password: "IDBI@2026" });
   bankToken = bankLogin.body.access_token;

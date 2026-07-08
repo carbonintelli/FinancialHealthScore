@@ -17,6 +17,8 @@ import { buildDetailedReport, renderHtmlReport } from "../services/reports/index
 import { runPolicyAgent, runRegulatoryAgent } from "../services/agents/legacy-agents.js";
 import { orchestrateAssessment, getArchitecture } from "../services/agents/orchestrator.js";
 import { getOrchestrationRun, listAgentRuns } from "../services/agents/logger.js";
+import { pullBureauReport, verifyTax } from "../services/integrations/mock-clients.js";
+import { getApplicablePolicies, toPolicyResponse } from "../data/government-policies.js";
 import { getDb } from "../db/index.js";
 import { v4 as uuidv4 } from "uuid";
 
@@ -89,6 +91,38 @@ apiRouter.get("/integrations/status", (_req, res) => {
 
 apiRouter.get("/agents/architecture", (_req, res) => {
   res.json(getArchitecture());
+});
+
+apiRouter.get("/policies/catalog", (req, res) => {
+  const sector = (req.query.sector as string) || "general";
+  const policies = getApplicablePolicies(sector);
+  res.json({
+    sector,
+    count: policies.length,
+    policies: policies.map(toPolicyResponse),
+  });
+});
+
+apiRouter.post("/integrations/bureau/pull", (req, res) => {
+  const gstin = (req.query.gstin as string) || (req.body?.gstin as string);
+  const pan = (req.query.pan as string) || (req.body?.pan as string);
+  const businessName =
+    (req.query.business_name as string) || (req.body?.business_name as string) || "MSME";
+  try {
+    res.json(pullBureauReport(gstin, pan, businessName));
+  } catch (e) {
+    res.status(503).json({ detail: String(e) });
+  }
+});
+
+apiRouter.post("/integrations/tax/verify", (req, res) => {
+  const gstin = (req.query.gstin as string) || (req.body?.gstin as string);
+  const pan = (req.query.pan as string) || (req.body?.pan as string);
+  try {
+    res.json(verifyTax(gstin, pan));
+  } catch (e) {
+    res.status(503).json({ detail: String(e) });
+  }
 });
 
 apiRouter.get("/agents/status", requireAuth, (req, res) => {

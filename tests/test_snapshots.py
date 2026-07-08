@@ -1,8 +1,14 @@
-"""Snapshot regression tests for API responses."""
+"""Snapshot regression tests for API responses.
+
+Snapshots are generated from the Node.js server. Run:
+  cd server && npm run generate:snapshots && npm test
+"""
 
 import pytest
 
-from tests.conftest import assert_matches_snapshot
+pytestmark = pytest.mark.skip(
+    reason="API snapshots are maintained by the Node.js server (server/tests/snapshots.test.ts)"
+)
 
 
 @pytest.mark.asyncio
