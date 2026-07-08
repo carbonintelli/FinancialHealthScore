@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Register MSME — Financial Health Score</title>
+  <link rel="icon" href="/app/assets/favicon.svg" type="image/svg+xml" />
+  <link rel="stylesheet" href="/app/css/style.css" />
+</head>
+<body>
+  <div class="login-page">
+    <div class="login-brand-panel">
+      <div class="login-brand-content">
+        <div class="login-logo-wrap">
+          <img src="/app/assets/logo.svg" alt="Financial Health Score" width="72" height="72" />
+          <div>
+            <div class="login-brand-title">Register your MSME</div>
+            <p class="login-brand-tagline">Create your account, submit business & financial data, and get your Financial Health Score instantly.</p>
+          </div>
+        </div>
+        <ul class="login-features">
+          <li><span class="login-feature-icon">1</span><span><strong>Register</strong> — Udyam, GSTIN, sector & business profile</span></li>
+          <li><span class="login-feature-icon">2</span><span><strong>Data feed</strong> — revenue, balance sheet & cash flows</span></li>
+          <li><span class="login-feature-icon">3</span><span><strong>Health Score</strong> — 20 dimensions + carbon intelligence + 27 AI agents</span></li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="login-form-panel">
+      <div class="login-card" style="max-width:520px">
+        <div class="login-card-header">
+          <h1>MSME Registration</h1>
+          <p class="tagline">Step <span id="step-num">1</span> of 3 — <span id="step-label">Account</span></p>
+        </div>
+
+        <div class="role-tabs" style="grid-template-columns:1fr 1fr 1fr;margin-bottom:1rem">
+          <div class="role-tab active" data-step="1">Account</div>
+          <div class="role-tab" data-step="2">Business</div>
+          <div class="role-tab" data-step="3">Financials</div>
+        </div>
+
+        <div id="alert"></div>
+
+        <form id="register-form">
+          <div id="step-1">
+            <div class="form-group"><label>Your full name</label><input id="full_name" required placeholder="Rajesh Patil" /></div>
+            <div class="form-group"><label>Email</label><input type="email" id="email" required placeholder="you@business.in" /></div>
+            <div class="form-group"><label>Password (min 8 chars)</label><input type="password" id="password" required minlength="8" /></div>
+          </div>
+
+          <div id="step-2" style="display:none">
+            <div class="form-group"><label>Business name</label><input id="business_name" required placeholder="Shree Ganesh Auto Components Pvt Ltd" /></div>
+            <div class="form-group">
+              <label>Sector</label>
+              <select id="sector">
+                <option value="manufacturing">Manufacturing</option>
+                <option value="auto_components">Auto Components</option>
+                <option value="textiles">Textiles</option>
+                <option value="food_processing">Food Processing</option>
+                <option value="services">Services</option>
+                <option value="general">General</option>
+              </select>
+            </div>
+            <div class="form-group"><label>Udyam number</label><input id="udyam_number" placeholder="UDYAM-MH-12-0012345" /></div>
+            <div class="form-group"><label>GSTIN</label><input id="gstin" placeholder="27AABCS1234F1Z5" maxlength="15" /></div>
+            <div class="form-group"><label>PAN</label><input id="pan" placeholder="AABCS1234F" maxlength="10" /></div>
+            <div class="form-group"><label>State</label>
+              <select id="state">
+                <option value="maharashtra">Maharashtra</option>
+                <option value="gujarat">Gujarat</option>
+                <option value="karnataka">Karnataka</option>
+                <option value="tamil_nadu">Tamil Nadu</option>
+                <option value="delhi">Delhi</option>
+              </select>
+            </div>
+            <div class="form-group"><label>Employees</label><input type="number" id="employee_count" min="1" value="25" /></div>
+            <div class="form-group"><label>Years in operation</label><input type="number" id="years_in_operation" min="0" step="0.5" value="5" /></div>
+          </div>
+
+          <div id="step-3" style="display:none">
+            <p class="card-desc">Submit your latest financials to calculate your Health Score on registration.</p>
+            <div class="form-group"><label>Annual turnover (INR)</label><input type="number" id="annual_turnover_inr" min="100000" step="100000" value="12000000" required /></div>
+            <div class="form-group"><label>Annual revenue (INR)</label><input type="number" id="revenue_inr" min="100000" step="100000" value="12000000" /></div>
+            <div class="form-group"><label>Net profit (INR)</label><input type="number" id="net_profit_inr" min="0" step="50000" value="1200000" /></div>
+            <div class="form-group"><label>Current assets (INR)</label><input type="number" id="current_assets_inr" min="0" step="50000" value="3600000" /></div>
+            <div class="form-group"><label>Current liabilities (INR)</label><input type="number" id="current_liabilities_inr" min="0" step="50000" value="2160000" /></div>
+            <div class="form-group"><label>Total debt (INR)</label><input type="number" id="total_debt_inr" min="0" step="50000" value="3000000" /></div>
+            <label style="display:flex;align-items:center;gap:.5rem;font-size:.9rem;margin-bottom:1rem">
+              <input type="checkbox" id="run_assessment" checked />
+              Calculate Financial Health Score on registration
+            </label>
+          </div>
+
+          <div style="display:flex;gap:.5rem;margin-top:1rem">
+            <button type="button" class="btn btn-outline" id="prev-btn" style="display:none">Back</button>
+            <button type="button" class="btn btn-primary" id="next-btn" style="flex:1">Continue</button>
+            <button type="submit" class="btn btn-accent btn-lg" id="submit-btn" style="display:none;flex:1">Register & Get Score</button>
+          </div>
+        </form>
+
+        <p style="margin-top:1.25rem;font-size:.9rem;text-align:center">
+          Already registered? <a href="/app/index.html">Sign in</a>
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <script src="/app/js/api.js"></script>
+  <script>
+    let step = 1;
+    const labels = { 1: 'Account', 2: 'Business', 3: 'Financials' };
+
+    function showStep(n) {
+      step = n;
+      document.getElementById('step-num').textContent = n;
+      document.getElementById('step-label').textContent = labels[n];
+      [1, 2, 3].forEach(i => {
+        document.getElementById(`step-${i}`).style.display = i === n ? 'block' : 'none';
+        document.querySelector(`[data-step="${i}"]`).classList.toggle('active', i === n);
+      });
+      document.getElementById('prev-btn').style.display = n > 1 ? 'inline-flex' : 'none';
+      document.getElementById('next-btn').style.display = n < 3 ? 'inline-flex' : 'none';
+      document.getElementById('submit-btn').style.display = n === 3 ? 'inline-flex' : 'none';
+    }
+
+    document.getElementById('next-btn').addEventListener('click', () => {
+      if (step === 1 && (!document.getElementById('email').value || document.getElementById('password').value.length < 8)) {
+        document.getElementById('alert').innerHTML = '<div class="alert alert-error">Enter valid email and password (8+ chars)</div>';
+        return;
+      }
+      if (step === 2 && !document.getElementById('business_name').value.trim()) {
+        document.getElementById('alert').innerHTML = '<div class="alert alert-error">Business name is required</div>';
+        return;
+      }
+      document.getElementById('alert').innerHTML = '';
+      showStep(step + 1);
+    });
+    document.getElementById('prev-btn').addEventListener('click', () => showStep(step - 1));
+
+    document.getElementById('annual_turnover_inr').addEventListener('input', e => {
+      const v = e.target.value;
+      if (!document.getElementById('revenue_inr').dataset.touched) document.getElementById('revenue_inr').value = v;
+    });
+    document.getElementById('revenue_inr').addEventListener('input', () => {
+      document.getElementById('revenue_inr').dataset.touched = '1';
+    });
+
+    document.getElementById('register-form').addEventListener('submit', async e => {
+      e.preventDefault();
+      const alert = document.getElementById('alert');
+      alert.innerHTML = '';
+      const btn = document.getElementById('submit-btn');
+      btn.disabled = true;
+      btn.textContent = 'Registering…';
+
+      const revenue = Number(document.getElementById('revenue_inr').value);
+      const turnover = Number(document.getElementById('annual_turnover_inr').value);
+      const payload = {
+        email: document.getElementById('email').value,
+        password: document.getElementById('password').value,
+        full_name: document.getElementById('full_name').value,
+        business_name: document.getElementById('business_name').value,
+        sector: document.getElementById('sector').value,
+        udyam_number: document.getElementById('udyam_number').value || null,
+        gstin: document.getElementById('gstin').value || null,
+        pan: document.getElementById('pan').value || null,
+        state: document.getElementById('state').value,
+        employee_count: Number(document.getElementById('employee_count').value),
+        years_in_operation: Number(document.getElementById('years_in_operation').value),
+        annual_turnover_inr: turnover,
+        run_assessment: document.getElementById('run_assessment').checked,
+        financial_data: {
+          accounting: {
+            revenue_inr: revenue,
+            cost_of_goods_inr: revenue * 0.65,
+            operating_expenses_inr: revenue * 0.2,
+            current_assets_inr: Number(document.getElementById('current_assets_inr').value),
+            current_liabilities_inr: Number(document.getElementById('current_liabilities_inr').value),
+            total_debt_inr: Number(document.getElementById('total_debt_inr').value),
+            equity_inr: revenue * 0.35,
+            net_profit_inr: Number(document.getElementById('net_profit_inr').value),
+            period_end: '2026-03-31',
+          },
+        },
+      };
+
+      try {
+        const res = await fetch(`${API_BASE}/api/v1/auth/register`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.detail || 'Registration failed');
+        setAuth(data.access_token, data.user);
+        if (data.assessment?.assessment) {
+          sessionStorage.setItem('fhs_welcome_score', JSON.stringify({
+            score: data.assessment.assessment.overall_score,
+            grade: data.assessment.assessment.grade,
+          }));
+        }
+        window.location.href = '/app/msme/dashboard.html';
+      } catch (err) {
+        alert.innerHTML = `<div class="alert alert-error">${err.message}</div>`;
+        btn.disabled = false;
+        btn.textContent = 'Register & Get Score';
+      }
+    });
+  </script>
+</body>
+</html>

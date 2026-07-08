@@ -20,6 +20,7 @@ Interactive OpenAPI docs are available on the **legacy Python server** only (`py
 | Method | Path | Auth | Description |
 |---|---|---|---|
 | `POST` | `/api/v1/auth/login` | — | Email/password → JWT bearer token |
+| `POST` | `/api/v1/auth/register` | — | MSME self-registration + optional Health Score |
 | `GET` | `/api/v1/auth/me` | JWT | Current user profile |
 
 **Login example:**
@@ -99,8 +100,13 @@ See [AGENTIC_ARCHITECTURE.md](./AGENTIC_ARCHITECTURE.md).
 
 | Method | Path | Auth | Description |
 |---|---|---|---|
-| `GET` | `/api/v1/msme/dashboard` | MSME JWT | Latest score summary |
-| `GET` | `/api/v1/msme/assessments` | MSME JWT | Assessment history |
+| `GET` | `/api/v1/msme/dashboard` | MSME JWT | Latest score summary + profile completeness |
+| `GET` | `/api/v1/msme/profile` | MSME JWT | Business profile & stored financial data |
+| `PUT` | `/api/v1/msme/profile` | MSME JWT | Update business profile & financial data |
+| `GET` | `/api/v1/msme/data-feeds` | MSME JWT | Data feed submission history |
+| `POST` | `/api/v1/msme/data-feed` | MSME JWT | Submit financial data feed + optional Health Score |
+| `POST` | `/api/v1/msme/assess` | MSME JWT | Assess from stored profile data |
+| `POST` | `/api/v1/msme/assess/quick` | MSME JWT | Quick assess (uses profile if available) |
 | `GET` | `/api/v1/msme/assessments` | MSME JWT | Assessment history |
 | `GET` | `/api/v1/msme/loans` | MSME JWT | List own loan applications |
 | `POST` | `/api/v1/msme/loans` | MSME JWT | Submit loan application |

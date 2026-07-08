@@ -234,3 +234,84 @@ describe("Node.js Platform", () => {
     expect(res.body.sustainability_report.carbon_footprint.total_emissions_tco2e).toBeGreaterThan(0);
   }, 90000);
 });
+
+describe("MSME Registration & Data Feed", () => {
+  it("registers new MSME with financial data and health score", async () => {
+    const email = `new-msme-${Date.now()}@example.in`;
+    const res = await request(app)
+      .post("/api/v1/auth/register")
+      .send({
+        email,
+        password: "TestMSME@2026",
+        full_name: "Test Founder",
+        business_name: "Test Components Pvt Ltd",
+        sector: "manufacturing",
+        gstin: "27AABCT1234F1Z9",
+        udyam_number: "UDYAM-MH-99-0099999",
+        state: "maharashtra",
+        annual_turnover_inr: 15_000_000,
+        financial_data: {
+          accounting: {
+            revenue_inr: 15_000_000,
+            cost_of_goods_inr: 9_750_000,
+            operating_expenses_inr: 3_000_000,
+            current_assets_inr: 4_500_000,
+            current_liabilities_inr: 2_700_000,
+            total_debt_inr: 3_750_000,
+            equity_inr: 5_250_000,
+            net_profit_inr: 1_500_000,
+          },
+        },
+        run_assessment: true,
+      });
+    expect(res.status).toBe(201);
+    expect(res.body.access_token).toBeDefined();
+    expect(res.body.msme_id).toMatch(/^msme-/);
+    expect(res.body.assessment.assessment.overall_score).toBeGreaterThan(0);
+    expect(res.body.assessment.assessment.dimension_scores).toHaveLength(20);
+  }, 60000);
+
+  it("submits data feed and recalculates score", async () => {
+    const email = `feed-msme-${Date.now()}@example.in`;
+    const reg = await request(app).post("/api/v1/auth/register").send({
+      email,
+      password: "TestMSME@2026",
+      full_name: "Feed Test",
+      business_name: "Feed Test Industries",
+      sector: "textiles",
+      annual_turnover_inr: 8_000_000,
+      run_assessment: false,
+    });
+    const token = reg.body.access_token;
+
+    const feed = await request(app)
+      .post("/api/v1/msme/data-feed")
+      .set("Authorization", `Bearer ${token}`)
+      .send({
+        source: "manual",
+        financial_data: {
+          accounting: {
+            revenue_inr: 10_000_000,
+            cost_of_goods_inr: 6_500_000,
+            operating_expenses_inr: 2_000_000,
+            current_assets_inr: 3_000_000,
+            current_liabilities_inr: 1_800_000,
+            total_debt_inr: 2_500_000,
+            equity_inr: 3_500_000,
+            net_profit_inr: 1_000_000,
+          },
+        },
+        run_assessment: true,
+      });
+    expect(feed.status).toBe(201);
+    expect(feed.body.feed_id).toBeDefined();
+    expect(feed.body.assessment.overall_score).toBeGreaterThan(0);
+
+    const profile = await request(app).get("/api/v1/msme/profile").set("Authorization", `Bearer ${token}`);
+    expect(profile.status).toBe(200);
+    expect(profile.body.financial_data.accounting.revenue_inr).toBe(10_000_000);
+
+    const feeds = await request(app).get("/api/v1/msme/data-feeds").set("Authorization", `Bearer ${token}`);
+    expect(feeds.body.feeds.length).toBeGreaterThanOrEqual(1);
+  }, 60000);
+});

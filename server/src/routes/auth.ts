@@ -3,6 +3,7 @@ import { getDb, type UserRow, type OrgRow } from "../db/index.js";
 import { createToken, verifyPassword } from "../auth/index.js";
 import { config } from "../config.js";
 import { requireAuth, type AuthRequest } from "../middleware/auth.js";
+import { registerMsme } from "../services/msme-registration.js";
 
 export const authRouter = Router();
 
@@ -18,6 +19,17 @@ function userProfile(user: UserRow, org: OrgRow) {
     msme_id: user.msme_id,
   };
 }
+
+authRouter.post("/register", async (req, res) => {
+  try {
+    const result = await registerMsme(req.body);
+    res.status(201).json(result);
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    const status = msg.includes("already registered") ? 400 : 422;
+    res.status(status).json({ detail: msg });
+  }
+});
 
 authRouter.post("/login", (req, res) => {
   const { email, password } = req.body;

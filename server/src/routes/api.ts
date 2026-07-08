@@ -26,6 +26,8 @@ import {
   buildSustainabilityReport,
 } from "../services/integrations/carbon-intelligence.js";
 import { importAndAssess, pullConnectorData } from "../services/integrations/data-import.js";
+import { getMsmeProfile, listDataFeeds, saveMsmeProfile, mergeFinancialData } from "../services/msme-profile.js";
+import { assessFromProfile, submitDataFeed } from "../services/msme-assess.js";
 import {
   listLoansForMsme,
   listLoansForBank,
@@ -309,6 +311,7 @@ apiRouter.get("/msme/dashboard", ...msmeAuth, (req: AuthRequest, res) => {
   const org = getDb().prepare("SELECT name FROM organizations WHERE id = ?").get(req.user!.organization_id) as { name: string };
   const latest = listAssessmentsForMsme(req.user!.msme_id ?? "", 1)[0];
   const msmeId = req.user!.msme_id ?? "";
+  const profile = msmeId ? getMsmeProfile(msmeId) : null;
   res.json({
     msme_id: msmeId,
     business_name: org?.name ?? "MSME",
@@ -319,13 +322,113 @@ apiRouter.get("/msme/dashboard", ...msmeAuth, (req: AuthRequest, res) => {
     open_loan_applications: msmeId ? openLoanCountForMsme(msmeId) : 0,
     unread_notifications: unreadNotificationCount(req.user!.id),
     improvement_count: latest ? JSON.parse(latest.result_json).recommended_improvements?.length ?? 0 : 0,
+    profile_completeness: profile?.data_completeness_pct ?? null,
+    has_profile_data: !!(profile?.financial_data?.accounting),
   });
+});
+
+apiRouter.get("/msme/profile", ...msmeAuth, (req: AuthRequest, res) => {
+  const msmeId = req.user!.msme_id;
+  if (!msmeId) return res.status(400).json({ detail: "MSME profile not linked" });
+  const profile = getMsmeProfile(msmeId);
+  if (!profile) return res.status(404).json({ detail: "Profile not found" });
+  res.json(profile);
+});
+
+apiRouter.put("/msme/profile", ...msmeAuth, (req: AuthRequest, res) => {
+  if (req.user!.role === "msme_viewer") return res.status(403).json({ detail: "Viewers cannot update profile" });
+  const msmeId = req.user!.msme_id;
+  if (!msmeId) return res.status(400).json({ detail: "MSME profile not linked" });
+  const org = getDb().prepare("SELECT name FROM organizations WHERE id = ?").get(req.user!.organization_id) as { name: string };
+  const existing = getMsmeProfile(msmeId);
+  const body = req.body ?? {};
+  const financial = mergeFinancialData(existing?.financial_data ?? {}, body.financial_data ?? {});
+  saveMsmeProfile({
+    msme_id: msmeId,
+    organization_id: req.user!.organization_id,
+    business_name: body.business_name ?? org?.name ?? existing?.business_name ?? "MSME",
+    sector: body.sector ?? existing?.sector,
+    gstin: body.gstin ?? existing?.gstin,
+    pan: body.pan ?? existing?.pan,
+    udyam_number: body.udyam_number ?? existing?.udyam_number,
+    state: body.state ?? existing?.state,
+    pincode: body.pincode ?? existing?.pincode,
+    employee_count: body.employee_count ?? existing?.employee_count,
+    years_in_operation: body.years_in_operation ?? existing?.years_in_operation,
+    annual_turnover_inr: body.annual_turnover_inr ?? existing?.annual_turnover_inr,
+    financial_data: financial,
+  });
+  res.json(getMsmeProfile(msmeId));
+});
+
+apiRouter.get("/msme/data-feeds", ...msmeAuth, (req: AuthRequest, res) => {
+  const msmeId = req.user!.msme_id;
+  if (!msmeId) return res.status(400).json({ detail: "MSME profile not linked" });
+  res.json({ feeds: listDataFeeds(msmeId) });
+});
+
+apiRouter.post("/msme/data-feed", ...msmeAuth, async (req: AuthRequest, res) => {
+  if (req.user!.role === "msme_viewer") return res.status(403).json({ detail: "Viewers cannot submit data feeds" });
+  const msmeId = req.user!.msme_id;
+  if (!msmeId) return res.status(400).json({ detail: "MSME profile not linked" });
+  const org = getDb().prepare("SELECT name FROM organizations WHERE id = ?").get(req.user!.organization_id) as { name: string };
+  if (!req.body?.financial_data && !req.body?.accounting) {
+    return res.status(400).json({ detail: "financial_data or accounting block required" });
+  }
+  try {
+    const financialData = req.body.financial_data ?? { accounting: req.body.accounting };
+    const result = await submitDataFeed({
+      userId: req.user!.id,
+      msmeId,
+      organizationId: req.user!.organization_id,
+      businessName: org?.name ?? "MSME",
+      source: req.body.source ?? "manual",
+      financialData,
+      profilePatch: req.body.profile,
+      runAssessment: req.body.run_assessment !== false,
+      audience: req.body.audience ?? "credit_team",
+      includeCarbonIntelligence: req.body.include_carbon_intelligence !== false,
+    });
+    res.status(201).json(result);
+  } catch (e) {
+    res.status(500).json({ detail: String(e) });
+  }
+});
+
+apiRouter.post("/msme/assess", ...msmeAuth, async (req: AuthRequest, res) => {
+  if (req.user!.role === "msme_viewer") return res.status(403).json({ detail: "Viewers cannot assess" });
+  const msmeId = req.user!.msme_id;
+  if (!msmeId) return res.status(400).json({ detail: "MSME profile not linked" });
+  try {
+    const result = await assessFromProfile({
+      userId: req.user!.id,
+      msmeId,
+      audience: req.body?.audience ?? "credit_team",
+      source: "msme_self_assess",
+      includeCarbonIntelligence: req.body?.include_carbon_intelligence !== false,
+      financialData: req.body?.financial_data,
+    });
+    res.json(result);
+  } catch (e) {
+    res.status(500).json({ detail: String(e) });
+  }
 });
 
 apiRouter.post("/msme/assess/quick", ...msmeAuth, async (req: AuthRequest, res) => {
   if (req.user!.role === "msme_viewer") return res.status(403).json({ detail: "Viewers cannot assess" });
+  const msmeId = req.user!.msme_id!;
   try {
-    const result = await assessDemo("credit_team", getMockCarbonData(req.user!.msme_id!));
+    const profile = getMsmeProfile(msmeId);
+    if (profile?.financial_data?.accounting) {
+      const result = await assessFromProfile({
+        userId: req.user!.id,
+        msmeId,
+        audience: "credit_team",
+        source: "msme_quick_assess",
+      });
+      return res.json(result.assessment);
+    }
+    const result = await assessDemo("credit_team", getMockCarbonData(msmeId));
     const stored = await assessAndStore(req.user!.id, result, "credit_team");
     res.json({ ...stored.result, agent_insights: stored.agent_insights });
   } catch (e) {

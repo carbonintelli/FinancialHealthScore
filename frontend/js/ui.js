@@ -37,6 +37,7 @@ const FHS = (() => {
       portalSub: 'Your Business Health',
       nav: [
         { id: 'dashboard', href: '/app/msme/dashboard.html', label: 'Dashboard', icon: 'dashboard' },
+        { id: 'profile', href: '/app/msme/profile.html', label: 'Data Feed', icon: 'portfolio' },
         { id: 'import', href: '/app/msme/import.html', label: 'Import Data', icon: 'portfolio' },
         { id: 'assess', href: '/app/msme/assess.html', label: 'Run Assessment', icon: 'assess' },
         { id: 'report', href: '/app/msme/report.html', label: 'My Report', icon: 'report' },

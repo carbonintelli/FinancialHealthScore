@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Business Profile & Data Feed — Financial Health Score</title>
+  <link rel="icon" href="/app/assets/favicon.svg" type="image/svg+xml" />
+  <link rel="stylesheet" href="/app/css/style.css" />
+</head>
+<body>
+  <div class="layout">
+    <aside class="sidebar"></aside>
+    <main class="main">
+      <div id="page-header"></div>
+
+      <div class="stats-grid" id="profile-stats" style="margin-bottom:1.5rem">
+        <div class="loading-pulse"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-header"><h3>Submit Data Feed</h3></div>
+        <p class="card-desc">Update your financial data and recalculate your Financial Health Score. Data feeds are logged for audit and linked to assessments.</p>
+        <form id="feed-form">
+          <div class="form-group">
+            <label>Data source</label>
+            <select id="source">
+              <option value="manual">Manual entry</option>
+              <option value="tally">Tally ERP sync</option>
+              <option value="zoho">Zoho Books sync</option>
+              <option value="bank_statement">Bank statement upload</option>
+            </select>
+          </div>
+          <div class="form-group"><label>Annual revenue (INR)</label><input type="number" id="revenue_inr" min="100000" step="100000" required /></div>
+          <div class="form-group"><label>Net profit (INR)</label><input type="number" id="net_profit_inr" min="0" step="50000" /></div>
+          <div class="form-group"><label>Current assets (INR)</label><input type="number" id="current_assets_inr" min="0" step="50000" /></div>
+          <div class="form-group"><label>Current liabilities (INR)</label><input type="number" id="current_liabilities_inr" min="0" step="50000" /></div>
+          <div class="form-group"><label>Total debt (INR)</label><input type="number" id="total_debt_inr" min="0" step="50000" /></div>
+          <label style="display:flex;align-items:center;gap:.5rem;font-size:.9rem;margin-bottom:1rem">
+            <input type="checkbox" id="run_assessment" checked />
+            Recalculate Health Score after data feed
+          </label>
+          <button type="submit" class="btn btn-accent btn-lg">Submit Data Feed</button>
+        </form>
+        <div id="feed-result" style="margin-top:1.25rem"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-header"><h3>Data Feed History</h3></div>
+        <div id="feed-history"><div class="loading-pulse"></div></div>
+      </div>
+    </main>
+  </div>
+  <script src="/app/js/api.js"></script>
+  <script src="/app/js/ui.js"></script>
+  <script>
+    if (!requireAuth()) throw new Error('auth');
+    const user = getUser();
+    if (!isMsmeUser(user)) redirectByRole(user);
+    FHS.mountLayout('msme', 'profile');
+
+    document.getElementById('page-header').innerHTML = FHS.renderPageHeader({
+      title: 'Business Profile & Data Feed',
+      subtitle: 'Keep your financial data current for accurate Health Scores',
+    });
+
+    function loadProfile() {
+      api('/api/v1/msme/profile').then(p => {
+        document.getElementById('profile-stats').innerHTML = `
+          <div class="stat-card"><div class="stat-body"><div class="stat-label">Business</div><div class="stat-value" style="font-size:1rem">${p.business_name}</div><div class="stat-trend">${p.sector.replace(/_/g,' ')} · ${p.msme_id}</div></div></div>
+          <div class="stat-card"><div class="stat-body"><div class="stat-label">Profile completeness</div><div class="stat-value">${p.data_completeness_pct}%</div><div class="stat-trend">Last feed: ${p.last_feed_at ? new Date(p.last_feed_at).toLocaleDateString() : '—'}</div></div></div>
+          <div class="stat-card"><div class="stat-body"><div class="stat-label">GSTIN</div><div class="stat-value" style="font-size:1rem">${p.gstin || '—'}</div><div class="stat-trend">Udyam: ${p.udyam_number || '—'}</div></div></div>`;
+        const acct = p.financial_data?.accounting || {};
+        if (acct.revenue_inr) document.getElementById('revenue_inr').value = acct.revenue_inr;
+        if (acct.net_profit_inr) document.getElementById('net_profit_inr').value = acct.net_profit_inr;
+        if (acct.current_assets_inr) document.getElementById('current_assets_inr').value = acct.current_assets_inr;
+        if (acct.current_liabilities_inr) document.getElementById('current_liabilities_inr').value = acct.current_liabilities_inr;
+        if (acct.total_debt_inr) document.getElementById('total_debt_inr').value = acct.total_debt_inr;
+      }).catch(() => {
+        document.getElementById('profile-stats').innerHTML = '<div class="alert alert-warn">Complete your profile via data feed below.</div>';
+      });
+    }
+
+    function loadFeeds() {
+      api('/api/v1/msme/data-feeds').then(data => {
+        const feeds = data.feeds || [];
+        document.getElementById('feed-history').innerHTML = feeds.length ? `
+          <table class="data-table"><thead><tr><th>Date</th><th>Source</th><th>Status</th><th>Assessment</th></tr></thead>
+          <tbody>${feeds.map(f => `<tr>
+            <td>${new Date(f.created_at).toLocaleString()}</td>
+            <td>${f.source}</td>
+            <td><span class="badge">${f.status}</span></td>
+            <td>${f.assessment_id ? f.assessment_id.slice(0,8) + '…' : '—'}</td>
+          </tr>`).join('')}</tbody></table>` : '<p class="card-desc">No data feeds yet.</p>';
+      });
+    }
+
+    document.getElementById('feed-form').addEventListener('submit', async e => {
+      e.preventDefault();
+      const btn = e.target.querySelector('button[type=submit]');
+      btn.disabled = true;
+      btn.textContent = 'Submitting…';
+      const revenue = Number(document.getElementById('revenue_inr').value);
+      try {
+        const res = await api('/api/v1/msme/data-feed', {
+          method: 'POST',
+          body: JSON.stringify({
+            source: document.getElementById('source').value,
+            run_assessment: document.getElementById('run_assessment').checked,
+            financial_data: {
+              accounting: {
+                revenue_inr: revenue,
+                cost_of_goods_inr: revenue * 0.65,
+                operating_expenses_inr: revenue * 0.2,
+                current_assets_inr: Number(document.getElementById('current_assets_inr').value),
+                current_liabilities_inr: Number(document.getElementById('current_liabilities_inr').value),
+                total_debt_inr: Number(document.getElementById('total_debt_inr').value),
+                equity_inr: revenue * 0.35,
+                net_profit_inr: Number(document.getElementById('net_profit_inr').value) || revenue * 0.1,
+                period_end: '2026-03-31',
+              },
+            },
+          }),
+        });
+        const a = res.assessment;
+        document.getElementById('feed-result').innerHTML = a ? `
+          <div class="alert alert-success">
+            Data feed received. Health Score: <strong>${a.overall_score?.toFixed?.(1) ?? a.overall_score}</strong> / Grade ${a.grade}
+          </div>` : '<div class="alert alert-success">Data feed saved.</div>';
+        loadProfile();
+        loadFeeds();
+      } catch (err) {
+        document.getElementById('feed-result').innerHTML = `<div class="alert alert-error">${err.message}</div>`;
+      }
+      btn.disabled = false;
+      btn.textContent = 'Submit Data Feed';
+    });
+
+    loadProfile();
+    loadFeeds();
+  </script>
+</body>
+</html>
