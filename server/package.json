@@ -11,7 +11,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "generate:snapshots": "tsx scripts/generate-snapshots.ts",
-    "collect:app-snapshots": "tsx scripts/collect-app-snapshots.ts"
+    "collect:app-snapshots": "tsx scripts/collect-app-snapshots.ts",
+    "capture:ui-snapshots": "tsx scripts/capture-ui-snapshots.ts"
   },
   "engines": {
     "node": ">=20"
@@ -34,6 +35,7 @@
     "@types/jsonwebtoken": "^9.0.7",
     "@types/node": "^22.10.5",
     "@types/supertest": "^6.0.2",
+    "playwright": "^1.61.1",
     "supertest": "^7.0.0",
     "tsx": "^4.19.2",
     "typescript": "^5.7.2",

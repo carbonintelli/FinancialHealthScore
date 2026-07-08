@@ -73,6 +73,7 @@ See [docs/NODE_PLATFORM.md](docs/NODE_PLATFORM.md) and [docs/PLATFORM.md](docs/P
 
 | Document | Description |
 |---|---|
+| [docs/APPLICATION_UI_SNAPSHOTS.md](docs/APPLICATION_UI_SNAPSHOTS.md) | Visual UI screenshots of all stakeholder portals |
 | [docs/APPLICATION_SNAPSHOTS.md](docs/APPLICATION_SNAPSHOTS.md) | UI routes, portal pages & live application data snapshots |
 | [docs/PRODUCT_SNAPSHOTS.md](docs/PRODUCT_SNAPSHOTS.md) | API golden-file regression snapshots |
 | [docs/TERMINOLOGY.md](docs/TERMINOLOGY.md) | Banking & MSME terminology, portal labels, status mappings |
