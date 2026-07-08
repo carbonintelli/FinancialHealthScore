@@ -14,9 +14,12 @@ from app.models.schemas import (
     DimensionScore,
     EvidenceInsight,
     FinancialHealthScoreResult,
+    GovernmentPolicyAssessment,
+    PolicyAlignmentInsight,
     RiskIndicator,
     RiskLevel,
 )
+from app.data.government_policies import get_applicable_policies, get_policy_by_code
 
 
 def _clamp(value: float, low: float = 0.0, high: float = 100.0) -> float:
@@ -69,12 +72,16 @@ class ScoringEngine:
     """Computes explainable Financial Health Scores from financial and carbon data."""
 
     DIMENSION_WEIGHTS = {
-        "financial_resilience": 0.30,
-        "cash_flow_health": 0.20,
-        "operational_stability": 0.15,
-        "payment_behaviour": 0.15,
-        "carbon_transition_risk": 0.10,
-        "alternative_data_signals": 0.10,
+        "financial_resilience": 0.20,
+        "cash_flow_health": 0.12,
+        "operational_stability": 0.10,
+        "payment_behaviour": 0.10,
+        "carbon_transition_risk": 0.08,
+        "alternative_data_signals": 0.08,
+        "founder_capability": 0.12,
+        "market_sentiment": 0.08,
+        "product_demand_outlook": 0.07,
+        "government_policy_alignment": 0.05,
     }
 
     def assess(
@@ -93,15 +100,20 @@ class ScoringEngine:
         dimensions.append(self._score_payment_behaviour(fd.payment_records, carbon_data))
         dimensions.append(self._score_carbon_transition(carbon_data, fd.utility_bills))
         dimensions.append(self._score_alternative_data(fd, carbon_data))
+        dimensions.append(self._score_founder_capability(fd.founder, profile))
+        dimensions.append(self._score_market_sentiment(fd.market_sentiment))
+        dimensions.append(self._score_product_demand(fd.product_market, profile))
+        dimensions.append(self._score_government_policy_alignment(fd, profile))
 
         overall = sum(d.score * d.weight for d in dimensions)
         confidences = [d.confidence for d in dimensions]
         overall_confidence = _avg_confidence(confidences)
 
-        risk_indicators = self._build_risk_indicators(dimensions, acct, carbon_data)
+        risk_indicators = self._build_risk_indicators(dimensions, acct, carbon_data, fd)
         key_insights = self._build_key_insights(dimensions, risk_indicators)
         green_opportunities = self._identify_green_finance_opportunities(dimensions, carbon_data)
         carbon_summary = self._build_carbon_summary(carbon_data, profile.msme_id)
+        policy_assessment = self._build_government_policy_assessment(fd, profile)
         audience_summary = self._audience_summary(request.audience, overall, risk_indicators)
 
         return FinancialHealthScoreResult(
@@ -118,6 +130,7 @@ class ScoringEngine:
             key_insights=key_insights,
             green_finance_opportunities=green_opportunities,
             carbon_intelligence=carbon_summary,
+            government_policy_assessment=policy_assessment,
             audience_summary=audience_summary,
             metadata={
                 "sector": profile.sector,
@@ -614,8 +627,694 @@ class ScoringEngine:
             insights=insights,
         )
 
+    def _score_founder_capability(self, founder, profile) -> DimensionScore:
+        insights: list[EvidenceInsight] = []
+        scores: list[float] = []
+        confidence = ConfidenceLevel.LOW
+
+        if not founder:
+            return DimensionScore(
+                dimension="founder_capability",
+                score=55.0,
+                weight=self.DIMENSION_WEIGHTS["founder_capability"],
+                risk_level=RiskLevel.MODERATE,
+                confidence=ConfidenceLevel.LOW,
+                insights=[
+                    EvidenceInsight(
+                        indicator="Founder Profile",
+                        category="key_person_risk",
+                        value="not provided",
+                        benchmark=None,
+                        impact="neutral",
+                        narrative="Founder capability data not submitted; neutral score applied. Request founder profile for key-person risk assessment.",
+                        confidence=ConfidenceLevel.LOW,
+                        data_source="inferred",
+                    )
+                ],
+            )
+
+        if founder.years_industry_experience is not None:
+            exp_score = _clamp(40 + founder.years_industry_experience * 3, 0, 100)
+            scores.append(exp_score)
+            insights.append(
+                EvidenceInsight(
+                    indicator="Industry Experience",
+                    category="founder_capability",
+                    value=f"{founder.years_industry_experience:.0f} years",
+                    benchmark="10 years",
+                    impact="positive" if founder.years_industry_experience >= 10 else "neutral",
+                    narrative=(
+                        f"Founder brings {founder.years_industry_experience:.0f} years of industry experience, "
+                        f"{'reducing' if founder.years_industry_experience >= 10 else 'moderating'} execution risk."
+                    ),
+                    confidence=ConfidenceLevel.HIGH,
+                    data_source="founder_profile",
+                )
+            )
+
+        if founder.years_entrepreneurship is not None:
+            ent_score = _clamp(35 + founder.years_entrepreneurship * 4, 0, 100)
+            scores.append(ent_score)
+            insights.append(
+                EvidenceInsight(
+                    indicator="Entrepreneurship Tenure",
+                    category="founder_capability",
+                    value=f"{founder.years_entrepreneurship:.0f} years",
+                    benchmark="5 years",
+                    impact="positive" if founder.years_entrepreneurship >= 5 else "neutral",
+                    narrative=f"Founder has operated own business for {founder.years_entrepreneurship:.0f} years.",
+                    confidence=ConfidenceLevel.HIGH,
+                    data_source="founder_profile",
+                )
+            )
+
+        edu_scores = {
+            "diploma": 55,
+            "graduate": 70,
+            "post_graduate": 80,
+            "professional": 85,
+            "doctorate": 90,
+        }
+        if founder.education_level:
+            edu_score = edu_scores.get(founder.education_level.lower(), 60)
+            scores.append(edu_score)
+            insights.append(
+                EvidenceInsight(
+                    indicator="Education Level",
+                    category="founder_capability",
+                    value=founder.education_level,
+                    benchmark="graduate",
+                    impact="positive" if edu_score >= 70 else "neutral",
+                    narrative=f"Educational background: {founder.education_level.replace('_', ' ')}.",
+                    confidence=ConfidenceLevel.MEDIUM,
+                    data_source="founder_profile",
+                )
+            )
+
+        if founder.cibil_score is not None:
+            cibil_score = _clamp((founder.cibil_score - 300) / 6, 0, 100)
+            scores.append(cibil_score)
+            insights.append(
+                EvidenceInsight(
+                    indicator="Founder CIBIL Score",
+                    category="key_person_risk",
+                    value=founder.cibil_score,
+                    benchmark=750,
+                    impact="positive" if founder.cibil_score >= 750 else "negative" if founder.cibil_score < 650 else "neutral",
+                    narrative=(
+                        f"Personal credit score of {founder.cibil_score} "
+                        f"{'supports' if founder.cibil_score >= 750 else 'raises concerns for' if founder.cibil_score < 650 else 'is acceptable for'} "
+                        "founder risk assessment."
+                    ),
+                    confidence=ConfidenceLevel.HIGH,
+                    data_source="credit_bureau",
+                )
+            )
+
+        if founder.prior_defaults > 0:
+            scores.append(_clamp(40 - founder.prior_defaults * 15, 0, 100))
+            insights.append(
+                EvidenceInsight(
+                    indicator="Prior Loan Defaults",
+                    category="key_person_risk",
+                    value=founder.prior_defaults,
+                    benchmark=0,
+                    impact="negative",
+                    narrative=f"{founder.prior_defaults} prior loan default(s) on founder record — elevated key-person risk.",
+                    confidence=ConfidenceLevel.HIGH,
+                    data_source="credit_bureau",
+                )
+            )
+
+        if founder.prior_business_exits > 0:
+            scores.append(_clamp(60 + founder.prior_business_exits * 10, 0, 100))
+            insights.append(
+                EvidenceInsight(
+                    indicator="Prior Successful Exits",
+                    category="founder_capability",
+                    value=founder.prior_business_exits,
+                    benchmark=0,
+                    impact="positive",
+                    narrative=f"{founder.prior_business_exits} prior successful business exit(s) demonstrate track record.",
+                    confidence=ConfidenceLevel.MEDIUM,
+                    data_source="founder_profile",
+                )
+            )
+
+        if founder.management_team_size is not None:
+            team_score = _clamp(40 + founder.management_team_size * 8, 0, 100)
+            scores.append(team_score)
+            insights.append(
+                EvidenceInsight(
+                    indicator="Management Team Depth",
+                    category="succession_risk",
+                    value=founder.management_team_size,
+                    benchmark=3,
+                    impact="positive" if founder.management_team_size >= 3 else "negative",
+                    narrative=(
+                        f"Management team of {founder.management_team_size} senior leaders "
+                        f"{'reduces' if founder.management_team_size >= 3 else 'increases'} key-person dependency."
+                    ),
+                    confidence=ConfidenceLevel.MEDIUM,
+                    data_source="founder_profile",
+                )
+            )
+
+        if founder.succession_plan_documented:
+            scores.append(85)
+            insights.append(
+                EvidenceInsight(
+                    indicator="Succession Plan",
+                    category="succession_risk",
+                    value="documented",
+                    benchmark="documented",
+                    impact="positive",
+                    narrative="Documented succession plan mitigates key-person risk.",
+                    confidence=ConfidenceLevel.MEDIUM,
+                    data_source="founder_profile",
+                )
+            )
+        else:
+            scores.append(45)
+            insights.append(
+                EvidenceInsight(
+                    indicator="Succession Plan",
+                    category="succession_risk",
+                    value="not documented",
+                    benchmark="documented",
+                    impact="negative",
+                    narrative="No documented succession plan — key-person risk if founder is unavailable.",
+                    confidence=ConfidenceLevel.MEDIUM,
+                    data_source="founder_profile",
+                )
+            )
+
+        if founder.industry_certifications:
+            cert_score = _clamp(55 + len(founder.industry_certifications) * 10, 0, 100)
+            scores.append(cert_score)
+            insights.append(
+                EvidenceInsight(
+                    indicator="Industry Certifications",
+                    category="founder_capability",
+                    value=", ".join(founder.industry_certifications[:3]),
+                    benchmark="1+",
+                    impact="positive",
+                    narrative=f"Founder holds {len(founder.industry_certifications)} industry certification(s).",
+                    confidence=ConfidenceLevel.MEDIUM,
+                    data_source="founder_profile",
+                )
+            )
+
+        if founder.linkedin_presence_score is not None:
+            scores.append(founder.linkedin_presence_score)
+            insights.append(
+                EvidenceInsight(
+                    indicator="Professional Network",
+                    category="founder_capability",
+                    value=f"{founder.linkedin_presence_score:.0f}/100",
+                    benchmark=60,
+                    impact="positive" if founder.linkedin_presence_score >= 60 else "neutral",
+                    narrative="Professional network strength supports business development capability.",
+                    confidence=ConfidenceLevel.LOW,
+                    data_source="alternative_data",
+                )
+            )
+
+        score = sum(scores) / len(scores) if scores else 55
+        confidence = ConfidenceLevel.HIGH if founder.cibil_score else ConfidenceLevel.MEDIUM
+        return DimensionScore(
+            dimension="founder_capability",
+            score=round(score, 1),
+            weight=self.DIMENSION_WEIGHTS["founder_capability"],
+            risk_level=_score_to_risk(score),
+            confidence=confidence,
+            insights=insights,
+        )
+
+    def _score_market_sentiment(self, sentiment) -> DimensionScore:
+        insights: list[EvidenceInsight] = []
+        scores: list[float] = []
+        confidence = ConfidenceLevel.LOW
+
+        if not sentiment:
+            return DimensionScore(
+                dimension="market_sentiment",
+                score=55.0,
+                weight=self.DIMENSION_WEIGHTS["market_sentiment"],
+                risk_level=RiskLevel.MODERATE,
+                confidence=ConfidenceLevel.LOW,
+                insights=[
+                    EvidenceInsight(
+                        indicator="Market Sentiment",
+                        category="reputation",
+                        value="not provided",
+                        benchmark=None,
+                        impact="neutral",
+                        narrative="Market sentiment data not available; recommend NPS, reviews, and media monitoring.",
+                        confidence=ConfidenceLevel.LOW,
+                        data_source="inferred",
+                    )
+                ],
+            )
+
+        if sentiment.overall_sentiment_score is not None:
+            scores.append(sentiment.overall_sentiment_score)
+            insights.append(
+                EvidenceInsight(
+                    indicator="Overall Market Sentiment",
+                    category="reputation",
+                    value=f"{sentiment.overall_sentiment_score:.0f}/100",
+                    benchmark=70,
+                    impact="positive" if sentiment.overall_sentiment_score >= 70 else "negative",
+                    narrative=f"Composite market sentiment score: {sentiment.overall_sentiment_score:.0f}/100.",
+                    confidence=ConfidenceLevel.MEDIUM,
+                    data_source="sentiment_analysis",
+                )
+            )
+
+        if sentiment.customer_nps is not None:
+            nps_score = _clamp(50 + sentiment.customer_nps * 0.5, 0, 100)
+            scores.append(nps_score)
+            insights.append(
+                EvidenceInsight(
+                    indicator="Customer NPS",
+                    category="customer_satisfaction",
+                    value=sentiment.customer_nps,
+                    benchmark=50,
+                    impact="positive" if sentiment.customer_nps >= 50 else "negative",
+                    narrative=f"Net Promoter Score of {sentiment.customer_nps:.0f} reflects customer advocacy.",
+                    confidence=ConfidenceLevel.HIGH,
+                    data_source="customer_surveys",
+                )
+            )
+
+        if sentiment.google_rating is not None:
+            rating_score = _clamp((sentiment.google_rating - 1) / 4 * 100, 0, 100)
+            scores.append(rating_score)
+            review_confidence = ConfidenceLevel.HIGH if (sentiment.google_review_count or 0) >= 20 else ConfidenceLevel.MEDIUM
+            insights.append(
+                EvidenceInsight(
+                    indicator="Google Rating",
+                    category="public_reputation",
+                    value=f"{sentiment.google_rating:.1f}/5 ({sentiment.google_review_count or 0} reviews)",
+                    benchmark="4.0",
+                    impact="positive" if sentiment.google_rating >= 4.0 else "negative",
+                    narrative=f"Public Google rating of {sentiment.google_rating:.1f} from {sentiment.google_review_count or 0} reviews.",
+                    confidence=review_confidence,
+                    data_source="public_reviews",
+                )
+            )
+
+        if sentiment.positive_media_pct is not None and sentiment.media_mentions_12m:
+            media_score = sentiment.positive_media_pct
+            scores.append(media_score)
+            insights.append(
+                EvidenceInsight(
+                    indicator="Media Sentiment",
+                    category="reputation",
+                    value=f"{sentiment.positive_media_pct:.0f}% positive ({sentiment.media_mentions_12m} mentions)",
+                    benchmark="70%",
+                    impact="positive" if sentiment.positive_media_pct >= 70 else "negative",
+                    narrative=f"{sentiment.positive_media_pct:.0f}% of {sentiment.media_mentions_12m} media mentions are positive.",
+                    confidence=ConfidenceLevel.MEDIUM,
+                    data_source="media_monitoring",
+                )
+            )
+
+        if sentiment.customer_retention_rate_pct is not None:
+            ret_score = _clamp(sentiment.customer_retention_rate_pct, 0, 100)
+            scores.append(ret_score)
+            insights.append(
+                EvidenceInsight(
+                    indicator="Customer Retention",
+                    category="market_stickiness",
+                    value=f"{sentiment.customer_retention_rate_pct:.0f}%",
+                    benchmark="80%",
+                    impact="positive" if sentiment.customer_retention_rate_pct >= 80 else "negative",
+                    narrative=f"Customer retention rate of {sentiment.customer_retention_rate_pct:.0f}% indicates market stickiness.",
+                    confidence=ConfidenceLevel.HIGH,
+                    data_source="crm_data",
+                )
+            )
+
+        if sentiment.supplier_trust_score is not None:
+            scores.append(sentiment.supplier_trust_score)
+            insights.append(
+                EvidenceInsight(
+                    indicator="Supplier Trust Score",
+                    category="supply_chain_reputation",
+                    value=f"{sentiment.supplier_trust_score:.0f}/100",
+                    benchmark=70,
+                    impact="positive" if sentiment.supplier_trust_score >= 70 else "negative",
+                    narrative="Supplier trust score reflects payment reliability and trade relationships.",
+                    confidence=ConfidenceLevel.MEDIUM,
+                    data_source="trade_references",
+                )
+            )
+
+        if sentiment.litigation_count_3y > 0:
+            lit_score = _clamp(60 - sentiment.litigation_count_3y * 20, 0, 100)
+            scores.append(lit_score)
+            insights.append(
+                EvidenceInsight(
+                    indicator="Litigation History",
+                    category="legal_risk",
+                    value=sentiment.litigation_count_3y,
+                    benchmark=0,
+                    impact="negative",
+                    narrative=f"{sentiment.litigation_count_3y} litigation case(s) in past 3 years — reputational and financial risk.",
+                    confidence=ConfidenceLevel.HIGH,
+                    data_source="legal_records",
+                )
+            )
+
+        gst_scores = {"excellent": 95, "good": 80, "average": 60, "poor": 30}
+        if sentiment.gst_compliance_rating:
+            gst_score = gst_scores.get(sentiment.gst_compliance_rating.lower(), 55)
+            scores.append(gst_score)
+            insights.append(
+                EvidenceInsight(
+                    indicator="GST Compliance Rating",
+                    category="regulatory_compliance",
+                    value=sentiment.gst_compliance_rating,
+                    benchmark="good",
+                    impact="positive" if gst_score >= 80 else "negative",
+                    narrative=f"GST filing compliance rated as {sentiment.gst_compliance_rating}.",
+                    confidence=ConfidenceLevel.HIGH,
+                    data_source="gst_portal",
+                )
+            )
+
+        score = sum(scores) / len(scores) if scores else 55
+        confidence = ConfidenceLevel.HIGH if len(scores) >= 3 else ConfidenceLevel.MEDIUM if scores else ConfidenceLevel.LOW
+        return DimensionScore(
+            dimension="market_sentiment",
+            score=round(score, 1),
+            weight=self.DIMENSION_WEIGHTS["market_sentiment"],
+            risk_level=_score_to_risk(score),
+            confidence=confidence,
+            insights=insights,
+        )
+
+    def _score_product_demand(self, product_market, profile) -> DimensionScore:
+        insights: list[EvidenceInsight] = []
+        scores: list[float] = []
+        confidence = ConfidenceLevel.LOW
+
+        if not product_market or not product_market.products:
+            return DimensionScore(
+                dimension="product_demand_outlook",
+                score=55.0,
+                weight=self.DIMENSION_WEIGHTS["product_demand_outlook"],
+                risk_level=RiskLevel.MODERATE,
+                confidence=ConfidenceLevel.LOW,
+                insights=[
+                    EvidenceInsight(
+                        indicator="Product Portfolio",
+                        category="market_demand",
+                        value="not provided",
+                        benchmark=None,
+                        impact="neutral",
+                        narrative="Product and market demand data not submitted. Provide product lines and demand outlook.",
+                        confidence=ConfidenceLevel.LOW,
+                        data_source="inferred",
+                    )
+                ],
+            )
+
+        demand_scores = {
+            "strong_growth": 90,
+            "moderate_growth": 75,
+            "stable": 60,
+            "declining": 30,
+        }
+        if product_market.market_demand_outlook:
+            d_score = demand_scores.get(product_market.market_demand_outlook.lower(), 55)
+            scores.append(d_score)
+            insights.append(
+                EvidenceInsight(
+                    indicator="Market Demand Outlook",
+                    category="market_demand",
+                    value=product_market.market_demand_outlook.replace("_", " "),
+                    benchmark="moderate_growth",
+                    impact="positive" if d_score >= 75 else "negative" if d_score < 50 else "neutral",
+                    narrative=f"Market demand outlook assessed as {product_market.market_demand_outlook.replace('_', ' ')}.",
+                    confidence=ConfidenceLevel.MEDIUM,
+                    data_source="market_research",
+                )
+            )
+
+        if product_market.sector_growth_rate_pct is not None:
+            growth_score = _clamp(50 + product_market.sector_growth_rate_pct * 5, 0, 100)
+            scores.append(growth_score)
+            insights.append(
+                EvidenceInsight(
+                    indicator="Sector Growth Rate",
+                    category="industry_tailwind",
+                    value=f"{product_market.sector_growth_rate_pct:.1f}%",
+                    benchmark="8%",
+                    impact="positive" if product_market.sector_growth_rate_pct >= 8 else "neutral",
+                    narrative=f"Industry sector growing at {product_market.sector_growth_rate_pct:.1f}% CAGR.",
+                    confidence=ConfidenceLevel.MEDIUM,
+                    data_source="industry_reports",
+                )
+            )
+
+        if product_market.capacity_utilisation_pct is not None:
+            util = product_market.capacity_utilisation_pct
+            util_score = _clamp(50 + (util - 50) * 0.8, 0, 100) if util <= 90 else _clamp(100 - (util - 90) * 2, 0, 100)
+            scores.append(util_score)
+            insights.append(
+                EvidenceInsight(
+                    indicator="Capacity Utilisation",
+                    category="operational_demand",
+                    value=f"{util:.0f}%",
+                    benchmark="75%",
+                    impact="positive" if 70 <= util <= 90 else "negative",
+                    narrative=(
+                        f"Capacity utilisation at {util:.0f}% "
+                        f"{'indicates healthy demand' if 70 <= util <= 90 else 'suggests under/over-utilisation risk'}."
+                    ),
+                    confidence=ConfidenceLevel.HIGH,
+                    data_source="production_records",
+                )
+            )
+
+        if product_market.order_book_months is not None:
+            ob_score = _clamp(40 + product_market.order_book_months * 15, 0, 100)
+            scores.append(ob_score)
+            insights.append(
+                EvidenceInsight(
+                    indicator="Order Book Depth",
+                    category="demand_visibility",
+                    value=f"{product_market.order_book_months:.1f} months",
+                    benchmark="3 months",
+                    impact="positive" if product_market.order_book_months >= 3 else "negative",
+                    narrative=f"Confirmed order book covers {product_market.order_book_months:.1f} months of production.",
+                    confidence=ConfidenceLevel.HIGH,
+                    data_source="order_management",
+                )
+            )
+
+        product_names = [p.name for p in product_market.products[:4]]
+        categories = list({p.category for p in product_market.products})
+        max_share = max(p.revenue_share_pct for p in product_market.products)
+        diversification_score = _clamp(100 - max(0, max_share - 40) * 1.5, 0, 100)
+        scores.append(diversification_score)
+        insights.append(
+            EvidenceInsight(
+                indicator="Product Portfolio",
+                category="product_mix",
+                value=", ".join(product_names),
+                benchmark="diversified",
+                impact="positive" if max_share <= 50 else "negative",
+                narrative=(
+                    f"{len(product_market.products)} product line(s) across {', '.join(categories)}. "
+                    f"Largest product contributes {max_share:.0f}% of revenue."
+                ),
+                confidence=ConfidenceLevel.HIGH,
+                data_source="product_catalog",
+            )
+        )
+
+        if product_market.export_revenue_pct is not None and product_market.export_revenue_pct > 0:
+            export_score = _clamp(55 + product_market.export_revenue_pct * 0.5, 0, 100)
+            scores.append(export_score)
+            insights.append(
+                EvidenceInsight(
+                    indicator="Export Revenue Share",
+                    category="market_reach",
+                    value=f"{product_market.export_revenue_pct:.0f}%",
+                    benchmark="15%",
+                    impact="positive",
+                    narrative=f"Export revenue at {product_market.export_revenue_pct:.0f}% diversifies market exposure.",
+                    confidence=ConfidenceLevel.MEDIUM,
+                    data_source="export_records",
+                )
+            )
+
+        if product_market.import_substitution_potential:
+            scores.append(80)
+            insights.append(
+                EvidenceInsight(
+                    indicator="Import Substitution",
+                    category="policy_tailwind",
+                    value="high potential",
+                    benchmark=None,
+                    impact="positive",
+                    narrative="Products align with Make in India import substitution priorities.",
+                    confidence=ConfidenceLevel.MEDIUM,
+                    data_source="policy_alignment",
+                )
+            )
+
+        if product_market.ev_supply_chain_exposure:
+            scores.append(78)
+            insights.append(
+                EvidenceInsight(
+                    indicator="EV Supply Chain",
+                    category="growth_segment",
+                    value="exposed",
+                    benchmark=None,
+                    impact="positive",
+                    narrative="Exposure to EV/auto supply chain benefits from PLI and electrification tailwinds.",
+                    confidence=ConfidenceLevel.MEDIUM,
+                    data_source="sector_analysis",
+                )
+            )
+
+        score = sum(scores) / len(scores) if scores else 55
+        confidence = ConfidenceLevel.HIGH if product_market.order_book_months else ConfidenceLevel.MEDIUM
+        return DimensionScore(
+            dimension="product_demand_outlook",
+            score=round(score, 1),
+            weight=self.DIMENSION_WEIGHTS["product_demand_outlook"],
+            risk_level=_score_to_risk(score),
+            confidence=confidence,
+            insights=insights,
+        )
+
+    def _score_government_policy_alignment(self, fd, profile) -> DimensionScore:
+        """Score dimension for government policy alignment (also builds detailed assessment separately)."""
+        policy_assessment = self._build_government_policy_assessment(fd, profile)
+        insights: list[EvidenceInsight] = []
+
+        for pi in policy_assessment.policy_insights[:4]:
+            impact = "positive" if pi.status == "enrolled" else "neutral" if pi.status == "not_applicable" else "negative" if pi.alignment_score < 40 else "neutral"
+            if pi.status == "eligible":
+                impact = "negative"
+            insights.append(
+                EvidenceInsight(
+                    indicator=pi.name,
+                    category="government_policy",
+                    value=pi.status,
+                    benchmark="enrolled",
+                    impact=impact if pi.status != "recommended" else "positive",
+                    narrative=pi.benefit_summary,
+                    confidence=ConfidenceLevel.HIGH if pi.status == "enrolled" else ConfidenceLevel.MEDIUM,
+                    data_source="government_policy_catalog",
+                )
+            )
+
+        if policy_assessment.sector_tailwinds:
+            insights.append(
+                EvidenceInsight(
+                    indicator="Sector Policy Tailwinds",
+                    category="government_policy",
+                    value=len(policy_assessment.sector_tailwinds),
+                    benchmark=None,
+                    impact="positive",
+                    narrative="; ".join(policy_assessment.sector_tailwinds[:2]),
+                    confidence=ConfidenceLevel.MEDIUM,
+                    data_source="government_policy_catalog",
+                )
+            )
+
+        score = policy_assessment.overall_alignment_score
+        return DimensionScore(
+            dimension="government_policy_alignment",
+            score=round(score, 1),
+            weight=self.DIMENSION_WEIGHTS["government_policy_alignment"],
+            risk_level=_score_to_risk(score),
+            confidence=ConfidenceLevel.HIGH if fd.government_policy else ConfidenceLevel.MEDIUM,
+            insights=insights,
+        )
+
+    def _build_government_policy_assessment(self, fd, profile) -> GovernmentPolicyAssessment:
+        enrollment = fd.government_policy
+        product_categories = [p.category for p in (fd.product_market.products if fd.product_market else [])]
+        applicable = get_applicable_policies(profile.sector, product_categories)
+
+        enrolled_codes = set(enrollment.enrolled_scheme_codes if enrollment else [])
+        if profile.udyam_number and "UDYAM" not in enrolled_codes:
+            enrolled_codes.add("UDYAM")
+
+        pending = set(enrollment.pending_applications if enrollment else [])
+        policy_insights: list[PolicyAlignmentInsight] = []
+        alignment_scores: list[float] = []
+        sector_tailwinds: list[str] = []
+        financing_opportunities: list[str] = []
+
+        for policy in applicable[:10]:
+            if policy.code in enrolled_codes:
+                status = "enrolled"
+                align_score = 90 + policy.relevance_weight * 10
+                action = None
+                sector_tailwinds.append(f"{policy.name}: active enrollment")
+            elif policy.code in pending:
+                status = "recommended"
+                align_score = 60 + policy.relevance_weight * 20
+                action = f"Complete pending application for {policy.name}"
+            else:
+                status = "eligible"
+                align_score = 40 + policy.relevance_weight * 30
+                action = f"Apply for {policy.name} — {policy.benefits[0]}"
+
+            policy_insights.append(
+                PolicyAlignmentInsight(
+                    code=policy.code,
+                    name=policy.name,
+                    status=status,
+                    alignment_score=round(min(align_score, 100), 1),
+                    benefit_summary=policy.description,
+                    action_recommendation=action,
+                )
+            )
+            alignment_scores.append(align_score if status == "enrolled" else align_score * 0.6)
+
+            if status == "eligible" and policy.code in ("CGTMSE", "PMMY", "CLCSS", "SOLAR_ROOFTOP"):
+                financing_opportunities.append(f"{policy.name}: {policy.benefits[0]}")
+
+        if enrollment and enrollment.zed_certification_level:
+            zed_bonus = {"bronze": 5, "silver": 10, "gold": 15, "diamond": 20}
+            alignment_scores.append(70 + zed_bonus.get(enrollment.zed_certification_level.lower(), 0))
+
+        if enrollment and enrollment.gst_filing_compliance_pct is not None:
+            if enrollment.gst_filing_compliance_pct >= 95:
+                alignment_scores.append(85)
+            elif enrollment.gst_filing_compliance_pct < 70:
+                alignment_scores.append(35)
+
+        if fd.product_market and fd.product_market.ev_supply_chain_exposure:
+            sector_tailwinds.append("PLI Auto & ACC Battery: EV supply chain policy tailwinds")
+        if fd.product_market and fd.product_market.import_substitution_potential:
+            sector_tailwinds.append("Make in India: import substitution policy support")
+
+        overall = sum(alignment_scores) / len(alignment_scores) if alignment_scores else 50
+        enrolled_count = sum(1 for p in policy_insights if p.status == "enrolled")
+        eligible_count = sum(1 for p in policy_insights if p.status == "eligible")
+
+        return GovernmentPolicyAssessment(
+            overall_alignment_score=round(_clamp(overall, 0, 100), 1),
+            enrolled_count=enrolled_count,
+            eligible_unenrolled_count=eligible_count,
+            policy_insights=policy_insights,
+            sector_tailwinds=sector_tailwinds[:5],
+            financing_opportunities=financing_opportunities[:5],
+        )
+
     def _build_risk_indicators(
-        self, dimensions: list[DimensionScore], acct, carbon_data
+        self, dimensions: list[DimensionScore], acct, carbon_data, fd=None
     ) -> list[RiskIndicator]:
         indicators: list[RiskIndicator] = []
 
@@ -662,7 +1361,55 @@ class ScoringEngine:
                     )
                 )
 
-        return indicators[:8]
+        if fd and fd.founder:
+            if fd.founder.prior_defaults > 0:
+                indicators.append(
+                    RiskIndicator(
+                        code="RISK_FOUNDER_DEFAULT",
+                        label="Founder Credit Default History",
+                        severity=RiskLevel.HIGH,
+                        description=f"Founder has {fd.founder.prior_defaults} prior loan default(s) on record.",
+                        evidence=[f"Prior defaults: {fd.founder.prior_defaults}"],
+                        recommended_action="Obtain personal guarantee assessment and enhanced monitoring.",
+                    )
+                )
+            if fd.founder.cibil_score and fd.founder.cibil_score < 650:
+                indicators.append(
+                    RiskIndicator(
+                        code="RISK_FOUNDER_CIBIL",
+                        label="Low Founder CIBIL Score",
+                        severity=RiskLevel.ELEVATED,
+                        description=f"Founder CIBIL score of {fd.founder.cibil_score} below acceptable threshold.",
+                        evidence=[f"CIBIL: {fd.founder.cibil_score}"],
+                        recommended_action="Review personal financial statements and co-applicant options.",
+                    )
+                )
+
+        if fd and fd.market_sentiment and fd.market_sentiment.litigation_count_3y > 0:
+            indicators.append(
+                RiskIndicator(
+                    code="RISK_LITIGATION",
+                    label="Active Litigation",
+                    severity=RiskLevel.ELEVATED,
+                    description=f"{fd.market_sentiment.litigation_count_3y} litigation case(s) may impact cash flows and reputation.",
+                    evidence=[f"Cases: {fd.market_sentiment.litigation_count_3y}"],
+                    recommended_action="Obtain legal opinion on materiality and contingent liabilities.",
+                )
+            )
+
+        if fd and fd.product_market and fd.product_market.market_demand_outlook == "declining":
+            indicators.append(
+                RiskIndicator(
+                    code="RISK_DECLINING_DEMAND",
+                    label="Declining Market Demand",
+                    severity=RiskLevel.HIGH,
+                    description="Product market demand outlook is declining — revenue at risk.",
+                    evidence=[f"Outlook: {fd.product_market.market_demand_outlook}"],
+                    recommended_action="Assess product diversification and pivot strategy.",
+                )
+            )
+
+        return indicators[:10]
 
     def _recommendation(self, dimension: str) -> str:
         recs = {
@@ -672,6 +1419,10 @@ class ScoringEngine:
             "payment_behaviour": "Set up payment reminders and consider supply chain finance solutions.",
             "carbon_transition_risk": "Commission carbon assessment and develop transition roadmap.",
             "alternative_data_signals": "Diversify supplier and customer base to reduce concentration risk.",
+            "founder_capability": "Strengthen management team depth and document succession planning.",
+            "market_sentiment": "Address customer satisfaction gaps and monitor public reputation.",
+            "product_demand_outlook": "Diversify product portfolio and secure long-term order commitments.",
+            "government_policy_alignment": "Enroll in eligible government schemes (CGTMSE, CLCSS, PLI) to reduce financing cost.",
         }
         return recs.get(dimension, "Conduct detailed due diligence.")
 
@@ -801,6 +1552,14 @@ class ScoringEngine:
             sources.append("bank_statements")
         if carbon_data:
             sources.append("ci.sustainow.in")
+        if fd.founder:
+            sources.append("founder_profile")
+        if fd.market_sentiment:
+            sources.extend(["sentiment_analysis", "public_reviews", "gst_portal"])
+        if fd.product_market and fd.product_market.products:
+            sources.append("product_catalog")
+        if fd.government_policy or profile.udyam_number:
+            sources.append("government_policy_catalog")
         return sources
 
 

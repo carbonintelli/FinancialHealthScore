@@ -81,6 +81,7 @@ Without an API key, the service runs in **demo mode** with realistic mock carbon
 | `GET` | `/api/v1/msme/{id}/carbon` | Carbon Intelligence data |
 | `GET` | `/api/v1/msme/{id}/score` | Score from CI data only |
 | `GET` | `/api/v1/carbon/catalog` | CI integration catalog |
+| `GET` | `/api/v1/policies/catalog` | Government policy catalog by sector |
 
 ### Example: Full Assessment
 
@@ -98,16 +99,30 @@ curl http://localhost:8080/api/v1/assess/demo?audience=credit_team
 
 ## Scoring Model
 
-The overall Financial Health Score (0–100) is a weighted composite:
+The overall Financial Health Score (0–100) is a weighted composite of **10 dimensions**:
 
-| Dimension | Weight |
-|---|---|
-| Financial Resilience | 30% |
-| Cash Flow Health | 20% |
-| Operational Stability | 15% |
-| Payment Behaviour | 15% |
-| Carbon Transition Risk | 10% |
-| Alternative Data Signals | 10% |
+| Dimension | Weight | Data Sources |
+|---|---|---|
+| Financial Resilience | 20% | Accounting records (liquidity, leverage, margins) |
+| Cash Flow Health | 12% | Cash flows + CI transaction analytics |
+| Operational Stability | 10% | Opex ratios, utility bills, business tenure |
+| Payment Behaviour | 10% | Payment records + CI late-payment rates |
+| Carbon Transition Risk | 8% | CI carbon summary, energy exposure |
+| Alternative Data Signals | 8% | Supplier/customer concentration, bank balances |
+| **Founder Capability** | 12% | Experience, CIBIL, management depth, succession |
+| **Market Sentiment** | 8% | NPS, reviews, media, retention, litigation |
+| **Product Demand Outlook** | 7% | Products, order book, capacity, sector growth |
+| **Government Policy Alignment** | 5% | Udyam, CGTMSE, PLI, CLCSS, ZED, sector schemes |
+
+### New Assessment Parameters
+
+**Founder Risk & Capability** — Industry experience, entrepreneurship tenure, CIBIL score, prior defaults, management team depth, succession planning, certifications.
+
+**Market Sentiment** — Customer NPS, Google ratings, media sentiment, customer retention, supplier trust, litigation history, GST compliance.
+
+**Product & Market Demand** — Product portfolio mix, market demand outlook, sector growth rate, capacity utilisation, order book depth, export share, EV/import-substitution exposure.
+
+**Government Policy Alignment** — Enrollment in schemes (Udyam, CGTMSE, PLI, CLCSS, ZED, SAMADHAN, etc.), eligibility for unenrolled schemes, sector policy tailwinds, and financing opportunities.
 
 Each dimension produces:
 - Score (0–100) with letter grade (A+ to F)

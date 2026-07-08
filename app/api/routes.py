@@ -157,3 +157,31 @@ async def carbon_integration_catalog():
         return await carbon_client.get_integration_catalog()
     except CarbonIntelligenceError as exc:
         raise HTTPException(status_code=502, detail=str(exc)) from exc
+
+
+@router.get(
+    "/policies/catalog",
+    tags=["Government Policy"],
+    summary="Government policy and scheme catalog for MSME assessment",
+)
+async def government_policy_catalog(sector: str = Query("general", description="MSME sector for filtering")):
+    """Return applicable Indian government policies aligned with Financial Health Score."""
+    from app.data.government_policies import get_applicable_policies
+
+    policies = get_applicable_policies(sector)
+    return {
+        "sector": sector,
+        "count": len(policies),
+        "policies": [
+            {
+                "code": p.code,
+                "name": p.name,
+                "ministry": p.ministry,
+                "description": p.description,
+                "benefits": p.benefits,
+                "eligibility_criteria": p.eligibility_criteria,
+                "health_score_impact": p.health_score_impact,
+            }
+            for p in policies
+        ],
+    }

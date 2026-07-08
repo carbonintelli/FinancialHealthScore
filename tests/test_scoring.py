@@ -50,10 +50,43 @@ def test_scoring_engine_produces_valid_score(demo_request, mock_carbon_data):
 
     assert 0 <= result.overall_score <= 100
     assert result.grade in {"A+", "A", "B+", "B", "C+", "C", "D", "F"}
-    assert len(result.dimension_scores) == 6
+    assert len(result.dimension_scores) == 10
     assert result.carbon_intelligence is not None
     assert result.carbon_intelligence.source == "ci.sustainow.in"
     assert len(result.key_insights) > 0
+    assert result.government_policy_assessment is not None
+    assert result.government_policy_assessment.enrolled_count >= 1
+
+
+def test_founder_capability_dimension(demo_request, mock_carbon_data):
+    result = scoring_engine.assess(demo_request, mock_carbon_data)
+    founder_dim = next(d for d in result.dimension_scores if d.dimension == "founder_capability")
+    assert founder_dim.score > 0
+    assert any(i.indicator == "Industry Experience" for i in founder_dim.insights)
+
+
+def test_market_sentiment_dimension(demo_request, mock_carbon_data):
+    result = scoring_engine.assess(demo_request, mock_carbon_data)
+    sentiment_dim = next(d for d in result.dimension_scores if d.dimension == "market_sentiment")
+    assert sentiment_dim.score > 0
+    assert any(i.indicator == "Customer NPS" for i in sentiment_dim.insights)
+
+
+def test_product_demand_dimension(demo_request, mock_carbon_data):
+    result = scoring_engine.assess(demo_request, mock_carbon_data)
+    product_dim = next(d for d in result.dimension_scores if d.dimension == "product_demand_outlook")
+    assert product_dim.score > 0
+    assert any(i.indicator == "Product Portfolio" for i in product_dim.insights)
+
+
+def test_government_policy_alignment(demo_request, mock_carbon_data):
+    result = scoring_engine.assess(demo_request, mock_carbon_data)
+    policy = result.government_policy_assessment
+    assert policy.overall_alignment_score > 0
+    assert len(policy.policy_insights) > 0
+    assert any(p.code == "PLI_AUTO" for p in policy.policy_insights)
+    policy_dim = next(d for d in result.dimension_scores if d.dimension == "government_policy_alignment")
+    assert policy_dim.score == policy.overall_alignment_score
 
 
 def test_dimension_weights_sum_to_one():
@@ -83,6 +116,8 @@ async def test_demo_assessment_endpoint():
     assert "overall_score" in data
     assert data["business_name"] == "Shree Ganesh Auto Components Pvt Ltd"
     assert data["carbon_intelligence"]["mock_data"] is True
+    assert data["government_policy_assessment"] is not None
+    assert len(data["dimension_scores"]) == 10
 
 
 @pytest.mark.asyncio

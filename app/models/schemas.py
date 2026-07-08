@@ -65,10 +65,117 @@ class MSMEProfile(BaseModel):
     business_name: str
     udyam_number: str | None = None
     gstin: str | None = None
-    sector: str = Field(..., description="e.g. manufacturing, services, trading")
+    sector: str = Field(..., description="e.g. manufacturing, services, trading, auto_components")
     employee_count: int | None = Field(None, ge=1)
     years_in_operation: float | None = Field(None, ge=0)
     annual_turnover_inr: float | None = Field(None, ge=0)
+
+
+class FounderProfile(BaseModel):
+    """Founder/management capability and key-person risk indicators."""
+
+    name: str | None = None
+    years_industry_experience: float | None = Field(None, ge=0, description="Years in the same industry")
+    years_entrepreneurship: float | None = Field(None, ge=0, description="Years running own business")
+    education_level: str | None = Field(
+        None,
+        description="e.g. diploma, graduate, post_graduate, professional",
+    )
+    prior_business_exits: int = Field(0, ge=0, description="Successful prior business exits")
+    cibil_score: int | None = Field(None, ge=300, le=900, description="Founder personal credit score")
+    prior_defaults: int = Field(0, ge=0, description="Count of prior loan defaults")
+    management_team_size: int | None = Field(None, ge=1, description="Senior management team count")
+    succession_plan_documented: bool = False
+    industry_certifications: list[str] = Field(
+        default_factory=list,
+        description="e.g. Six Sigma, ISO lead auditor, domain certifications",
+    )
+    linkedin_presence_score: float | None = Field(
+        None, ge=0, le=100, description="Professional network strength proxy (0-100)"
+    )
+
+
+class MarketSentiment(BaseModel):
+    """Market perception and reputation signals for the MSME."""
+
+    overall_sentiment_score: float | None = Field(
+        None, ge=0, le=100, description="Composite market sentiment (0=very negative, 100=very positive)"
+    )
+    customer_nps: float | None = Field(None, ge=-100, le=100, description="Net Promoter Score")
+    google_rating: float | None = Field(None, ge=1, le=5)
+    google_review_count: int | None = Field(None, ge=0)
+    media_mentions_12m: int | None = Field(None, ge=0, description="News/media mentions in trailing 12 months")
+    positive_media_pct: float | None = Field(None, ge=0, le=100)
+    customer_retention_rate_pct: float | None = Field(None, ge=0, le=100)
+    supplier_trust_score: float | None = Field(None, ge=0, le=100)
+    litigation_count_3y: int = Field(0, ge=0, description="Active or recent litigation cases")
+    gst_compliance_rating: str | None = Field(
+        None, description="e.g. excellent, good, average, poor"
+    )
+
+
+class ProductLine(BaseModel):
+    name: str
+    category: str = Field(..., description="e.g. auto_components, precision_parts, consumables")
+    revenue_share_pct: float = Field(..., ge=0, le=100)
+    hsn_code: str | None = None
+    is_export_oriented: bool = False
+
+
+class ProductMarketProfile(BaseModel):
+    """Products manufactured and market demand outlook."""
+
+    products: list[ProductLine] = Field(default_factory=list)
+    primary_market: str | None = Field(None, description="e.g. domestic, export, both")
+    export_revenue_pct: float | None = Field(None, ge=0, le=100)
+    market_demand_outlook: str | None = Field(
+        None,
+        description="strong_growth, moderate_growth, stable, declining",
+    )
+    sector_growth_rate_pct: float | None = Field(
+        None, description="Industry sector CAGR or growth rate"
+    )
+    capacity_utilisation_pct: float | None = Field(None, ge=0, le=100)
+    order_book_months: float | None = Field(
+        None, ge=0, description="Months of confirmed orders in pipeline"
+    )
+    import_substitution_potential: bool = False
+    ev_supply_chain_exposure: bool = False
+
+
+class GovernmentPolicyEnrollment(BaseModel):
+    """MSME enrollment in government schemes and policy alignment."""
+
+    enrolled_scheme_codes: list[str] = Field(
+        default_factory=list,
+        description="Policy codes from catalog e.g. UDYAM, CGTMSE, PLI_AUTO",
+    )
+    pending_applications: list[str] = Field(default_factory=list)
+    zed_certification_level: str | None = Field(
+        None, description="bronze, silver, gold, diamond, or None"
+    )
+    iso_certifications: list[str] = Field(default_factory=list)
+    gst_filing_compliance_pct: float | None = Field(None, ge=0, le=100)
+    delayed_payment_complaints_filed: int = Field(0, ge=0)
+    received_govt_subsidy_inr: float | None = Field(None, ge=0)
+
+
+class PolicyAlignmentInsight(BaseModel):
+    code: str
+    name: str
+    status: str = Field(..., description="enrolled, eligible, not_applicable, recommended")
+    alignment_score: float = Field(..., ge=0, le=100)
+    benefit_summary: str
+    action_recommendation: str | None = None
+
+
+class GovernmentPolicyAssessment(BaseModel):
+    overall_alignment_score: float = Field(..., ge=0, le=100)
+    enrolled_count: int
+    eligible_unenrolled_count: int
+    policy_insights: list[PolicyAlignmentInsight]
+    sector_tailwinds: list[str] = Field(default_factory=list)
+    financing_opportunities: list[str] = Field(default_factory=list)
 
 
 class FinancialDataInput(BaseModel):
@@ -81,6 +188,10 @@ class FinancialDataInput(BaseModel):
         None,
         description="Optional aggregated bank statement metrics",
     )
+    founder: FounderProfile | None = None
+    market_sentiment: MarketSentiment | None = None
+    product_market: ProductMarketProfile | None = None
+    government_policy: GovernmentPolicyEnrollment | None = None
 
 
 class AssessmentRequest(BaseModel):
@@ -153,6 +264,7 @@ class FinancialHealthScoreResult(BaseModel):
     key_insights: list[str]
     green_finance_opportunities: list[str] = Field(default_factory=list)
     carbon_intelligence: CarbonIntelligenceSummary | None = None
+    government_policy_assessment: GovernmentPolicyAssessment | None = None
     audience_summary: str
     metadata: dict[str, Any] = Field(default_factory=dict)
 
