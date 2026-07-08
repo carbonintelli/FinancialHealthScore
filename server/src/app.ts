@@ -16,7 +16,7 @@ export function createApp() {
       server: "nodejs",
       dimension_count: 20,
       platform: "/app/",
-      login: "/app/index.html",
+      login: "/app/",
       docs: "/api/v1/health",
       stakeholders: ["bank", "msme", "government", "regulatory"],
       ai_agents: [

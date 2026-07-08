@@ -102,7 +102,7 @@ POST /api/v1/msme/assess/import
 
 ## Enterprise Portal — ERP Data Integration
 
-**ERP Data Integration** page: `/app/msme/import.html`
+**ERP Data Integration** page: `/app/msme/import` (React route)
 
 1. Select Tally ERP or Zoho Books connector
 2. Preview imported P&L, cash flows, and sustainability metrics

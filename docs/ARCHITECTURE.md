@@ -82,7 +82,8 @@ sequenceDiagram
 | **Store** | `server/src/services/store.ts` | Assessment persistence |
 | **Reports** | `server/src/services/reports/` | JSON + HTML credit reports |
 | **DB** | `server/src/db/` | SQLite schema + seed data |
-| **Frontend** | `frontend/` | Stakeholder portals + `js/terminology.js` label registry |
+| **Frontend** | `client/` | React TypeScript SPA (Vite) |
+| **Frontend (legacy)** | `frontend/` | Static HTML fallback |
 | **Legacy API** | `app/api/routes.py` | FastAPI endpoints (optional) |
 
 ## Agentic Orchestration
