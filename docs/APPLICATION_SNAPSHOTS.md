@@ -14,7 +14,7 @@ Machine-readable export: [snapshots/application-snapshots.json](./snapshots/appl
 
 Regenerate: `cd server && npm run collect:app-snapshots`
 
-Related: [PRODUCT_SNAPSHOTS.md](./PRODUCT_SNAPSHOTS.md) (API golden files) · [PLATFORM.md](./PLATFORM.md) · [TERMINOLOGY.md](./TERMINOLOGY.md)
+Related: [APPLICATION_UI_SNAPSHOTS.md](./APPLICATION_UI_SNAPSHOTS.md) (visual screenshots) · [PRODUCT_SNAPSHOTS.md](./PRODUCT_SNAPSHOTS.md) (API golden files) · [PLATFORM.md](./PLATFORM.md) · [TERMINOLOGY.md](./TERMINOLOGY.md)
 
 ---
 
