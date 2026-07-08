@@ -19,6 +19,13 @@ import { orchestrateAssessment, getArchitecture } from "../services/agents/orche
 import { getOrchestrationRun, listAgentRuns } from "../services/agents/logger.js";
 import { pullBureauReport, verifyTax } from "../services/integrations/mock-clients.js";
 import { getApplicablePolicies, toPolicyResponse } from "../data/government-policies.js";
+import { listConnectors, importFromTally, importFromZoho } from "../services/integrations/connectors.js";
+import {
+  fetchFullIntelligence,
+  getIntegrationCatalog,
+  buildSustainabilityReport,
+} from "../services/integrations/carbon-intelligence.js";
+import { importAndAssess, pullConnectorData } from "../services/integrations/data-import.js";
 import {
   listLoansForMsme,
   listLoansForBank,
@@ -86,7 +93,13 @@ apiRouter.get("/integrations/status", (_req, res) => {
       tax_verification: { configured: false, source: "GSTN/ITR" },
       legal_search: { configured: false, source: "e-Courts/MCA" },
       document_intelligence: { configured: false, source: "OCR" },
-      carbon_intelligence: { configured: !!config.carbonApiKey, source: "ci.sustainow.in" },
+      carbon_intelligence: { configured: !!config.carbonApiKey, source: "ci.sustainow.in", mock: !config.carbonApiKey },
+      tally: { configured: !!(config.tallyApiKey && config.tallyApiUrl), source: "Tally ERP / TallyPrime", mock: !config.tallyApiKey },
+      zoho_books: {
+        configured: !!(config.zohoRefreshToken && config.zohoClientId && config.zohoOrganizationId),
+        source: "Zoho Books",
+        mock: !config.zohoRefreshToken,
+      },
     },
     ai_agents: {
       orchestration: "multi-phase",
@@ -132,6 +145,57 @@ apiRouter.post("/integrations/tax/verify", (req, res) => {
     res.json(verifyTax(gstin, pan));
   } catch (e) {
     res.status(503).json({ detail: String(e) });
+  }
+});
+
+apiRouter.get("/integrations/connectors", (_req, res) => {
+  res.json(listConnectors());
+});
+
+apiRouter.post("/integrations/tally/import", requireAuth, async (req: AuthRequest, res) => {
+  try {
+    const org = getDb().prepare("SELECT name FROM organizations WHERE id = ?").get(req.user!.organization_id) as { name: string };
+    const result = await importFromTally(req.body.company_name ?? org?.name ?? "MSME", req.body);
+    res.json(result);
+  } catch (e) {
+    res.status(502).json({ detail: String(e) });
+  }
+});
+
+apiRouter.post("/integrations/zoho/import", requireAuth, async (req: AuthRequest, res) => {
+  try {
+    const org = getDb().prepare("SELECT name FROM organizations WHERE id = ?").get(req.user!.organization_id) as { name: string };
+    const result = await importFromZoho(req.body.company_name ?? org?.name ?? "MSME", req.body);
+    res.json(result);
+  } catch (e) {
+    res.status(502).json({ detail: String(e) });
+  }
+});
+
+apiRouter.get("/integrations/carbon/catalog", async (_req, res) => {
+  try {
+    res.json(await getIntegrationCatalog());
+  } catch (e) {
+    res.status(502).json({ detail: String(e) });
+  }
+});
+
+apiRouter.get("/integrations/carbon/:msmeId", requireAuth, async (req, res) => {
+  try {
+    const intel = await fetchFullIntelligence(String(req.params.msmeId));
+    res.json(intel);
+  } catch (e) {
+    res.status((e as { statusCode?: number }).statusCode ?? 502).json({ detail: String(e) });
+  }
+});
+
+apiRouter.get("/integrations/carbon/:msmeId/sustainability-report", requireAuth, async (req, res) => {
+  try {
+    const msmeId = String(req.params.msmeId);
+    const intel = await fetchFullIntelligence(msmeId);
+    res.json(buildSustainabilityReport(msmeId, intel));
+  } catch (e) {
+    res.status((e as { statusCode?: number }).statusCode ?? 502).json({ detail: String(e) });
   }
 });
 
@@ -272,6 +336,48 @@ apiRouter.post("/msme/assess/quick", ...msmeAuth, async (req: AuthRequest, res) 
 apiRouter.get("/msme/assessments", ...msmeAuth, (req: AuthRequest, res) => {
   const records = listAssessmentsForMsme(req.user!.msme_id ?? "");
   res.json(records.map(toSummary));
+});
+
+apiRouter.post("/msme/assess/import", ...msmeAuth, async (req: AuthRequest, res) => {
+  if (req.user!.role === "msme_viewer") return res.status(403).json({ detail: "Viewers cannot assess" });
+  const connector = req.body.connector as "tally" | "zoho";
+  if (!connector || !["tally", "zoho"].includes(connector)) {
+    return res.status(400).json({ detail: "connector must be 'tally' or 'zoho'" });
+  }
+  if (!req.user!.msme_id) return res.status(400).json({ detail: "MSME profile not linked" });
+
+  try {
+    const org = getDb().prepare("SELECT name FROM organizations WHERE id = ?").get(req.user!.organization_id) as { name: string };
+    const result = await importAndAssess({
+      connector,
+      userId: req.user!.id,
+      msmeId: req.user!.msme_id,
+      companyName: org?.name ?? "MSME",
+      connectorOptions: req.body.options ?? {},
+      includeCarbonIntelligence: req.body.include_carbon_intelligence !== false,
+      audience: req.body.audience ?? "credit_team",
+    });
+    res.json(result);
+  } catch (e) {
+    res.status(500).json({ detail: String(e) });
+  }
+});
+
+apiRouter.post("/msme/assess/import/preview", ...msmeAuth, async (req: AuthRequest, res) => {
+  const connector = req.body.connector as "tally" | "zoho";
+  if (!connector || !["tally", "zoho"].includes(connector)) {
+    return res.status(400).json({ detail: "connector must be 'tally' or 'zoho'" });
+  }
+  const msmeId = req.user!.msme_id ?? "unknown";
+  const org = getDb().prepare("SELECT name FROM organizations WHERE id = ?").get(req.user!.organization_id) as { name: string };
+  try {
+    const imported = await pullConnectorData(connector, org?.name ?? "MSME", req.body.options ?? {});
+    const carbon = req.body.include_carbon_intelligence !== false ? await fetchFullIntelligence(msmeId) : undefined;
+    const sustainability = carbon ? buildSustainabilityReport(msmeId, carbon) : undefined;
+    res.json({ import_result: imported, carbon_intelligence: carbon, sustainability_report: sustainability });
+  } catch (e) {
+    res.status(502).json({ detail: String(e) });
+  }
 });
 
 // Government routes

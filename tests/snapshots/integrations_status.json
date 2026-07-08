@@ -20,7 +20,18 @@
     },
     "carbon_intelligence": {
       "configured": false,
-      "source": "ci.sustainow.in"
+      "source": "ci.sustainow.in",
+      "mock": true
+    },
+    "tally": {
+      "configured": false,
+      "source": "Tally ERP / TallyPrime",
+      "mock": true
+    },
+    "zoho_books": {
+      "configured": false,
+      "source": "Zoho Books",
+      "mock": true
     }
   },
   "ai_agents": {
