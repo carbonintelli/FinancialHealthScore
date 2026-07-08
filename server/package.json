@@ -10,7 +10,8 @@
     "dev": "tsx watch src/index.ts",
     "test": "vitest run",
     "test:watch": "vitest",
-    "generate:snapshots": "tsx scripts/generate-snapshots.ts"
+    "generate:snapshots": "tsx scripts/generate-snapshots.ts",
+    "collect:app-snapshots": "tsx scripts/collect-app-snapshots.ts"
   },
   "engines": {
     "node": ">=20"

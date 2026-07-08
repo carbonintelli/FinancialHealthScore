@@ -2,6 +2,8 @@
 
 Golden-file snapshots of API responses for regression testing against the **Node.js platform** (v2.1.0).
 
+**Application snapshots** (UI routes, portal pages, live API payloads): [APPLICATION_SNAPSHOTS.md](./APPLICATION_SNAPSHOTS.md)
+
 Related documentation:
 
 - [TERMINOLOGY.md](./TERMINOLOGY.md) — banking & MSME display labels
@@ -14,7 +16,8 @@ Related documentation:
 
 ```bash
 cd server
-npm run generate:snapshots
+npm run generate:snapshots      # API golden files → tests/snapshots/
+npm run collect:app-snapshots   # Application catalogue → docs/APPLICATION_SNAPSHOTS.md
 npm test
 ```
 

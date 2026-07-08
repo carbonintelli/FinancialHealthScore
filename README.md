@@ -73,6 +73,8 @@ See [docs/NODE_PLATFORM.md](docs/NODE_PLATFORM.md) and [docs/PLATFORM.md](docs/P
 
 | Document | Description |
 |---|---|
+| [docs/APPLICATION_SNAPSHOTS.md](docs/APPLICATION_SNAPSHOTS.md) | UI routes, portal pages & live application data snapshots |
+| [docs/PRODUCT_SNAPSHOTS.md](docs/PRODUCT_SNAPSHOTS.md) | API golden-file regression snapshots |
 | [docs/TERMINOLOGY.md](docs/TERMINOLOGY.md) | Banking & MSME terminology, portal labels, status mappings |
 | [docs/AGENTIC_ARCHITECTURE.md](docs/AGENTIC_ARCHITECTURE.md) | Multi-phase agentic AI orchestration (27 agents, 6 phases) |
 | [docs/NODE_PLATFORM.md](docs/NODE_PLATFORM.md) | Node.js server, AI agents, multi-stakeholder architecture |
