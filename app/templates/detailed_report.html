@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{{ report.report_title }} — {{ result.business_name }}</title>
+  <style>
+    :root { --primary: #0f4c81; --accent: #1a7f4e; --warn: #c45c00; --danger: #b42318; --bg: #f6f8fb; --card: #fff; --text: #1a1d21; --muted: #5c6570; }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); line-height: 1.55; padding: 2rem; }
+    .report { max-width: 960px; margin: 0 auto; background: var(--card); border-radius: 12px; box-shadow: 0 4px 24px rgba(15,76,129,.08); overflow: hidden; }
+    .header { background: linear-gradient(135deg, var(--primary), #1a6bb5); color: #fff; padding: 2rem 2.5rem; }
+    .header h1 { font-size: 1.5rem; font-weight: 600; margin-bottom: .25rem; }
+    .header .meta { opacity: .9; font-size: .9rem; }
+    .score-banner { display: flex; gap: 2rem; padding: 1.5rem 2.5rem; background: #eef4fa; border-bottom: 1px solid #d8e3ed; flex-wrap: wrap; }
+    .score-circle { width: 100px; height: 100px; border-radius: 50%; background: var(--primary); color: #fff; display: flex; flex-direction: column; align-items: center; justify-content: center; font-weight: 700; }
+    .score-circle .num { font-size: 1.75rem; line-height: 1; }
+    .score-circle .lbl { font-size: .7rem; opacity: .9; }
+    .grade { font-size: 2rem; font-weight: 700; color: var(--primary); }
+    .section { padding: 1.75rem 2.5rem; border-bottom: 1px solid #e8ecf0; }
+    .section:last-child { border-bottom: none; }
+    .section h2 { font-size: 1.1rem; color: var(--primary); margin-bottom: 1rem; text-transform: uppercase; letter-spacing: .04em; }
+    .section p, .section li { color: var(--text); margin-bottom: .5rem; }
+    .recommendation { background: #f0faf4; border-left: 4px solid var(--accent); padding: 1rem 1.25rem; border-radius: 0 8px 8px 0; font-weight: 500; }
+    table { width: 100%; border-collapse: collapse; font-size: .9rem; }
+    th, td { text-align: left; padding: .6rem .75rem; border-bottom: 1px solid #e8ecf0; }
+    th { background: #f4f7fa; font-weight: 600; color: var(--muted); font-size: .8rem; text-transform: uppercase; }
+    .risk-low { color: var(--accent); }
+    .risk-moderate { color: #b8860b; }
+    .risk-elevated, .risk-high { color: var(--warn); }
+    .risk-critical { color: var(--danger); }
+    .insight-list { list-style: none; }
+    .insight-list li { padding: .4rem 0; padding-left: 1.25rem; position: relative; }
+    .insight-list li::before { content: "•"; position: absolute; left: 0; color: var(--primary); font-weight: bold; }
+    .footer { padding: 1.25rem 2.5rem; background: #f4f7fa; font-size: .8rem; color: var(--muted); text-align: center; }
+    @media print { body { padding: 0; background: #fff; } .report { box-shadow: none; } }
+  </style>
+</head>
+<body>
+  <div class="report">
+    <div class="header">
+      <h1>{{ report.report_title }}</h1>
+      <div class="meta">{{ result.business_name }} · Assessment ID {{ result.assessment_id }} · Generated {{ generated_display }}</div>
+      <div class="meta">IDBI Innovate 2026 · Financial Health Score Platform · Sustainow Carbon Intelligence</div>
+    </div>
+
+    <div class="score-banner">
+      <div class="score-circle">
+        <span class="num">{{ "%.1f"|format(result.overall_score) }}</span>
+        <span class="lbl">/ 100</span>
+      </div>
+      <div>
+        <div class="grade">Grade {{ result.grade }}</div>
+        <div>Risk: <strong class="risk-{{ result.overall_risk_level.value if result.overall_risk_level.value is defined else result.overall_risk_level }}">{{ result.overall_risk_level.value if result.overall_risk_level.value is defined else result.overall_risk_level }}</strong></div>
+        <div>Confidence: {{ result.overall_confidence.value if result.overall_confidence.value is defined else result.overall_confidence }}</div>
+      </div>
+    </div>
+
+    <div class="section">
+      <h2>Executive Summary</h2>
+      <p>{{ report.executive_summary }}</p>
+      <p style="margin-top:1rem">{{ result.audience_summary }}</p>
+    </div>
+
+    <div class="section">
+      <h2>Credit Decision Recommendation</h2>
+      <div class="recommendation">{{ report.credit_decision_recommendation }}</div>
+    </div>
+
+    <div class="section">
+      <h2>20-Dimension Score Breakdown</h2>
+      <table>
+        <thead>
+          <tr><th>Dimension</th><th>Score</th><th>Weight</th><th>Risk</th><th>Confidence</th></tr>
+        </thead>
+        <tbody>
+          {% for d in dimension_scores %}
+          <tr>
+            <td>{{ d.dimension.replace('_', ' ').title() }}</td>
+            <td><strong>{{ "%.1f"|format(d.score) }}</strong></td>
+            <td>{{ "%.0f"|format(d.weight * 100) }}%</td>
+            <td class="risk-{{ d.risk_level.value if d.risk_level.value is defined else d.risk_level }}">{{ d.risk_level.value if d.risk_level.value is defined else d.risk_level }}</td>
+            <td>{{ d.confidence.value if d.confidence.value is defined else d.confidence }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+  {% if risk_indicators %}
+    <div class="section">
+      <h2>Risk Indicators</h2>
+      <table>
+        <thead><tr><th>Indicator</th><th>Severity</th><th>Description</th><th>Recommended Action</th></tr></thead>
+        <tbody>
+          {% for r in risk_indicators %}
+          <tr>
+            <td>{{ r.label }}</td>
+            <td class="risk-{{ r.severity.value if r.severity.value is defined else r.severity }}">{{ r.severity.value if r.severity.value is defined else r.severity }}</td>
+            <td>{{ r.description }}</td>
+            <td>{{ r.recommended_action or '—' }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% endif %}
+
+    <div class="section">
+      <h2>Key Insights</h2>
+      <ul class="insight-list">
+        {% for i in result.key_insights %}
+        <li>{{ i }}</li>
+        {% endfor %}
+      </ul>
+    </div>
+
+  {% if data_gaps %}
+    <div class="section">
+      <h2>Data Gaps</h2>
+      <table>
+        <thead><tr><th>Field</th><th>Impact</th><th>Recommendation</th></tr></thead>
+        <tbody>
+          {% for g in data_gaps %}
+          <tr>
+            <td>{{ g.field }}</td>
+            <td>{{ g.impact }}</td>
+            <td>{{ g.recommendation }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% endif %}
+
+    <div class="section">
+      <h2>Recommended Improvements</h2>
+      <ul class="insight-list">
+        {% for imp in result.recommended_improvements %}
+        <li>{{ imp }}</li>
+        {% endfor %}
+      </ul>
+    </div>
+
+  {% if result.green_finance_opportunities %}
+    <div class="section">
+      <h2>Green Finance Opportunities</h2>
+      <ul class="insight-list">
+        {% for g in result.green_finance_opportunities %}
+        <li>{{ g }}</li>
+        {% endfor %}
+      </ul>
+    </div>
+  {% endif %}
+
+  {% if result.carbon_intelligence %}
+    <div class="section">
+      <h2>Carbon Intelligence Summary</h2>
+      <p>Source: {{ result.carbon_intelligence.source }} · Total emissions: {{ result.carbon_intelligence.total_emissions_tco2e or 'N/A' }} tCO₂e · Carbon intensity: {{ result.carbon_intelligence.carbon_intensity or 'N/A' }}</p>
+    </div>
+  {% endif %}
+
+    <div class="footer">
+      Confidential — For authorized credit, risk, and relationship management use only.<br />
+      Financial Health Score Platform v1.2 · Sustainow Technologies · IDBI Innovate 2026
+    </div>
+  </div>
+</body>
+</html>

@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Login — Financial Health Score</title>
+  <link rel="stylesheet" href="/app/css/style.css" />
+</head>
+<body>
+  <div class="login-page">
+    <div class="login-card">
+      <h1>Financial Health Score</h1>
+      <p class="tagline">IDBI Innovate 2026 · MSME Credit Intelligence Platform</p>
+
+      <div class="role-tabs">
+        <div class="role-tab active" data-role="bank" id="tab-bank">Bank Login</div>
+        <div class="role-tab" data-role="msme" id="tab-msme">MSME Login</div>
+      </div>
+
+      <div id="alert"></div>
+
+      <form id="login-form">
+        <div class="form-group">
+          <label for="email">Email</label>
+          <input type="email" id="email" required placeholder="you@bank.in" />
+        </div>
+        <div class="form-group">
+          <label for="password">Password</label>
+          <input type="password" id="password" required placeholder="••••••••" />
+        </div>
+        <button type="submit" class="btn btn-primary" style="width:100%;margin-top:.5rem">Sign In</button>
+      </form>
+
+      <div class="demo-creds" id="demo-creds">
+        <strong>Demo credentials</strong>
+        <div id="cred-list" style="margin-top:.5rem"></div>
+      </div>
+    </div>
+  </div>
+
+  <script src="/app/js/api.js"></script>
+  <script>
+    const user = getUser();
+    if (getToken() && user) redirectByRole(user);
+
+    let selectedRole = 'bank';
+    const demos = { bank: [], msme: [] };
+
+    document.querySelectorAll('.role-tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        selectedRole = tab.dataset.role;
+        document.querySelectorAll('.role-tab').forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+        renderDemoCreds();
+        const first = demos[selectedRole][0];
+        if (first) {
+          document.getElementById('email').value = first.email;
+          document.getElementById('password').value = first.password;
+        }
+      });
+    });
+
+    function renderDemoCreds() {
+      const list = demos[selectedRole].map(d =>
+        `<div style="margin:.35rem 0"><code>${d.email}</code> / <code>${d.password}</code> — ${d.role}</div>`
+      ).join('');
+      document.getElementById('cred-list').innerHTML = list;
+    }
+
+    fetch(`${API_BASE}/api/v1/auth/demo-credentials`)
+      .then(r => r.json())
+      .then(data => {
+        demos.bank = data.bank;
+        demos.msme = data.msme;
+        renderDemoCreds();
+        document.getElementById('email').value = demos.bank[0].email;
+        document.getElementById('password').value = demos.bank[0].password;
+      });
+
+    document.getElementById('login-form').addEventListener('submit', async e => {
+      e.preventDefault();
+      const alert = document.getElementById('alert');
+      alert.innerHTML = '';
+      try {
+        const res = await api('/api/v1/auth/login', {
+          method: 'POST',
+          body: JSON.stringify({
+            email: document.getElementById('email').value,
+            password: document.getElementById('password').value,
+          }),
+        });
+        setAuth(res.access_token, res.user);
+        redirectByRole(res.user);
+      } catch (err) {
+        alert.innerHTML = `<div class="alert alert-error">${err.message}</div>`;
+      }
+    });
+  </script>
+</body>
+</html>

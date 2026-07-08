@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Run Assessment — Financial Health Score</title>
+  <link rel="stylesheet" href="/app/css/style.css" />
+</head>
+<body>
+  <div class="layout">
+    <aside class="sidebar" style="display:flex;flex-direction:column;min-height:100vh">
+      <div class="brand">Financial Health Score</div>
+      <nav>
+        <a href="/app/msme/dashboard.html">Dashboard</a>
+        <a href="/app/msme/assess.html" class="active">Run Assessment</a>
+        <a href="/app/msme/loans.html">Loan Applications</a>
+      </nav>
+      <div class="user-block"><button class="btn btn-outline btn-sm" style="color:#fff;border-color:rgba(255,255,255,.4)" onclick="logout()">Sign Out</button></div>
+    </aside>
+    <main class="main">
+      <h1 class="page-title">Run Financial Health Assessment</h1>
+      <div class="card">
+        <p style="margin-bottom:1rem;color:var(--muted)">
+          Run a quick assessment using your profile data and Carbon Intelligence enrichment,
+          or submit a loan application after assessment.
+        </p>
+        <button class="btn btn-accent" id="quick-btn">Run Quick Assessment</button>
+        <div id="result" style="margin-top:1.5rem"></div>
+      </div>
+      <div class="card">
+        <h3>Apply for MSME Loan</h3>
+        <form id="loan-form">
+          <div class="form-group">
+            <label>Loan Type</label>
+            <select id="loan-type">
+              <option value="working_capital">Working Capital</option>
+              <option value="term_loan">Term Loan</option>
+              <option value="equipment_finance">Equipment Finance</option>
+              <option value="green_finance">Green / Sustainability Linked</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Amount (INR)</label>
+            <input type="number" id="amount" min="100000" step="50000" value="2500000" required />
+          </div>
+          <div class="form-group">
+            <label>Tenure (months)</label>
+            <input type="number" id="tenure" min="6" max="120" value="36" required />
+          </div>
+          <div class="form-group">
+            <label>Purpose</label>
+            <textarea id="purpose" rows="3" placeholder="Describe loan purpose…"></textarea>
+          </div>
+          <button type="submit" class="btn btn-primary">Submit to IDBI Bank</button>
+        </form>
+        <div id="loan-msg" style="margin-top:1rem"></div>
+      </div>
+    </main>
+  </div>
+  <script src="/app/js/api.js"></script>
+  <script>
+    if (!requireAuth()) throw new Error('auth');
+    const user = getUser();
+    if (!isMsmeUser(user)) redirectByRole(user);
+    if (user.role === 'msme_viewer') {
+      document.getElementById('quick-btn').disabled = true;
+      document.getElementById('loan-form').style.display = 'none';
+    }
+
+    let lastAssessmentId = null;
+
+    document.getElementById('quick-btn').addEventListener('click', async () => {
+      const el = document.getElementById('result');
+      el.innerHTML = '<p>Running 20-dimension assessment…</p>';
+      try {
+        const r = await api('/api/v1/msme/assess/quick', { method: 'POST' });
+        lastAssessmentId = r.assessment_id;
+        el.innerHTML = `
+          <div class="alert alert-success">
+            Assessment complete: <strong>${r.overall_score.toFixed(1)}/100</strong> (Grade ${r.grade})
+            <a href="/app/msme/report.html?id=${r.assessment_id}" style="margin-left:1rem">View Report</a>
+          </div>`;
+      } catch (e) { el.innerHTML = `<div class="alert alert-error">${e.message}</div>`; }
+    });
+
+    document.getElementById('loan-form').addEventListener('submit', async e => {
+      e.preventDefault();
+      try {
+        const res = await api('/api/v1/msme/loans', {
+          method: 'POST',
+          body: JSON.stringify({
+            loan_type: document.getElementById('loan-type').value,
+            amount_inr: Number(document.getElementById('amount').value),
+            tenure_months: Number(document.getElementById('tenure').value),
+            purpose: document.getElementById('purpose').value,
+            assessment_id: lastAssessmentId,
+          }),
+        });
+        document.getElementById('loan-msg').innerHTML = `<div class="alert alert-success">Application ${res.application_ref} submitted successfully.</div>`;
+      } catch (err) {
+        document.getElementById('loan-msg').innerHTML = `<div class="alert alert-error">${err.message}</div>`;
+      }
+    });
+  </script>
+</body>
+</html>

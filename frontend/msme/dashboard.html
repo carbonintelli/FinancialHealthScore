@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MSME Dashboard — Financial Health Score</title>
+  <link rel="stylesheet" href="/app/css/style.css" />
+</head>
+<body>
+  <div class="layout">
+    <aside class="sidebar" style="display:flex;flex-direction:column;min-height:100vh">
+      <div class="brand">Financial Health Score</div>
+      <div class="sub">MSME Portal</div>
+      <nav>
+        <a href="/app/msme/dashboard.html" class="active">Dashboard</a>
+        <a href="/app/msme/assess.html">Run Assessment</a>
+        <a href="/app/msme/loans.html">Loan Applications</a>
+      </nav>
+      <div class="user-block">
+        <div id="user-name"></div>
+        <button class="btn btn-outline btn-sm" style="margin-top:.75rem;color:#fff;border-color:rgba(255,255,255,.4)" onclick="logout()">Sign Out</button>
+      </div>
+    </aside>
+    <main class="main">
+      <h1 class="page-title" id="biz-name">MSME Dashboard</h1>
+      <div class="stats-grid" id="stats"></div>
+      <div class="card">
+        <h3>Your Financial Health Score</h3>
+        <div id="score-block">Loading…</div>
+      </div>
+      <div class="card">
+        <h3>Assessment History</h3>
+        <div id="history">Loading…</div>
+      </div>
+    </main>
+  </div>
+  <script src="/app/js/api.js"></script>
+  <script>
+    if (!requireAuth()) throw new Error('auth');
+    const user = getUser();
+    if (!isMsmeUser(user)) redirectByRole(user);
+    document.getElementById('user-name').textContent = user.full_name;
+
+    async function load() {
+      const [dash, history] = await Promise.all([
+        api('/api/v1/msme/dashboard'),
+        api('/api/v1/msme/assessments'),
+      ]);
+
+      document.getElementById('biz-name').textContent = dash.business_name;
+      document.getElementById('stats').innerHTML = `
+        <div class="stat-card"><div class="label">Latest Score</div><div class="value">${dash.latest_score?.toFixed(1) ?? '—'}</div></div>
+        <div class="stat-card"><div class="label">Grade</div><div class="value">${dash.latest_grade ?? '—'}</div></div>
+        <div class="stat-card"><div class="label">Open Loans</div><div class="value">${dash.open_loan_applications}</div></div>
+        <div class="stat-card"><div class="label">Improvements</div><div class="value">${dash.improvement_count}</div></div>
+      `;
+
+      if (dash.latest_score != null) {
+        document.getElementById('score-block').innerHTML = `
+          <div class="score-hero">
+            <div class="score-ring" style="--pct:${dash.latest_score}"><span>${dash.latest_score.toFixed(1)}</span></div>
+            <div>
+              <p>Grade <strong>${dash.latest_grade}</strong> · ${riskBadge(dash.latest_risk_level)}</p>
+              <p style="color:var(--muted);margin-top:.5rem">Last assessed ${formatDate(dash.last_assessed_at)}</p>
+              <a class="btn btn-primary" style="margin-top:1rem" href="/app/msme/report.html">View Detailed Report</a>
+            </div>
+          </div>`;
+      } else {
+        document.getElementById('score-block').innerHTML = `
+          <p style="color:var(--muted);margin-bottom:1rem">No assessment yet. Run your first Financial Health Score.</p>
+          <a class="btn btn-accent" href="/app/msme/assess.html">Run Assessment</a>`;
+      }
+
+      if (!history.length) {
+        document.getElementById('history').innerHTML = '<p style="color:var(--muted)">No history yet.</p>';
+        return;
+      }
+      document.getElementById('history').innerHTML = `
+        <table>
+          <thead><tr><th>Date</th><th>Score</th><th>Grade</th><th>Risk</th><th></th></tr></thead>
+          <tbody>${history.map(a => `
+            <tr>
+              <td>${formatDate(a.created_at)}</td>
+              <td><strong>${a.overall_score.toFixed(1)}</strong></td>
+              <td>${a.grade}</td>
+              <td>${riskBadge(a.overall_risk_level)}</td>
+              <td><a class="btn btn-sm btn-primary" href="/app/msme/report.html?id=${a.assessment_id}">Report</a></td>
+            </tr>
+          `).join('')}</tbody>
+        </table>`;
+    }
+    load().catch(e => alert(e.message));
+  </script>
+</body>
+</html>
