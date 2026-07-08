@@ -1,8 +1,13 @@
 {
   "status": "healthy",
-  "version": "1.2.0",
+  "version": "2.1.0",
+  "server": "nodejs",
   "carbon_intelligence_connected": false,
   "mock_mode": true,
   "integrations_mock_mode": true,
-  "dimension_count": 20
+  "dimension_count": 20,
+  "ai_agents_enabled": true,
+  "agentic_orchestration": true,
+  "dimension_agents": 20,
+  "openai_configured": false
 }

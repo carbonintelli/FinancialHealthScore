@@ -1,0 +1,220 @@
+{
+  "version": "2.1.0",
+  "pattern": "multi-phase agentic orchestration",
+  "phases": [
+    {
+      "id": "enrichment",
+      "name": "Data Enrichment",
+      "agents": [
+        "data_enrichment"
+      ],
+      "parallel": false
+    },
+    {
+      "id": "dimension_analysis",
+      "name": "Per-Dimension Analysis",
+      "agents": [
+        "dimension:financial_resilience",
+        "dimension:founder_capability",
+        "dimension:cash_flow_health",
+        "dimension:payment_behaviour",
+        "dimension:credit_history_debt_servicing",
+        "dimension:operational_stability",
+        "dimension:legal_compliance",
+        "dimension:carbon_transition_risk",
+        "dimension:alternative_data_signals",
+        "dimension:market_sentiment",
+        "dimension:tax_compliance",
+        "dimension:operational_certifications",
+        "dimension:government_policy_alignment",
+        "dimension:product_demand_outlook",
+        "dimension:esg_disclosure",
+        "dimension:supply_chain_resilience",
+        "dimension:governance_diversity",
+        "dimension:insurance_business_continuity",
+        "dimension:geographic_risk",
+        "dimension:peer_benchmark"
+      ],
+      "parallel": true,
+      "count": 20
+    },
+    {
+      "id": "risk_synthesis",
+      "name": "Risk Synthesis",
+      "agents": [
+        "risk_synthesis"
+      ],
+      "parallel": false
+    },
+    {
+      "id": "health_score_synthesis",
+      "name": "Health Score Validation",
+      "agents": [
+        "health_score_synthesis"
+      ],
+      "parallel": false
+    },
+    {
+      "id": "report_orchestration",
+      "name": "Report Generation",
+      "agents": [
+        "report_orchestration"
+      ],
+      "parallel": false
+    },
+    {
+      "id": "stakeholder_agents",
+      "name": "Stakeholder Intelligence",
+      "agents": [
+        "credit_analysis",
+        "policy_advisory",
+        "regulatory_compliance"
+      ],
+      "parallel": true
+    }
+  ],
+  "dimension_agents": [
+    {
+      "dimension": "financial_resilience",
+      "label": "Financial Resilience",
+      "weight": 0.09,
+      "category": "financial",
+      "agent_role": "Liquidity & leverage analyst"
+    },
+    {
+      "dimension": "founder_capability",
+      "label": "Founder Capability",
+      "weight": 0.08,
+      "category": "market",
+      "agent_role": "Key-person risk analyst"
+    },
+    {
+      "dimension": "cash_flow_health",
+      "label": "Cash Flow Health",
+      "weight": 0.07,
+      "category": "financial",
+      "agent_role": "Cash flow analyst"
+    },
+    {
+      "dimension": "payment_behaviour",
+      "label": "Payment Behaviour",
+      "weight": 0.07,
+      "category": "financial",
+      "agent_role": "Payment behaviour analyst"
+    },
+    {
+      "dimension": "credit_history_debt_servicing",
+      "label": "Credit History & Debt Servicing",
+      "weight": 0.06,
+      "category": "financial",
+      "agent_role": "Credit bureau analyst"
+    },
+    {
+      "dimension": "operational_stability",
+      "label": "Operational Stability",
+      "weight": 0.06,
+      "category": "operational",
+      "agent_role": "Operations analyst"
+    },
+    {
+      "dimension": "legal_compliance",
+      "label": "Legal Compliance",
+      "weight": 0.06,
+      "category": "compliance",
+      "agent_role": "Legal compliance analyst"
+    },
+    {
+      "dimension": "carbon_transition_risk",
+      "label": "Carbon Transition Risk",
+      "weight": 0.05,
+      "category": "sustainability",
+      "agent_role": "Carbon transition analyst"
+    },
+    {
+      "dimension": "alternative_data_signals",
+      "label": "Alternative Data Signals",
+      "weight": 0.05,
+      "category": "alternative",
+      "agent_role": "Alternative data analyst"
+    },
+    {
+      "dimension": "market_sentiment",
+      "label": "Market Sentiment",
+      "weight": 0.05,
+      "category": "market",
+      "agent_role": "Market sentiment analyst"
+    },
+    {
+      "dimension": "tax_compliance",
+      "label": "Tax Compliance",
+      "weight": 0.04,
+      "category": "compliance",
+      "agent_role": "Tax compliance analyst"
+    },
+    {
+      "dimension": "operational_certifications",
+      "label": "Operational Certifications",
+      "weight": 0.04,
+      "category": "operational",
+      "agent_role": "Certification analyst"
+    },
+    {
+      "dimension": "government_policy_alignment",
+      "label": "Government Policy Alignment",
+      "weight": 0.04,
+      "category": "compliance",
+      "agent_role": "Policy alignment analyst"
+    },
+    {
+      "dimension": "product_demand_outlook",
+      "label": "Product Demand Outlook",
+      "weight": 0.04,
+      "category": "market",
+      "agent_role": "Demand forecast analyst"
+    },
+    {
+      "dimension": "esg_disclosure",
+      "label": "ESG Disclosure",
+      "weight": 0.04,
+      "category": "sustainability",
+      "agent_role": "ESG disclosure analyst"
+    },
+    {
+      "dimension": "supply_chain_resilience",
+      "label": "Supply Chain Resilience",
+      "weight": 0.04,
+      "category": "operational",
+      "agent_role": "Supply chain stress analyst"
+    },
+    {
+      "dimension": "governance_diversity",
+      "label": "Governance Diversity",
+      "weight": 0.03,
+      "category": "compliance",
+      "agent_role": "Governance analyst"
+    },
+    {
+      "dimension": "insurance_business_continuity",
+      "label": "Insurance & Business Continuity",
+      "weight": 0.03,
+      "category": "operational",
+      "agent_role": "Insurance adequacy analyst"
+    },
+    {
+      "dimension": "geographic_risk",
+      "label": "Geographic Risk",
+      "weight": 0.03,
+      "category": "alternative",
+      "agent_role": "Geographic risk analyst"
+    },
+    {
+      "dimension": "peer_benchmark",
+      "label": "Peer Benchmark",
+      "weight": 0.03,
+      "category": "alternative",
+      "agent_role": "Peer benchmarking analyst"
+    }
+  ],
+  "total_agents_per_full_run": 27,
+  "llm_enhanced": false
+}

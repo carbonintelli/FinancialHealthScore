@@ -1,5 +1,6 @@
 {
   "mock_mode": true,
+  "server": "nodejs",
   "integrations": {
     "credit_bureau": {
       "configured": false,
@@ -21,6 +22,21 @@
       "configured": false,
       "source": "ci.sustainow.in"
     }
+  },
+  "ai_agents": {
+    "orchestration": "multi-phase",
+    "dimension_agents": 20,
+    "synthesis_agents": [
+      "risk_synthesis",
+      "health_score_synthesis",
+      "report_orchestration"
+    ],
+    "stakeholder_agents": [
+      "credit_analysis",
+      "policy_advisory",
+      "regulatory_compliance"
+    ],
+    "enrichment": "data_enrichment"
   },
   "dimension_count": 20
 }

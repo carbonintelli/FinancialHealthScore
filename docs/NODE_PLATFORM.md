@@ -1,46 +1,62 @@
 # Node.js Platform Server
 
-Primary runtime for Financial Health Score v2.0 — multi-stakeholder MSME intelligence with AI agents.
+Primary runtime for Financial Health Score **v2.1** — multi-stakeholder MSME intelligence with **27-agent orchestration**.
 
 ## Quick Start
 
 ```bash
 cd server && npm install
+pip install -r requirements.txt    # Python scoring bridge
+cp .env.example .env
 npm run dev          # development with hot reload
-# or from repo root:
-npm run install:all && npm run dev
 ```
 
-Platform: http://localhost:8080/app/index.html
+Platform: http://localhost:8080/app/index.html  
+API health: http://localhost:8080/api/v1/health
 
 ## Architecture
 
 ```
 server/
 ├── src/
-│   ├── index.ts              # Express app entry
+│   ├── index.ts              # Express entry (listen + static frontend)
+│   ├── app.ts                # createApp() — shared by tests & snapshots
 │   ├── routes/               # Auth + API routes
 │   ├── services/
-│   │   ├── agents/           # AI agent orchestration
+│   │   ├── agents/           # 27-agent orchestration (6 phases)
+│   │   ├── integrations/     # Bureau, tax mock clients
 │   │   ├── scoring/bridge.ts # Python scoring bridge
-│   │   ├── store.ts          # Assessment persistence
+│   │   ├── store.ts          # Assessment persistence + orchestration
 │   │   └── reports/          # HTML + JSON reports
-│   └── db/                   # SQLite + seed data
+│   ├── data/
+│   │   └── government-policies.ts
+│   ├── db/                   # SQLite + seed data
+│   └── utils/
+│       └── snapshot-normalize.ts
+├── scripts/
+│   └── generate-snapshots.ts # Regenerate tests/snapshots/*.json
 ├── scoring_bridge.py         # Invokes Python scoring engine
-└── tests/                    # Vitest integration tests
+└── tests/
+    ├── platform.test.ts      # Platform + agent integration tests
+    └── snapshots.test.ts     # Golden-file API regression tests
 ```
 
 ## AI Agents
 
-| Agent | Trigger | Purpose |
+| Agent | Phase | Purpose |
 |---|---|---|
-| `credit_analysis` | Assessment complete | Credit committee recommendation |
-| `policy_advisory` | Govt portal | Scheme eligibility & enrollment |
-| `regulatory_compliance` | Regulatory review | RBI/GSTN/MCA compliance flags |
-| `data_enrichment` | Auto-enrich | Bureau/tax/legal pull summary |
-| `report_narrative` | Report generation | Executive summary narrative |
+| `data_enrichment` | 1 | Bureau/tax/legal/document pull summary |
+| 20 × `dimension_agent` | 2 | Per-dimension risk analysis (parallel) |
+| `risk_synthesis` | 3 | Composite risk profile |
+| `health_score_synthesis` | 4 | Agent-validated score + governance bonus |
+| `report_orchestration` | 5 | Credit decision narrative |
+| `credit_analysis` | 6 | Credit committee recommendation |
+| `policy_advisory` | 6 | Scheme eligibility & enrollment |
+| `regulatory_compliance` | 6 | RBI/GSTN/MCA compliance flags |
 
-Set `OPENAI_API_KEY` for LLM-enhanced agent outputs. Without it, agents use deterministic rule-based intelligence.
+Set `OPENAI_API_KEY` for LLM-enhanced agent narratives. Without it, agents use deterministic rule-based intelligence with identical structure.
+
+See [AGENTIC_ARCHITECTURE.md](./AGENTIC_ARCHITECTURE.md).
 
 ## Stakeholders & Roles
 
@@ -53,6 +69,8 @@ Set `OPENAI_API_KEY` for LLM-enhanced agent outputs. Without it, agents use dete
 
 ## Demo Credentials
 
+Retrieve all credentials: `GET /api/v1/auth/demo-credentials`
+
 | Stakeholder | Email | Password |
 |---|---|---|
 | Bank | `credit@idbi.bank.in` | `IDBI@2026` |
@@ -64,8 +82,32 @@ Set `OPENAI_API_KEY` for LLM-enhanced agent outputs. Without it, agents use dete
 
 The Node server invokes the Python scoring engine via `scoring_bridge.py` for exact 20-dimension parity. Requires Python 3 with `app/` dependencies installed (`pip install -r requirements.txt`).
 
-## Tests
+Demo MSME baseline: **77.3 / B+** (Shree Ganesh Auto Components Pvt Ltd).
+
+## Configuration
+
+```env
+PORT=8080
+SECRET_KEY=your-secret-key
+JWT_EXPIRE_MINUTES=480
+DATABASE_URL=data/financial_health_node.db
+USE_MOCK_INTEGRATIONS=true
+OPENAI_API_KEY=              # Optional — LLM agent narratives
+CARBON_INTELLIGENCE_API_KEY= # Optional — live CI data
+```
+
+## Tests & Snapshots
 
 ```bash
-cd server && npm test    # 7 integration tests
+cd server && npm test              # 23 tests (platform + snapshots)
+npm run generate:snapshots         # Regenerate tests/snapshots/*.json
 ```
+
+| Test file | Coverage |
+|---|---|
+| `tests/platform.test.ts` | Auth, agents, bank/MSME/govt/regulatory flows |
+| `tests/snapshots.test.ts` | Golden-file API response regression |
+
+Snapshot catalog: [PRODUCT_SNAPSHOTS.md](./PRODUCT_SNAPSHOTS.md)
+
+Python unit tests (`pytest`) still cover the scoring engine independently.

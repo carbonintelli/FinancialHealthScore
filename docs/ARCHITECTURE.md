@@ -1,6 +1,8 @@
 # Architecture
 
-Financial Health Score is a **FastAPI** service that ingests consented MSME financial, operational, and alternative data, enriches it via external integrations, and produces an explainable **20-dimension Financial Health Score** for credit, risk, and relationship management teams.
+Financial Health Score is a **Node.js Express** platform (v2.1) that ingests consented MSME financial, operational, and alternative data, enriches it via external integrations and AI agents, and produces an explainable **20-dimension Financial Health Score** for banks, MSMEs, government bodies, and regulators.
+
+The scoring engine runs in **Python** (`app/services/scoring_engine.py`) and is invoked by the Node server via `server/scoring_bridge.py` for dimension parity. A legacy **FastAPI** server (`python run.py`) remains available for Python-only deployments.
 
 Developed for **IDBI Innovate 2026** by SUSTAINOW TECHNOLOGIES.
 
@@ -9,17 +11,21 @@ Developed for **IDBI Innovate 2026** by SUSTAINOW TECHNOLOGIES.
 ```mermaid
 flowchart TB
     subgraph Clients
-        CT[Credit Teams]
-        RT[Risk Teams]
-        RM[Relationship Managers]
-        PA[Portfolio Analysts]
+        BANK[Bank Credit / Risk / RM]
+        MSME[MSME Owners]
+        GOVT[Government / SIDBI]
+        REG[Regulatory Bodies]
     end
 
-    subgraph FHS[Financial Health Score API]
-        API[FastAPI REST API]
-        SE[Scoring Engine]
-        AS[Advanced Scoring]
-        EN[Enrichment Pipeline]
+    subgraph Node[Node.js Platform — port 8080]
+        WEB[Express REST API]
+        AGENTS[Agentic Orchestrator — 27 agents]
+        STORE[SQLite Assessment Store]
+        FE[Static Frontend /app/]
+    end
+
+    subgraph Python[Python Scoring Bridge]
+        SE[Scoring Engine — 20 dimensions]
     end
 
     subgraph External
@@ -27,55 +33,67 @@ flowchart TB
         BU[CIBIL / CRISIL Bureau]
         TX[GSTN / ITR Tax]
         LG[e-Courts / MCA Legal]
-        DOC[Document OCR]
+        OAI[OpenAI — optional]
     end
 
-    CT & RT & RM & PA --> API
-    API --> EN
-    EN --> BU & TX & LG & DOC & CI
-    EN --> SE
-    SE --> AS
-    SE --> API
+    BANK & MSME & GOVT & REG --> FE
+    FE --> WEB
+    WEB --> AGENTS
+    WEB --> SE
+    AGENTS --> OAI
+    WEB --> BU & TX & LG & CI
+    WEB --> STORE
 ```
 
-## Request Flow
+## Request Flow — Assessment
 
 ```mermaid
 sequenceDiagram
     participant Client
-    participant API as FastAPI Routes
-    participant Enrich as Enrichment Pipeline
+    participant API as Express API
+    participant Bridge as Python Scoring Bridge
+    participant Orch as Agent Orchestrator
     participant CI as Carbon Intelligence
-    participant Engine as Scoring Engine
-    participant Adv as Advanced Scoring
+    participant DB as SQLite Store
 
-    Client->>API: POST /api/v1/assess
-    API->>Enrich: enrich_financial_data (if auto_enrich)
-    Enrich->>BU: Bureau pull (GSTIN/PAN)
-    Enrich->>TX: Tax verify
-    Enrich->>LG: Litigation search
-    Enrich->>DOC: Document OCR
-    API->>CI: fetch_full_intelligence (if msme_id)
-    API->>Engine: assess(request, carbon_data, enrichment_log)
-    Engine->>Adv: ESG, supply chain, geo, peer dimensions
-    Engine-->>API: FinancialHealthScoreResult
-    API-->>Client: JSON response
+    Client->>API: POST /api/v1/msme/assess/quick (JWT)
+    API->>Bridge: assess_demo / assess_request
+    Bridge-->>API: FinancialHealthScoreResult (20 dims)
+    API->>Orch: orchestrateAssessment (27 agents, 6 phases)
+    Orch-->>API: agent_insights
+    API->>DB: persist assessment + agent_insights
+    API-->>Client: score + agent_insights JSON
 ```
 
 ## Component Map
 
 | Layer | Module | Responsibility |
 |---|---|---|
-| **API** | `app/api/routes.py` | REST endpoints, orchestration |
-| **Models** | `app/models/schemas.py` | Pydantic request/response schemas |
-| **Config** | `app/config.py` | Environment settings, API keys |
-| **Scoring** | `app/services/scoring_engine.py` | 15 core dimension scorers |
-| **Advanced** | `app/services/advanced_scoring.py` | 5 advanced dimension scorers |
-| **Enrichment** | `app/services/enrichment.py` | Auto-fetch bureau/tax/legal/OCR |
-| **Integrations** | `app/services/integrations.py` | External API clients |
-| **Carbon** | `app/services/carbon_intelligence.py` | ci.sustainow.in client |
-| **Credit** | `app/services/credit_ratings.py` | CRISIL rating mapping |
-| **Data** | `app/data/*` | Benchmarks, policies, certifications, demo MSME |
+| **API** | `server/src/routes/api.ts` | REST endpoints, auth gates |
+| **Auth** | `server/src/routes/auth.ts` | JWT login, demo credentials |
+| **App** | `server/src/app.ts` | Express factory (tests + snapshots) |
+| **Agents** | `server/src/services/agents/` | 27-agent orchestration pipeline |
+| **Scoring** | `server/scoring_bridge.py` → `app/services/scoring_engine.py` | 20-dimension composite score |
+| **Integrations** | `server/src/services/integrations/` | Bureau, tax mock clients |
+| **Policies** | `server/src/data/government-policies.ts` | Scheme catalog by sector |
+| **Store** | `server/src/services/store.ts` | Assessment persistence |
+| **Reports** | `server/src/services/reports/` | JSON + HTML credit reports |
+| **DB** | `server/src/db/` | SQLite schema + seed data |
+| **Frontend** | `frontend/` | Bank, MSME, govt, regulatory portals |
+| **Legacy API** | `app/api/routes.py` | FastAPI endpoints (optional) |
+
+## Agentic Orchestration
+
+Every stored assessment (bank assess, MSME quick assess) triggers **27 AI agents** across **6 phases**:
+
+1. **Enrichment** — bureau/tax/legal/document summary
+2. **Dimension analysis** — 20 parallel dimension agents (one per scoring dimension)
+3. **Risk synthesis** — composite risk profile
+4. **Health score validation** — agent-validated score + governance bonus
+5. **Report orchestration** — credit decision narrative
+6. **Stakeholder agents** — credit, policy, regulatory outputs
+
+See [AGENTIC_ARCHITECTURE.md](./AGENTIC_ARCHITECTURE.md) for full agent catalog and API.
 
 ## Scoring Architecture
 
@@ -131,46 +149,14 @@ flowchart LR
     Financial & Operational & People & Market & Risk & Sustainability & AltData --> SCORE[Overall Score 0-100]
 ```
 
-### Dimension Groups
-
-| Group | Dimensions | Combined Weight |
-|---|---|---|
-| Financial Core | resilience, cash flow, payment, credit history | 29% |
-| Operational | stability, certifications, supply chain | 14% |
-| People & Governance | founder, governance diversity | 11% |
-| Market & Demand | sentiment, product demand, peer benchmark | 12% |
-| Compliance & Risk | legal, tax, geographic, insurance | 16% |
-| Sustainability | carbon, ESG, government policy | 13% |
-| Alternative Data | concentration, bank signals | 5% |
-
-## Data Model
-
-```mermaid
-erDiagram
-    AssessmentRequest ||--|| FinancialDataInput : contains
-    FinancialDataInput ||--|| MSMEProfile : profile
-    FinancialDataInput ||--|| AccountingSnapshot : accounting
-    FinancialDataInput |o--o| FounderProfile : founder
-    FinancialDataInput |o--o| CreditBureauProfile : credit_bureau
-    FinancialDataInput |o--o| LegalComplianceProfile : legal_compliance
-    FinancialDataInput |o--o| TaxComplianceProfile : tax_compliance
-    FinancialDataInput |o--o| ESGDisclosureProfile : esg_disclosure
-    FinancialDataInput |o--o| SupplyChainProfile : supply_chain
-    FinancialDataInput |o--o| InsuranceProfile : insurance
-    FinancialDataInput |o--o| GeographicProfile : geographic
-    FinancialHealthScoreResult ||--|{ DimensionScore : dimension_scores
-    FinancialHealthScoreResult ||--o| AdvancedIntelligenceSummary : advanced_intelligence
-```
-
 ## Integration Modes
 
 | Integration | Mock Trigger | Live Trigger |
 |---|---|---|
 | Carbon Intelligence | No `CARBON_INTELLIGENCE_API_KEY` | `ci_live_*` key set |
-| Credit Bureau | `USE_MOCK_INTEGRATIONS=true` | `CREDIT_BUREAU_API_KEY` set |
-| Tax Verification | `USE_MOCK_INTEGRATIONS=true` | `TAX_API_KEY` set |
-| Legal Search | `USE_MOCK_INTEGRATIONS=true` | `LEGAL_API_KEY` set |
-| Document OCR | `USE_MOCK_INTEGRATIONS=true` | `DOCUMENT_API_KEY` set |
+| Credit Bureau | `USE_MOCK_INTEGRATIONS=true` (default) | `CREDIT_BUREAU_API_KEY` set |
+| Tax Verification | `USE_MOCK_INTEGRATIONS=true` (default) | `TAX_API_KEY` set |
+| AI Agents | No `OPENAI_API_KEY` | `sk-*` key set (LLM narratives) |
 
 ## Response Structure
 
@@ -186,31 +172,38 @@ Every assessment returns:
 | `data_gaps` | Missing inputs with severity |
 | `recommended_improvements` | Actionable recommendations |
 | `advanced_intelligence` | Integration status, peer percentile |
-| `carbon_intelligence` | ci.sustainow.in summary |
-| `government_policy_assessment` | Scheme enrollment analysis |
-| `metadata` | Sources, enrichment log, bonuses |
+| `agent_insights` | Full orchestration output (stored assessments) |
 
 ## Deployment
 
 ```bash
+cd server && npm install
 pip install -r requirements.txt
 cp .env.example .env
-python run.py          # Development
-# or
-uvicorn app.main:app --host 0.0.0.0 --port 8080
+npm run dev          # Development (port 8080)
+npm run build && npm start   # Production
 ```
 
-Health check: `GET /api/v1/health`  
-OpenAPI docs: `GET /docs`
+- **Platform login**: http://localhost:8080/app/index.html
+- **API root**: `GET /api`
+- **Health check**: `GET /api/v1/health`
+
+Legacy Python server: `python run.py` (FastAPI with `/docs` OpenAPI UI).
 
 ## Testing Strategy
 
-| Suite | File | Coverage |
+| Suite | Command | Coverage |
 |---|---|---|
-| Unit scoring | `tests/test_scoring.py` | Dimension scorers, engine |
-| Advanced | `tests/test_advanced.py` | ESG, peer, geo, supply chain |
-| Integrations | `tests/test_integrations.py` | Bureau, tax, legal, OCR clients |
-| API | `tests/test_api_assess.py` | Assessment endpoints |
-| Snapshots | `tests/test_snapshots.py` | Golden-file regression |
+| Node platform + agents | `cd server && npm test` | 23 Vitest tests (platform + snapshots) |
+| Python scoring unit | `pytest tests/test_scoring.py -v` | Dimension scorers, engine |
+| Python advanced | `pytest tests/test_advanced.py -v` | ESG, peer, geo, supply chain |
+| Python integrations | `pytest tests/test_integrations.py -v` | Bureau, tax, legal clients |
+| Python API | `pytest tests/test_api_assess.py -v` | Legacy FastAPI assessment |
 
-Regenerate snapshots: `python scripts/generate_snapshots.py`
+**Regenerate API snapshots** (Node.js golden files):
+
+```bash
+cd server && npm run generate:snapshots && npm test
+```
+
+Snapshot files live in `tests/snapshots/`. See [PRODUCT_SNAPSHOTS.md](./PRODUCT_SNAPSHOTS.md).

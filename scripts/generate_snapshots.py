@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
-"""Regenerate API response snapshots for regression testing."""
+"""Regenerate API response snapshots for regression testing.
+
+DEPRECATED: Snapshots are now generated from the Node.js server.
+Use: cd server && npm run generate:snapshots
+"""
 
 from __future__ import annotations
 

@@ -48,6 +48,6 @@ Women-led MSMEs receive up to **+2.5 points** on the overall score.
 
 ## Demo MSME Snapshot
 
-**Shree Ganesh Auto Components Pvt Ltd**: Score **78.1 / B+**, 20 dimensions, 0 data gaps.
+**Shree Ganesh Auto Components Pvt Ltd**: Score **77.3 / B+**, 20 dimensions, 0 data gaps.
 
 See `tests/snapshots/demo_assessment_credit.json` for full response snapshot.

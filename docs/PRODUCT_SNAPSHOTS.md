@@ -1,11 +1,23 @@
 # Product Snapshots
 
-Golden-file snapshots of API responses for regression testing. Regenerate with:
+Golden-file snapshots of API responses for regression testing against the **Node.js platform** (v2.1.0).
+
+Related documentation:
+
+- [ARCHITECTURE.md](./ARCHITECTURE.md) — system design and testing strategy
+- [API.md](./API.md) — full endpoint reference
+- [AGENTIC_ARCHITECTURE.md](./AGENTIC_ARCHITECTURE.md) — 27-agent orchestration
+- [NODE_PLATFORM.md](./NODE_PLATFORM.md) — Node.js server setup and tests
+
+## Regenerate
 
 ```bash
-python scripts/generate_snapshots.py
-pytest tests/test_snapshots.py -v
+cd server
+npm run generate:snapshots
+npm test
 ```
+
+Legacy Python snapshot generation (`python scripts/generate_snapshots.py`) is deprecated — snapshots now reflect the Node.js Express server.
 
 ## Demo Assessment — Credit Team
 
@@ -14,7 +26,7 @@ pytest tests/test_snapshots.py -v
 | Field | Value |
 |---|---|
 | Business | Shree Ganesh Auto Components Pvt Ltd |
-| Overall Score | 78.1 |
+| Overall Score | 77.3 |
 | Grade | B+ |
 | Risk Level | low |
 | Dimensions | 20 |
@@ -61,7 +73,7 @@ pytest tests/test_snapshots.py -v
 
 | File | Endpoint |
 |---|---|
-| `root.json` | `GET /` |
+| `root.json` | `GET /api` |
 | `health.json` | `GET /api/v1/health` |
 | `integrations_status.json` | `GET /api/v1/integrations/status` |
 | `demo_assessment_credit.json` | `GET /api/v1/assess/demo?audience=credit_team` |
@@ -69,6 +81,11 @@ pytest tests/test_snapshots.py -v
 | `policies_auto.json` | `GET /api/v1/policies/catalog?sector=auto_components` |
 | `bureau_pull.json` | `POST /api/v1/integrations/bureau/pull` |
 | `tax_verify.json` | `POST /api/v1/integrations/tax/verify` |
+| `agents_architecture.json` | `GET /api/v1/agents/architecture` |
+| `demo_credentials.json` | `GET /api/v1/auth/demo-credentials` |
+| `msme_orchestration.json` | `POST /api/v1/msme/assess/quick` → `agent_insights` |
+
+Volatile fields (`assessment_id`, `orchestration_id`, `run_id`, timestamps, etc.) are normalized to `<UUID>` / `<TIMESTAMP>` in golden files.
 
 ## Architecture Diagram
 
