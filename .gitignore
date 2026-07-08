@@ -14,3 +14,4 @@ data/*.db-shm
 data/*.db-wal
 server/node_modules/
 server/dist/
+node_modules/

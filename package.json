@@ -3,9 +3,15 @@
   "version": "2.0.0",
   "private": true,
   "scripts": {
-    "start": "cd server && npm run build && npm start",
-    "dev": "cd server && npm run dev",
-    "install:all": "cd server && npm install",
+    "start": "cd client && npm run build && cd ../server && npm run build && npm start",
+    "dev": "concurrently -n api,web -c blue,green \"cd server && npm run dev\" \"cd client && npm run dev\"",
+    "dev:server": "cd server && npm run dev",
+    "dev:client": "cd client && npm run dev",
+    "build": "cd client && npm run build && cd ../server && npm run build",
+    "install:all": "cd server && npm install && cd ../client && npm install",
     "test": "cd server && npm test"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2"
   }
 }

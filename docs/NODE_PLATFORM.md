@@ -1,20 +1,49 @@
 # Node.js Platform Server
 
-Primary runtime for Financial Health Score (FHS) **v2.1** — multi-stakeholder MSME credit intelligence with **27-agent orchestration**.
-
-UI terminology is centralised in `frontend/js/terminology.js`. See [TERMINOLOGY.md](./TERMINOLOGY.md).
+Primary runtime for Financial Health Score (FHS) **v2.1** — Node.js **Express API** + **React TypeScript SPA**.
 
 ## Quick Start
 
 ```bash
-cd server && npm install
-pip install -r requirements.txt    # Python scoring bridge
+npm run install:all    # from repo root
 cp .env.example .env
-npm run dev          # development with hot reload
+npm run dev            # API :8080 + Vite :5173
 ```
 
-Platform: http://localhost:8080/app/index.html  
+Production:
+
+```bash
+npm run build && npm start
+```
+
+Platform UI: http://localhost:8080/app/  
 API health: http://localhost:8080/api/v1/health
+
+## Frontend (React SPA)
+
+The UI lives in `client/` — **React 19**, **TypeScript**, **React Router**, **Vite**.
+
+| Command | Description |
+|---|---|
+| `cd client && npm run dev` | Vite dev server with `/api` proxy to Express |
+| `cd client && npm run build` | Production bundle → `client/dist/` |
+| `npm run dev` (root) | Runs API + Vite concurrently |
+
+Express serves `client/dist` at `/app/` with SPA fallback routing (`server/src/frontend.ts`). The legacy `frontend/` HTML folder is used only when the React build is missing.
+
+### Client structure
+
+```
+client/src/
+├── api/           # fetch client, auth storage, types
+├── components/    # AppLayout, ScoreHero, StatCard, …
+├── hooks/         # useAuth (JWT context)
+├── lib/           # terminology.ts, portals.tsx, format.ts
+├── pages/         # bank/, msme/, govt/, regulatory/
+└── styles/        # app.css
+```
+
+Terminology: [TERMINOLOGY.md](./TERMINOLOGY.md) — mirrored in `client/src/lib/terminology.ts`.
 
 ## Architecture
 

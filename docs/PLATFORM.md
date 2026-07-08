@@ -2,19 +2,19 @@
 
 Full-stack Financial Health Score (FHS) platform with JWT authentication, role-based access, **27-agent orchestration**, credit assessment persistence, credit facility workflow, and detailed HTML credit assessment reports.
 
-**Runtime:** Node.js Express v2.1 (`cd server && npm run dev`)
+**Runtime:** Node.js Express v2.1 API + React TypeScript SPA (`client/`)
 
 UI copy uses formal banking and MSME terminology. See [TERMINOLOGY.md](./TERMINOLOGY.md).
 
 ## Access
 
-| Portal | URL | Description |
+| Portal | URL (production) | URL (dev via Vite) |
 |---|---|---|
-| **Sign In** | http://localhost:8080/app/index.html | Stakeholder authentication |
-| **Lending Institution** | http://localhost:8080/app/bank/dashboard.html | Executive dashboard, lending portfolio, credit applications |
-| **Enterprise (MSME)** | http://localhost:8080/app/msme/dashboard.html | Enterprise dashboard, credit assessment, registration |
-| **Government** | http://localhost:8080/app/govt/dashboard.html | National MSME registry & scheme advisory |
-| **Regulatory** | http://localhost:8080/app/regulatory/dashboard.html | Supervisory dashboard & compliance review |
+| **Sign In** | http://localhost:8080/app/ | http://localhost:5173/app/ |
+| **Lending Institution** | http://localhost:8080/app/bank/dashboard | Executive dashboard, lending portfolio, credit applications |
+| **Enterprise (MSME)** | http://localhost:8080/app/msme/dashboard | Enterprise dashboard, credit assessment, registration |
+| **Government** | http://localhost:8080/app/govt/dashboard | National MSME registry & scheme advisory |
+| **Regulatory** | http://localhost:8080/app/regulatory/dashboard | Supervisory dashboard & compliance review |
 | **API Reference** | [API.md](./API.md) | REST endpoint reference |
 
 ## Demo Login Credentials

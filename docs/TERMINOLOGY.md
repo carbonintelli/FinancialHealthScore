@@ -2,7 +2,7 @@
 
 Professional banking and MSME industry terminology used across the Financial Health Score (FHS) platform — UI, API error messages, and documentation.
 
-The canonical label registry lives in `frontend/js/terminology.js`. Server API field names (e.g. `status: "under_review"`) remain unchanged; only display labels are formalised.
+The canonical label registry lives in `client/src/lib/terminology.ts` (React SPA). Legacy copy in `frontend/js/terminology.js` is deprecated.
 
 ## Platform & Portals
 
@@ -171,19 +171,8 @@ User-facing errors use formal language. Examples:
 
 ## Frontend Integration
 
-Include `terminology.js` before `api.js` on all portal pages:
+The React SPA (`client/`) imports terminology from `src/lib/terminology.ts`. Formatters are used in components and pages directly.
 
-```html
-<script src="/app/js/terminology.js"></script>
-<script src="/app/js/api.js"></script>
-<script src="/app/js/ui.js"></script>
-```
+Development: `npm run dev` runs Express API and Vite concurrently. Vite proxies `/api` to the Node backend.
 
-Formatter helpers in `api.js`:
-
-- `formatLoanStatus(status)` — credit application status label
-- `formatRiskLevel(level)` — credit risk rating label
-- `formatLoanType(type)` — facility type label
-- `formatDataSource(source)` — financial data source label
-- `formatFeedStatus(status)` — data submission status label
-- `riskBadge(level)` — HTML badge with full risk label
+Production: `cd client && npm run build` — Express serves `client/dist` at `/app/` with SPA routing.

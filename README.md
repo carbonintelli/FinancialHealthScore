@@ -35,21 +35,22 @@ Each dimension produces a score (0–100), risk level, confidence, and evidence-
 ## Quick Start (Node.js — recommended)
 
 ```bash
-# Install Node server + Python scoring dependencies
-cd server && npm install
-pip install -r requirements.txt
+# Install server + React client dependencies
+npm run install:all
 cp .env.example .env
 
-# Run platform (Node.js on port 8080)
+# Development — API (:8080) + Vite React SPA (:5173, proxies /api)
 npm run dev
-# or from repo root: npm run dev
+
+# Production build + start
+npm run build && npm start
 ```
 
 Legacy Python-only server: `python run.py`
 
-Server starts at **http://localhost:8080**
-
-- **Platform Sign In**: http://localhost:8080/app/index.html
+Server API starts at **http://localhost:8080**  
+React platform UI (dev): **http://localhost:5173/app/**  
+React platform UI (production): **http://localhost:8080/app/**
 - **API Root**: http://localhost:8080/api
 - **Demo Assessment**: http://localhost:8080/api/v1/assess/demo
 - **Health Check**: http://localhost:8080/api/v1/health
@@ -200,7 +201,15 @@ Women-led MSMEs receive a **governance score bonus** (up to +2.5 points on overa
 ## Project Structure
 
 ```
-├── server/                  # Node.js platform (primary runtime)
+├── client/                  # React + TypeScript SPA (Vite)
+│   ├── src/
+│   │   ├── api/             # API client & auth
+│   │   ├── components/      # Layout, ScoreHero, StatCard, …
+│   │   ├── lib/             # terminology, portals, formatters
+│   │   ├── pages/           # bank, msme, govt, regulatory routes
+│   │   └── styles/          # Global styles (ported from legacy CSS)
+│   └── vite.config.ts
+├── server/                  # Node.js API (primary runtime)
 │   ├── src/
 │   │   ├── index.ts         # Express entry
 │   │   ├── app.ts           # App factory (tests + snapshots)
@@ -213,16 +222,7 @@ Women-led MSMEs receive a **governance score bonus** (up to +2.5 points on overa
 │   │   └── generate-snapshots.ts
 │   ├── scoring_bridge.py    # Python scoring bridge
 │   └── tests/               # Vitest (platform + snapshots)
-├── frontend/                # Multi-stakeholder web portals
-│   ├── index.html           # Sign-in (lending institution / enterprise / govt / regulatory)
-│   ├── js/
-│   │   ├── terminology.js   # Banking & MSME label registry
-│   │   ├── api.js             # API client + formatters
-│   │   └── ui.js              # Shared layout & components
-│   ├── bank/                # Executive dashboard, lending portfolio, credit applications
-│   ├── msme/                # Enterprise dashboard, credit assessment, registration
-│   ├── govt/                # National MSME dashboard & scheme advisory
-│   └── regulatory/          # Supervisory dashboard & compliance review
+├── frontend/                # Legacy static HTML (fallback only)
 ├── app/                     # Python scoring engine + legacy FastAPI
 │   ├── services/scoring_engine.py
 │   ├── services/integrations.py
