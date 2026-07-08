@@ -65,6 +65,10 @@
           <button type="submit" class="btn btn-primary btn-lg" style="width:100%;margin-top:.25rem">Sign In</button>
         </form>
 
+        <p id="msme-register-link" style="display:none;margin-top:1rem;text-align:center;font-size:.9rem">
+          New MSME? <a href="/app/msme/register.html">Register & get your Health Score</a>
+        </p>
+
         <div class="demo-creds" id="demo-creds">
           <strong>Demo credentials</strong>
           <div id="cred-list"></div>
@@ -87,6 +91,7 @@
         document.querySelectorAll('.role-tab').forEach(t => t.classList.remove('active'));
         tab.classList.add('active');
         renderDemoCreds();
+        document.getElementById('msme-register-link').style.display = selectedRole === 'msme' ? 'block' : 'none';
         const first = demos[selectedRole]?.[0];
         if (first) {
           document.getElementById('email').value = first.email;

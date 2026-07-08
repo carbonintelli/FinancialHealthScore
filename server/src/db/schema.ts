@@ -119,4 +119,39 @@ CREATE TABLE IF NOT EXISTS agent_runs (
   output_json TEXT NOT NULL,
   created_at TEXT DEFAULT (datetime('now'))
 );
+
+CREATE TABLE IF NOT EXISTS msme_profiles (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  msme_id TEXT UNIQUE NOT NULL,
+  organization_id INTEGER NOT NULL,
+  business_name TEXT NOT NULL,
+  sector TEXT DEFAULT 'general',
+  gstin TEXT,
+  pan TEXT,
+  udyam_number TEXT,
+  state TEXT,
+  pincode TEXT,
+  employee_count INTEGER,
+  years_in_operation REAL,
+  annual_turnover_inr REAL,
+  financial_data_json TEXT NOT NULL DEFAULT '{}',
+  data_completeness_pct REAL DEFAULT 0,
+  last_feed_at TEXT,
+  created_at TEXT DEFAULT (datetime('now')),
+  updated_at TEXT DEFAULT (datetime('now')),
+  FOREIGN KEY (organization_id) REFERENCES organizations(id)
+);
+
+CREATE TABLE IF NOT EXISTS msme_data_feeds (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  feed_id TEXT UNIQUE NOT NULL,
+  msme_id TEXT NOT NULL,
+  submitted_by_user_id INTEGER NOT NULL,
+  source TEXT NOT NULL DEFAULT 'manual',
+  payload_json TEXT NOT NULL,
+  assessment_id TEXT,
+  status TEXT DEFAULT 'received',
+  created_at TEXT DEFAULT (datetime('now')),
+  FOREIGN KEY (submitted_by_user_id) REFERENCES users(id)
+);
 `;
