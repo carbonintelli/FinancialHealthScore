@@ -29,18 +29,20 @@ Each dimension produces a score (0–100), risk level, confidence, and evidence-
 - **Relationship Managers** — Discover green-finance opportunities
 - **Portfolio Analysts** — Improve credit monitoring and portfolio intelligence
 
-## Quick Start
+## Quick Start (Node.js — recommended)
 
 ```bash
-# Install dependencies
+# Install Node server + Python scoring dependencies
+cd server && npm install
 pip install -r requirements.txt
-
-# Copy environment config
 cp .env.example .env
 
-# Run the server
-python run.py
+# Run platform (Node.js on port 8080)
+npm run dev
+# or from repo root: npm run dev
 ```
+
+Legacy Python-only server: `python run.py`
 
 Server starts at **http://localhost:8080**
 
@@ -57,13 +59,16 @@ Server starts at **http://localhost:8080**
 | Bank Admin | `admin@idbi.bank.in` | `IDBI@2026` |
 | Credit Team | `credit@idbi.bank.in` | `IDBI@2026` |
 | MSME Owner | `rajesh@shreeganesh.in` | `MSME@2026` |
+| MSME Ministry | `admin@msme.gov.in` | `GOVT@2026` |
+| RBI Supervisor | `supervisor@rbi.org.in` | `REG@2026` |
 
-See [docs/PLATFORM.md](docs/PLATFORM.md) for full credentials, roles, and workflows.
+See [docs/NODE_PLATFORM.md](docs/NODE_PLATFORM.md) and [docs/PLATFORM.md](docs/PLATFORM.md) for full credentials and AI agent workflows.
 
 ## Documentation
 
 | Document | Description |
 |---|---|
+| [docs/NODE_PLATFORM.md](docs/NODE_PLATFORM.md) | Node.js server, AI agents, multi-stakeholder architecture |
 | [docs/PLATFORM.md](docs/PLATFORM.md) | Login, bank & MSME portals, loan workflow, detailed reports |
 | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | System context, request flow, component map, testing strategy |
 | [docs/API.md](docs/API.md) | REST endpoint reference |

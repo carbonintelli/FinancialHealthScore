@@ -8,13 +8,15 @@
 </head>
 <body>
   <div class="login-page">
-    <div class="login-card">
+    <div class="login-card" style="max-width:520px">
       <h1>Financial Health Score</h1>
-      <p class="tagline">IDBI Innovate 2026 · MSME Credit Intelligence Platform</p>
+      <p class="tagline">IDBI Innovate 2026 · Multi-Stakeholder MSME Intelligence Platform</p>
 
-      <div class="role-tabs">
-        <div class="role-tab active" data-role="bank" id="tab-bank">Bank Login</div>
-        <div class="role-tab" data-role="msme" id="tab-msme">MSME Login</div>
+      <div class="role-tabs" style="flex-wrap:wrap">
+        <div class="role-tab active" data-role="bank">Bank</div>
+        <div class="role-tab" data-role="msme">MSME</div>
+        <div class="role-tab" data-role="government">Government</div>
+        <div class="role-tab" data-role="regulatory">Regulatory</div>
       </div>
 
       <div id="alert"></div>
@@ -22,11 +24,11 @@
       <form id="login-form">
         <div class="form-group">
           <label for="email">Email</label>
-          <input type="email" id="email" required placeholder="you@bank.in" />
+          <input type="email" id="email" required />
         </div>
         <div class="form-group">
           <label for="password">Password</label>
-          <input type="password" id="password" required placeholder="••••••••" />
+          <input type="password" id="password" required />
         </div>
         <button type="submit" class="btn btn-primary" style="width:100%;margin-top:.5rem">Sign In</button>
       </form>
@@ -44,7 +46,7 @@
     if (getToken() && user) redirectByRole(user);
 
     let selectedRole = 'bank';
-    const demos = { bank: [], msme: [] };
+    const demos = { bank: [], msme: [], government: [], regulatory: [] };
 
     document.querySelectorAll('.role-tab').forEach(tab => {
       tab.addEventListener('click', () => {
@@ -52,7 +54,7 @@
         document.querySelectorAll('.role-tab').forEach(t => t.classList.remove('active'));
         tab.classList.add('active');
         renderDemoCreds();
-        const first = demos[selectedRole][0];
+        const first = demos[selectedRole]?.[0];
         if (first) {
           document.getElementById('email').value = first.email;
           document.getElementById('password').value = first.password;
@@ -61,7 +63,7 @@
     });
 
     function renderDemoCreds() {
-      const list = demos[selectedRole].map(d =>
+      const list = (demos[selectedRole] || []).map(d =>
         `<div style="margin:.35rem 0"><code>${d.email}</code> / <code>${d.password}</code> — ${d.role}</div>`
       ).join('');
       document.getElementById('cred-list').innerHTML = list;
@@ -70,8 +72,7 @@
     fetch(`${API_BASE}/api/v1/auth/demo-credentials`)
       .then(r => r.json())
       .then(data => {
-        demos.bank = data.bank;
-        demos.msme = data.msme;
+        Object.assign(demos, data);
         renderDemoCreds();
         document.getElementById('email').value = demos.bank[0].email;
         document.getElementById('password').value = demos.bank[0].password;

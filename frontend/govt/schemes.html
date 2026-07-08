@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Scheme Advisory — Government Portal</title>
+  <link rel="stylesheet" href="/app/css/style.css" />
+</head>
+<body>
+  <div class="layout">
+    <aside class="sidebar" style="display:flex;flex-direction:column;min-height:100vh;background:linear-gradient(180deg,#1a5f2a,#0d3d1a)">
+      <div class="brand">MSME Intelligence</div>
+      <nav>
+        <a href="/app/govt/dashboard.html">Dashboard</a>
+        <a href="/app/govt/schemes.html" class="active">Scheme Advisory</a>
+      </nav>
+      <div class="user-block"><button class="btn btn-outline btn-sm" style="color:#fff;border-color:rgba(255,255,255,.4)" onclick="logout()">Sign Out</button></div>
+    </aside>
+    <main class="main">
+      <h1 class="page-title">AI Policy & Scheme Advisory Agent</h1>
+      <div class="card">
+        <p style="margin-bottom:1rem;color:var(--muted)">Select an MSME to run the Policy Advisory AI agent and get eligible government scheme recommendations.</p>
+        <div class="form-group">
+          <label>MSME ID</label>
+          <input type="text" id="msme-id" value="" placeholder="msme-demo-001" />
+        </div>
+        <button class="btn btn-accent" id="run-btn">Run Policy Agent</button>
+        <div id="result" style="margin-top:1.5rem"></div>
+      </div>
+      <div class="card">
+        <h3>Available Schemes Catalog</h3>
+        <div id="catalog">Loading…</div>
+      </div>
+    </main>
+  </div>
+  <script src="/app/js/api.js"></script>
+  <script>
+    if (!requireAuth()) throw new Error('auth');
+    const params = new URLSearchParams(location.search);
+    if (params.get('msme')) document.getElementById('msme-id').value = params.get('msme');
+
+    api('/api/v1/govt/schemes/catalog').then(d => {
+      document.getElementById('catalog').innerHTML = `<ul>${d.schemes.map(s => `<li><strong>${s}</strong></li>`).join('')}</ul>`;
+    });
+
+    document.getElementById('run-btn').addEventListener('click', async () => {
+      const msmeId = document.getElementById('msme-id').value.trim();
+      if (!msmeId) return alert('Enter MSME ID');
+      const el = document.getElementById('result');
+      el.innerHTML = '<p>Running Policy Advisory Agent…</p>';
+      try {
+        const agent = await api(`/api/v1/govt/schemes/recommend/${msmeId}`, { method: 'POST' });
+        el.innerHTML = `
+          <div class="alert alert-success"><strong>${agent.agent_type}</strong> (${agent.confidence} confidence)${agent.used_llm ? ' · LLM enhanced' : ''}</div>
+          <p>${agent.summary}</p>
+          <h4 style="margin-top:1rem">Recommendations</h4>
+          <ul>${agent.recommendations.map(r => `<li>${r}</li>`).join('')}</ul>`;
+      } catch (e) { el.innerHTML = `<div class="alert alert-error">${e.message}</div>`; }
+    });
+  </script>
+</body>
+</html>
