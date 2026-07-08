@@ -1,0 +1,17 @@
+{
+  "success": true,
+  "mock": true,
+  "source": "cibil_crisil_mock",
+  "data": {
+    "businessName": "Shree Ganesh Auto Components Pvt Ltd",
+    "gstin": "27AABCS1234F1Z5",
+    "pan": "AABCS1234F",
+    "crisilRating": "BBB+",
+    "crisilOutlook": "stable",
+    "cmrRank": 3,
+    "totalExposureInr": 12000000,
+    "activeAccounts": 3,
+    "overdueAccounts": 0,
+    "lastPullDate": "2026-07-01"
+  }
+}

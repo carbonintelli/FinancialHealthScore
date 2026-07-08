@@ -10,14 +10,17 @@ Financial Health Score analyses consented MSME data—including transactions, ut
 
 ### Core Capabilities
 
-| Capability | Description |
-|---|---|
-| **Financial Resilience** | Liquidity ratios, leverage, profitability margins |
-| **Cash Flow Health** | Inflow/outflow patterns, volatility, net margins |
-| **Operational Stability** | Cost efficiency, energy exposure, business tenure |
-| **Payment Behaviour** | On-time rates, late payments, defaults |
-| **Carbon Transition Risk** | Carbon intensity, energy cost exposure via CI |
-| **Alternative Data Signals** | Supplier/customer concentration, bank balances |
+**Financial & credit (6 dimensions)** — liquidity, leverage, profitability, cash flow, payment behaviour, credit history and debt servicing
+
+**Operational & compliance (5 dimensions)** — operational stability, legal compliance, tax compliance, operational certifications, governance diversity (including women-led MSME credit benefit)
+
+**Market & policy (4 dimensions)** — founder capability, market sentiment, product demand outlook, government policy alignment
+
+**Sustainability & resilience (5 dimensions)** — carbon transition risk, ESG disclosure, supply chain resilience, insurance and business continuity, geographic risk
+
+**Alternative intelligence (2 dimensions)** — alternative data signals, peer portfolio benchmarking
+
+Each dimension produces a score (0–100), risk level, confidence, and evidence-linked insights. Assessments also return `data_gaps`, `recommended_improvements`, and `advanced_intelligence` summaries.
 
 ### Target Users
 
@@ -44,6 +47,16 @@ Server starts at **http://localhost:8080**
 - **API Docs**: http://localhost:8080/docs
 - **Demo Assessment**: http://localhost:8080/api/v1/assess/demo
 - **Health Check**: http://localhost:8080/api/v1/health
+- **Integrations Status**: http://localhost:8080/api/v1/integrations/status
+
+## Documentation
+
+| Document | Description |
+|---|---|
+| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | System context, request flow, component map, testing strategy |
+| [docs/API.md](docs/API.md) | REST endpoint reference |
+| [docs/SCORING.md](docs/SCORING.md) | 20-dimension scoring model and grade bands |
+| [docs/PRODUCT_SNAPSHOTS.md](docs/PRODUCT_SNAPSHOTS.md) | Golden-file API snapshots and demo MSME baseline |
 
 ## Carbon Intelligence Integration
 
@@ -75,9 +88,13 @@ Without an API key, the service runs in **demo mode** with realistic mock carbon
 |---|---|---|
 | `GET` | `/` | Service info |
 | `GET` | `/api/v1/health` | Health check |
-| `GET` | `/api/v1/integration` | Integration details |
-| `POST` | `/api/v1/assess` | Full MSME assessment |
+| `GET` | `/api/v1/integration` | Carbon Intelligence integration details |
+| `GET` | `/api/v1/integrations/status` | Bureau, tax, legal, OCR integration status |
+| `POST` | `/api/v1/assess` | Full MSME assessment (`auto_enrich: true` by default) |
 | `GET` | `/api/v1/assess/demo` | Demo with sample data |
+| `POST` | `/api/v1/integrations/bureau/pull` | CIBIL/CRISIL bureau pull |
+| `POST` | `/api/v1/integrations/tax/verify` | GSTN/ITR tax verification |
+| `POST` | `/api/v1/integrations/legal/search` | e-Courts/MCA litigation search |
 | `GET` | `/api/v1/msme/{id}/carbon` | Carbon Intelligence data |
 | `GET` | `/api/v1/msme/{id}/score` | Score from CI data only |
 | `GET` | `/api/v1/carbon/catalog` | CI integration catalog |
@@ -146,9 +163,7 @@ Set API keys in `.env` to switch from mock to live integrations.
 
 ### Governance Diversity Credit Benefit
 
-Women-led MSMEs receive a **governance score bonus** (up to +2.5 points on overall score). Every assessment returns `data_gaps`, `recommended_improvements`, and `advanced_intelligence` summaries.
-
-Each dimension produces score (0–100), risk level, confidence, and evidence-linked insights.
+Women-led MSMEs receive a **governance score bonus** (up to +2.5 points on overall score).
 
 ## Project Structure
 
@@ -159,10 +174,25 @@ Each dimension produces score (0–100), risk level, confidence, and evidence-li
 │   ├── api/routes.py        # REST API endpoints
 │   ├── models/schemas.py    # Pydantic data models
 │   ├── services/
-│   │   ├── carbon_intelligence.py  # ci.sustainow.in client
-│   │   └── scoring_engine.py       # Score computation
-│   └── data/sample_msme.py  # Demo MSME data
+│   │   ├── carbon_intelligence.py
+│   │   ├── integrations.py       # Bureau, tax, legal, OCR clients
+│   │   ├── enrichment.py         # Auto-enrichment pipeline
+│   │   ├── advanced_scoring.py   # ESG, supply chain, geo, peer
+│   │   └── scoring_engine.py
+│   └── data/
+│       ├── sector_benchmarks.py
+│       ├── geographic_risk.py
+│       └── sample_msme.py
+├── docs/                    # Architecture, API, scoring, snapshots
+├── scripts/
+│   └── generate_snapshots.py
 ├── tests/
+│   ├── snapshots/           # Golden-file API responses
+│   ├── test_scoring.py
+│   ├── test_advanced.py
+│   ├── test_api_assess.py
+│   ├── test_integrations.py
+│   └── test_snapshots.py
 ├── examples/
 ├── requirements.txt
 └── run.py
@@ -171,7 +201,12 @@ Each dimension produces score (0–100), risk level, confidence, and evidence-li
 ## Running Tests
 
 ```bash
+# Full test suite (37 tests)
 pytest -v
+
+# Regenerate golden-file snapshots after API changes
+python3 scripts/generate_snapshots.py
+pytest tests/test_snapshots.py -v
 ```
 
 ## License

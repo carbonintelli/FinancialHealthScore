@@ -1,0 +1,26 @@
+{
+  "mock_mode": true,
+  "integrations": {
+    "credit_bureau": {
+      "configured": false,
+      "source": "CIBIL/CRISIL"
+    },
+    "tax_verification": {
+      "configured": false,
+      "source": "GSTN/ITR"
+    },
+    "legal_search": {
+      "configured": false,
+      "source": "e-Courts/MCA"
+    },
+    "document_intelligence": {
+      "configured": false,
+      "source": "OCR"
+    },
+    "carbon_intelligence": {
+      "configured": false,
+      "source": "ci.sustainow.in"
+    }
+  },
+  "dimension_count": 20
+}

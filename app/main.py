@@ -82,9 +82,17 @@ async def root():
         "service": settings.app_name,
         "version": settings.app_version,
         "description": "AI-Powered Alternative Data Intelligence for MSME Credit Decisions",
+        "dimension_count": 20,
         "docs": "/docs",
+        "documentation": {
+            "architecture": "docs/ARCHITECTURE.md",
+            "api": "docs/API.md",
+            "scoring": "docs/SCORING.md",
+            "snapshots": "docs/PRODUCT_SNAPSHOTS.md",
+        },
         "demo": "/api/v1/assess/demo",
         "health": "/api/v1/health",
+        "integrations": "/api/v1/integrations/status",
         "carbon_intelligence": "https://ci.sustainow.in",
         "competition": "IDBI Innovate 2026",
     }

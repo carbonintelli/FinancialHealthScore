@@ -1,0 +1,8 @@
+{
+  "status": "healthy",
+  "version": "1.1.0",
+  "carbon_intelligence_connected": false,
+  "mock_mode": true,
+  "integrations_mock_mode": true,
+  "dimension_count": 20
+}

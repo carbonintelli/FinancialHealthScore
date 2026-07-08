@@ -1,0 +1,15 @@
+{
+  "success": true,
+  "mock": true,
+  "source": "gstn_itr_mock",
+  "data": {
+    "gstin": "27AABCS1234F1Z5",
+    "pan": "AABCS1234F",
+    "gstFilingCompliancePct": 96.0,
+    "itrFiledOnTime3y": 3,
+    "advanceTaxCompliant": true,
+    "tdsCompliancePct": 97.0,
+    "outstandingDemandInr": 0,
+    "lastVerified": "2026-07-05"
+  }
+}

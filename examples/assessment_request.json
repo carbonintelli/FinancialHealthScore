@@ -5,42 +5,114 @@
       "business_name": "Shree Ganesh Auto Components Pvt Ltd",
       "udyam_number": "UDYAM-MH-12-0012345",
       "gstin": "27AABCS1234F1Z5",
+      "pan": "AABCS1234F",
+      "state": "maharashtra",
+      "pincode": "411045",
       "sector": "auto_components",
       "employee_count": 85,
-      "years_in_operation": 12,
-      "annual_turnover_inr": 48000000
+      "years_in_operation": 12.0,
+      "annual_turnover_inr": 48000000.0
     },
     "accounting": {
-      "revenue_inr": 48000000,
-      "cost_of_goods_inr": 31200000,
-      "operating_expenses_inr": 9600000,
-      "current_assets_inr": 14500000,
-      "current_liabilities_inr": 8200000,
-      "total_debt_inr": 12000000,
-      "equity_inr": 18500000,
-      "net_profit_inr": 4800000,
+      "revenue_inr": 48000000.0,
+      "cost_of_goods_inr": 31200000.0,
+      "operating_expenses_inr": 9600000.0,
+      "current_assets_inr": 14500000.0,
+      "current_liabilities_inr": 8200000.0,
+      "total_debt_inr": 12000000.0,
+      "equity_inr": 18500000.0,
+      "net_profit_inr": 4800000.0,
       "period_end": "2026-03-31"
     },
     "cash_flows": [
-      {"month": "2026-01", "inflows": 4100000, "outflows": 3750000},
-      {"month": "2026-02", "inflows": 3850000, "outflows": 3620000},
-      {"month": "2026-03", "inflows": 4450000, "outflows": 3890000}
+      {
+        "month": "2026-01",
+        "inflows": 4100000.0,
+        "outflows": 3750000.0
+      },
+      {
+        "month": "2026-02",
+        "inflows": 3850000.0,
+        "outflows": 3620000.0
+      },
+      {
+        "month": "2026-03",
+        "inflows": 4450000.0,
+        "outflows": 3890000.0
+      },
+      {
+        "month": "2026-04",
+        "inflows": 4200000.0,
+        "outflows": 3800000.0
+      },
+      {
+        "month": "2026-05",
+        "inflows": 3950000.0,
+        "outflows": 3700000.0
+      },
+      {
+        "month": "2026-06",
+        "inflows": 4300000.0,
+        "outflows": 3850000.0
+      }
     ],
     "utility_bills": [
       {
         "month": "2026-01",
-        "electricity_kwh": 18500,
-        "electricity_cost_inr": 148000,
-        "fuel_litres": 2200,
-        "fuel_cost_inr": 198000
+        "electricity_kwh": 18500.0,
+        "electricity_cost_inr": 148000.0,
+        "fuel_litres": 2200.0,
+        "fuel_cost_inr": 198000.0
+      },
+      {
+        "month": "2026-02",
+        "electricity_kwh": 17200.0,
+        "electricity_cost_inr": 138000.0,
+        "fuel_litres": 2050.0,
+        "fuel_cost_inr": 185000.0
+      },
+      {
+        "month": "2026-03",
+        "electricity_kwh": 19100.0,
+        "electricity_cost_inr": 153000.0,
+        "fuel_litres": 2350.0,
+        "fuel_cost_inr": 212000.0
       }
     ],
     "payment_records": [
       {
         "counterparty": "Tata Steel Ltd",
-        "amount_inr": 850000,
+        "amount_inr": 850000.0,
         "due_date": "2026-04-15",
         "paid_date": "2026-04-14",
+        "status": "on_time"
+      },
+      {
+        "counterparty": "Mahindra Logistics",
+        "amount_inr": 320000.0,
+        "due_date": "2026-04-20",
+        "paid_date": "2026-04-22",
+        "status": "late"
+      },
+      {
+        "counterparty": "Bharat Forge",
+        "amount_inr": 1200000.0,
+        "due_date": "2026-05-01",
+        "paid_date": "2026-04-28",
+        "status": "on_time"
+      },
+      {
+        "counterparty": "Local Supplier Co",
+        "amount_inr": 95000.0,
+        "due_date": "2026-05-10",
+        "paid_date": "2026-05-10",
+        "status": "on_time"
+      },
+      {
+        "counterparty": "MSEB Electricity",
+        "amount_inr": 148000.0,
+        "due_date": "2026-04-25",
+        "paid_date": "2026-04-25",
         "status": "on_time"
       }
     ],
@@ -51,108 +123,348 @@
     },
     "founder": {
       "name": "Rajesh Patil",
-      "years_industry_experience": 18,
-      "years_entrepreneurship": 12,
+      "is_female": false,
+      "years_industry_experience": 18.0,
+      "years_entrepreneurship": 12.0,
       "education_level": "graduate",
+      "prior_business_exits": 0,
       "cibil_score": 782,
       "prior_defaults": 0,
       "management_team_size": 4,
       "succession_plan_documented": false,
-      "industry_certifications": ["ISO 9001 Lead Auditor", "Lean Six Sigma Green Belt"],
-      "linkedin_presence_score": 72
+      "industry_certifications": [
+        "ISO 9001 Lead Auditor",
+        "Lean Six Sigma Green Belt"
+      ],
+      "linkedin_presence_score": 72.0
     },
     "market_sentiment": {
-      "overall_sentiment_score": 74,
-      "customer_nps": 52,
+      "overall_sentiment_score": 74.0,
+      "customer_nps": 52.0,
       "google_rating": 4.2,
       "google_review_count": 38,
       "media_mentions_12m": 6,
-      "positive_media_pct": 83,
-      "customer_retention_rate_pct": 86,
-      "supplier_trust_score": 78,
+      "positive_media_pct": 83.0,
+      "customer_retention_rate_pct": 86.0,
+      "supplier_trust_score": 78.0,
       "litigation_count_3y": 0,
       "gst_compliance_rating": "good"
     },
     "product_market": {
       "products": [
-        {"name": "Precision Forged Crankshafts", "category": "auto_components", "revenue_share_pct": 42, "hsn_code": "8483", "is_export_oriented": true},
-        {"name": "Transmission Gears", "category": "auto_components", "revenue_share_pct": 35, "hsn_code": "8483"},
-        {"name": "EV Motor Housings", "category": "auto_components", "revenue_share_pct": 15, "hsn_code": "8501"}
+        {
+          "name": "Precision Forged Crankshafts",
+          "category": "auto_components",
+          "revenue_share_pct": 42.0,
+          "hsn_code": "8483",
+          "is_export_oriented": true
+        },
+        {
+          "name": "Transmission Gears",
+          "category": "auto_components",
+          "revenue_share_pct": 35.0,
+          "hsn_code": "8483",
+          "is_export_oriented": false
+        },
+        {
+          "name": "EV Motor Housings",
+          "category": "auto_components",
+          "revenue_share_pct": 15.0,
+          "hsn_code": "8501",
+          "is_export_oriented": false
+        },
+        {
+          "name": "General Machined Parts",
+          "category": "auto_components",
+          "revenue_share_pct": 8.0,
+          "hsn_code": "8483",
+          "is_export_oriented": false
+        }
       ],
       "primary_market": "both",
-      "export_revenue_pct": 22,
+      "export_revenue_pct": 22.0,
       "market_demand_outlook": "moderate_growth",
       "sector_growth_rate_pct": 9.5,
-      "capacity_utilisation_pct": 78,
+      "capacity_utilisation_pct": 78.0,
       "order_book_months": 4.2,
       "import_substitution_potential": true,
       "ev_supply_chain_exposure": true
     },
     "government_policy": {
-      "enrolled_scheme_codes": ["CGTMSE", "CLCSS", "SAMADHAN"],
-      "pending_applications": ["PLI_AUTO"],
+      "enrolled_scheme_codes": [
+        "CGTMSE",
+        "CLCSS",
+        "SAMADHAN"
+      ],
+      "pending_applications": [
+        "PLI_AUTO"
+      ],
       "zed_certification_level": "silver",
-      "iso_certifications": ["ISO 9001:2015", "IATF 16949"],
-      "gst_filing_compliance_pct": 96,
+      "iso_certifications": [
+        "ISO 9001:2015",
+        "IATF 16949"
+      ],
+      "gst_filing_compliance_pct": 96.0,
       "delayed_payment_complaints_filed": 1,
-      "received_govt_subsidy_inr": 1850000
+      "received_govt_subsidy_inr": 1850000.0
     },
     "credit_bureau": {
       "crisil_rating": "BBB+",
       "crisil_outlook": "stable",
       "crisil_rating_date": "2026-02-15",
+      "crisil_score": null,
       "rating_agency": "CRISIL",
       "commercial_credit_score": 3,
-      "emi_on_time_pct_12m": 94.5,
-      "debt_service_coverage_ratio": 1.62,
-      "restructured_loans_count": 0,
-      "written_off_loans_count": 0,
-      "npa_incidents_5y": 0,
       "past_debts": [
         {
           "lender_name": "IDBI Bank",
           "loan_type": "term_loan",
-          "principal_inr": 8000000,
-          "outstanding_inr": 4200000,
+          "principal_inr": 8000000.0,
+          "outstanding_inr": 4200000.0,
           "interest_rate_pct": 10.25,
           "tenure_months": 84,
           "start_date": "2021-06-01",
+          "closed_date": null,
           "status": "active",
           "repayment_completed_pct": 47.5,
-          "emi_amount_inr": 128500,
+          "emi_amount_inr": 128500.0,
           "collateral_type": "hypothecation"
         },
         {
           "lender_name": "HDFC Bank",
           "loan_type": "cc_od",
-          "principal_inr": 3000000,
-          "outstanding_inr": 0,
+          "principal_inr": 3000000.0,
+          "outstanding_inr": 1100000.0,
+          "interest_rate_pct": 11.5,
+          "tenure_months": null,
           "start_date": "2019-03-15",
           "closed_date": "2024-03-14",
           "status": "closed",
-          "repayment_completed_pct": 100
+          "repayment_completed_pct": 100.0,
+          "emi_amount_inr": null,
+          "collateral_type": "none"
+        },
+        {
+          "lender_name": "SIDBI",
+          "loan_type": "equipment_finance",
+          "principal_inr": 2500000.0,
+          "outstanding_inr": 0.0,
+          "interest_rate_pct": 9.75,
+          "tenure_months": 60,
+          "start_date": "2018-01-10",
+          "closed_date": "2023-01-09",
+          "status": "closed",
+          "repayment_completed_pct": 100.0,
+          "emi_amount_inr": null,
+          "collateral_type": "equipment"
         }
       ],
       "repayment_history": [
         {
           "month": "2026-01",
           "lender_name": "IDBI Bank",
-          "emi_amount_inr": 128500,
+          "emi_amount_inr": 128500.0,
           "due_date": "2026-01-05",
           "paid_date": "2026-01-05",
-          "status": "on_time"
+          "status": "on_time",
+          "outstanding_after_inr": 4350000.0
         },
         {
           "month": "2026-02",
           "lender_name": "IDBI Bank",
-          "emi_amount_inr": 128500,
+          "emi_amount_inr": 128500.0,
           "due_date": "2026-02-05",
           "paid_date": "2026-02-06",
-          "status": "late"
+          "status": "late",
+          "outstanding_after_inr": 4280000.0
+        },
+        {
+          "month": "2026-03",
+          "lender_name": "IDBI Bank",
+          "emi_amount_inr": 128500.0,
+          "due_date": "2026-03-05",
+          "paid_date": "2026-03-05",
+          "status": "on_time",
+          "outstanding_after_inr": 4200000.0
+        },
+        {
+          "month": "2026-04",
+          "lender_name": "IDBI Bank",
+          "emi_amount_inr": 128500.0,
+          "due_date": "2026-04-05",
+          "paid_date": "2026-04-05",
+          "status": "on_time",
+          "outstanding_after_inr": 4120000.0
+        },
+        {
+          "month": "2026-05",
+          "lender_name": "IDBI Bank",
+          "emi_amount_inr": 128500.0,
+          "due_date": "2026-05-05",
+          "paid_date": "2026-05-05",
+          "status": "on_time",
+          "outstanding_after_inr": 4040000.0
+        },
+        {
+          "month": "2026-06",
+          "lender_name": "IDBI Bank",
+          "emi_amount_inr": 128500.0,
+          "due_date": "2026-06-05",
+          "paid_date": "2026-06-05",
+          "status": "on_time",
+          "outstanding_after_inr": 3960000.0
         }
-      ]
-    }
+      ],
+      "total_active_debt_inr": null,
+      "debt_service_coverage_ratio": 1.62,
+      "emi_on_time_pct_12m": 94.5,
+      "restructured_loans_count": 0,
+      "written_off_loans_count": 0,
+      "npa_incidents_5y": 0
+    },
+    "legal_compliance": {
+      "company_lawsuits": [
+        {
+          "case_type": "civil",
+          "party": "Former Employee",
+          "filed_against": "company",
+          "status": "resolved_favorable",
+          "amount_at_stake_inr": 450000.0,
+          "filing_date": "2023-08-10",
+          "description": "Wrongful termination claim \u2014 dismissed in company favor"
+        }
+      ],
+      "founder_lawsuits": [],
+      "pending_cases_company": 0,
+      "pending_cases_founders": 0,
+      "resolved_favorable_pct": 100.0,
+      "regulatory_penalties_3y": 0,
+      "regulatory_penalty_amount_inr": null,
+      "criminal_cases_pending": 0,
+      "arbitration_cases_pending": 0
+    },
+    "tax_compliance": {
+      "itr_filed_on_time_3y": 3,
+      "income_tax_paid_inr_12m": 1120000.0,
+      "advance_tax_compliance_pct": 100.0,
+      "tds_compliance_pct": 97.0,
+      "gst_filing_compliance_pct": 96.0,
+      "tax_demand_outstanding_inr": 0.0,
+      "tax_litigation_pending": false,
+      "last_itr_acknowledgement": "ITR-6/2025-26/1234567890",
+      "tax_clearance_certificate": false
+    },
+    "operational_certifications": {
+      "certifications": [
+        {
+          "name": "ISO 9001:2015",
+          "certifying_body": "Bureau Veritas",
+          "valid_until": "2027-06-30",
+          "scope": "Quality Management"
+        },
+        {
+          "name": "IATF 16949:2016",
+          "certifying_body": "TUV SUD",
+          "valid_until": "2027-03-15",
+          "scope": "Automotive Quality"
+        },
+        {
+          "name": "ISO 14001:2015",
+          "certifying_body": "Bureau Veritas",
+          "valid_until": "2026-12-31",
+          "scope": "Environmental Management"
+        }
+      ],
+      "iso_certifications": [
+        "ISO 9001:2015",
+        "IATF 16949",
+        "ISO 14001:2015"
+      ],
+      "last_quality_audit_date": "2026-01-20",
+      "quality_audit_passed": true,
+      "certification_coverage_pct": 88.0
+    },
+    "government_compliance": {
+      "labour_law_compliance_pct": 94.0,
+      "pf_esi_compliance_pct": 98.0,
+      "environmental_clearance_valid": true,
+      "pollution_control_board_consent": true,
+      "factory_act_registered": true,
+      "shops_establishment_valid": true,
+      "statutory_audit_completed": true,
+      "mca_annual_filings_current": true,
+      "msme_samadhaan_registered": true,
+      "fire_safety_noc_valid": true,
+      "overall_compliance_score": 92.0
+    },
+    "governance_diversity": {
+      "female_founders_count": 1,
+      "female_directors_count": 2,
+      "total_directors": 5,
+      "women_led_enterprise": false,
+      "women_entrepreneur_scheme_enrolled": false,
+      "board_independence_pct": 40.0
+    },
+    "esg_disclosure": {
+      "brsr_lite_ready": false,
+      "ghg_inventory_completed": true,
+      "esg_report_published": false,
+      "esg_report_year": null,
+      "disclosure_score": 62.0,
+      "supplier_esg_program": true,
+      "water_stress_disclosure": true,
+      "waste_management_program": true
+    },
+    "supply_chain": {
+      "key_supplier_count": 24,
+      "key_customer_count": 18,
+      "single_source_dependency_pct": 22.0,
+      "inventory_days": 42.0,
+      "alternate_suppliers_identified_pct": 75.0,
+      "stress_scenario_survival_months": 4.5,
+      "import_dependency_pct": 15.0
+    },
+    "insurance": {
+      "property_insurance": true,
+      "machinery_breakdown_cover": true,
+      "business_interruption_cover": true,
+      "liability_insurance": true,
+      "key_person_insurance": false,
+      "coverage_adequacy_pct": 82.0,
+      "total_coverage_inr": 55000000.0,
+      "claims_history_clean": true,
+      "policy_expiry_within_90d": false
+    },
+    "geographic": {
+      "state": "maharashtra",
+      "district": "pune",
+      "tier": "tier2",
+      "flood_risk_zone": "low",
+      "industrial_cluster_presence": true,
+      "seismic_zone": null
+    },
+    "documents": [
+      {
+        "document_type": "itr",
+        "file_name": "ITR_FY2025-26.pdf",
+        "reference_id": null,
+        "uploaded_at": null
+      },
+      {
+        "document_type": "audit_report",
+        "file_name": "Statutory_Audit_2025.pdf",
+        "reference_id": null,
+        "uploaded_at": null
+      },
+      {
+        "document_type": "bank_statement",
+        "file_name": "Bank_Summary_12M.pdf",
+        "reference_id": null,
+        "uploaded_at": null
+      }
+    ]
   },
   "include_carbon_intelligence": true,
-  "audience": "credit_team"
+  "audience": "credit_team",
+  "auto_enrich": true
 }

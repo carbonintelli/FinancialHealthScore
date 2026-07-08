@@ -1,0 +1,219 @@
+{
+  "sector": "auto_components",
+  "count": 13,
+  "policies": [
+    {
+      "code": "UDYAM",
+      "name": "Udyam Registration",
+      "ministry": "MSME Ministry",
+      "description": "Official MSME registration portal enabling priority sector lending, subsidies, and tender preferences.",
+      "benefits": [
+        "Collateral-free loans up to ₹2 Cr",
+        "Lower interest rates",
+        "Tender set-asides",
+        "ISO certification reimbursement"
+      ],
+      "eligibility_criteria": [
+        "Investment and turnover within MSME limits",
+        "Valid Aadhaar-linked registration"
+      ],
+      "health_score_impact": "positive"
+    },
+    {
+      "code": "CGTMSE",
+      "name": "Credit Guarantee Fund Trust for Micro and Small Enterprises",
+      "ministry": "MSME Ministry / DFS",
+      "description": "Collateral-free credit guarantee for MSME loans up to ₹5 Cr.",
+      "benefits": [
+        "Up to 85% guarantee cover",
+        "No third-party collateral required",
+        "Faster loan sanction"
+      ],
+      "eligibility_criteria": [
+        "Udyam-registered MSME",
+        "New or existing MSE borrower",
+        "Member lending institution"
+      ],
+      "health_score_impact": "positive"
+    },
+    {
+      "code": "PLI_AUTO",
+      "name": "Production Linked Incentive — Automobile & Auto Components",
+      "ministry": "Heavy Industries",
+      "description": "PLI scheme boosting domestic auto component manufacturing and EV supply chain.",
+      "benefits": [
+        "4–13% incentive on incremental sales",
+        "EV component priority",
+        "Import substitution tailwind"
+      ],
+      "eligibility_criteria": [
+        "Minimum investment threshold",
+        "Domestic value addition norms",
+        "Global group revenue criteria"
+      ],
+      "health_score_impact": "positive"
+    },
+    {
+      "code": "PMMY",
+      "name": "Pradhan Mantri MUDRA Yojana",
+      "ministry": "DFS",
+      "description": "Micro-finance scheme for non-corporate, non-farm small/micro enterprises.",
+      "benefits": [
+        "Shishu (up to ₹50K)",
+        "Kishore (₹50K–5L)",
+        "Tarun (₹5L–20L)",
+        "No collateral for small loans"
+      ],
+      "eligibility_criteria": [
+        "Non-corporate small business",
+        "Credit requirement up to ₹20L"
+      ],
+      "health_score_impact": "positive"
+    },
+    {
+      "code": "CLCSS",
+      "name": "Credit Linked Capital Subsidy Scheme",
+      "ministry": "MSME Ministry",
+      "description": "15% capital subsidy for technology upgradation in MSME manufacturing.",
+      "benefits": [
+        "15% subsidy on institutional finance",
+        "Technology modernisation",
+        "Improved productivity"
+      ],
+      "eligibility_criteria": [
+        "Udyam-registered",
+        "Eligible plant & machinery",
+        "Approved technology"
+      ],
+      "health_score_impact": "positive"
+    },
+    {
+      "code": "MAKE_IN_INDIA",
+      "name": "Make in India 2.0",
+      "ministry": "Commerce & DPIIT",
+      "description": "National manufacturing push with sector-specific production targets and FDI facilitation.",
+      "benefits": [
+        "FDI facilitation",
+        "Industrial corridor access",
+        "Domestic demand preference in govt procurement"
+      ],
+      "eligibility_criteria": [
+        "Manufacturing entity in focus sectors"
+      ],
+      "health_score_impact": "positive"
+    },
+    {
+      "code": "PLI_ADV_CHEM",
+      "name": "PLI — Advanced Chemistry Cell Battery Storage",
+      "ministry": "Heavy Industries",
+      "description": "Incentivises ACC battery manufacturing for EV and energy storage ecosystems.",
+      "benefits": [
+        "Incentive on cell sales",
+        "EV ecosystem demand boost",
+        "Energy storage market access"
+      ],
+      "eligibility_criteria": [
+        "Minimum 5 GWh capacity commitment",
+        "Domestic manufacturing"
+      ],
+      "health_score_impact": "positive"
+    },
+    {
+      "code": "SAMADHAN",
+      "name": "MSME Samadhaan — Delayed Payment Monitoring",
+      "ministry": "MSME Ministry",
+      "description": "Portal for filing delayed payment complaints against buyers (Section 16 MSMED Act).",
+      "benefits": [
+        "Recovery of delayed payments with interest",
+        "Buyer blacklisting",
+        "Improved receivables cycle"
+      ],
+      "eligibility_criteria": [
+        "Udyam-registered supplier",
+        "Undisputed dues from buyer"
+      ],
+      "health_score_impact": "positive"
+    },
+    {
+      "code": "ZED",
+      "name": "Zero Defect Zero Effect (ZED) Certification",
+      "ministry": "MSME Ministry",
+      "description": "Quality and sustainability certification programme for MSME manufacturers.",
+      "benefits": [
+        "Quality benchmarking",
+        "Export readiness",
+        "Green manufacturing recognition",
+        "Subsidy on certification cost"
+      ],
+      "eligibility_criteria": [
+        "Manufacturing MSME",
+        "Commitment to quality standards"
+      ],
+      "health_score_impact": "positive"
+    },
+    {
+      "code": "SOLAR_ROOFTOP",
+      "name": "PM-KUSUM / Rooftop Solar Subsidy",
+      "ministry": "MNRE",
+      "description": "Subsidies for solar rooftop installations reducing energy costs and Scope 2 emissions.",
+      "benefits": [
+        "Up to 40% capital subsidy",
+        "Reduced electricity costs",
+        "Carbon footprint reduction"
+      ],
+      "eligibility_criteria": [
+        "Own rooftop or lease agreement",
+        "DISCOM approval",
+        "Eligible installer"
+      ],
+      "health_score_impact": "positive"
+    },
+    {
+      "code": "GECL",
+      "name": "Emergency Credit Line Guarantee Scheme (ECLGS successor)",
+      "ministry": "DFS",
+      "description": "Guaranteed emergency credit for MSMEs during economic stress periods.",
+      "benefits": [
+        "Additional working capital",
+        "Guarantee cover",
+        "Moratorium options"
+      ],
+      "eligibility_criteria": [
+        "GST-compliant MSME",
+        "Satisfactory account conduct"
+      ],
+      "health_score_impact": "positive"
+    },
+    {
+      "code": "BEE_STAR",
+      "name": "BEE Star Label / PAT Scheme",
+      "ministry": "Power",
+      "description": "Energy efficiency labelling and Perform-Achieve-Trade for designated consumers.",
+      "benefits": [
+        "Energy cost reduction",
+        "Regulatory compliance",
+        "Green finance eligibility"
+      ],
+      "eligibility_criteria": [
+        "Designated energy consumer or voluntary labelling"
+      ],
+      "health_score_impact": "positive"
+    },
+    {
+      "code": "STARTUP_INDIA",
+      "name": "Startup India Seed Fund Scheme",
+      "ministry": "DPIIT",
+      "description": "Seed funding and incubation support for DPIIT-recognised startups.",
+      "benefits": [
+        "Seed funding up to ₹50L",
+        "Incubation support",
+        "Tax exemptions (eligible startups)"
+      ],
+      "eligibility_criteria": [
+        "DPIIT-recognised startup",
+        "Innovative product/service"
+      ],
+      "health_score_impact": "positive"
+    }
+  ]
+}
