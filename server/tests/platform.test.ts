@@ -138,4 +138,63 @@ describe("Node.js Platform", () => {
     expect(res.status).toBe(200);
     expect(res.body.agent_review.agent_type).toBe("regulatory_compliance");
   }, 60000);
+
+  it("msme can submit and list loan applications", async () => {
+    const assess = await request(app).post("/api/v1/msme/assess/quick").set("Authorization", `Bearer ${msmeToken}`);
+    const submit = await request(app)
+      .post("/api/v1/msme/loans")
+      .set("Authorization", `Bearer ${msmeToken}`)
+      .send({
+        loan_type: "working_capital",
+        amount_inr: 1500000,
+        tenure_months: 24,
+        purpose: "Inventory",
+        assessment_id: assess.body.assessment_id,
+      });
+    expect(submit.status).toBe(201);
+    expect(submit.body.application_ref).toMatch(/^LN-/);
+
+    const list = await request(app).get("/api/v1/msme/loans").set("Authorization", `Bearer ${msmeToken}`);
+    expect(list.status).toBe(200);
+    expect(list.body.length).toBeGreaterThan(0);
+    expect(list.body[0].application_ref).toBe(submit.body.application_ref);
+  }, 60000);
+
+  it("bank can approve loan applications", async () => {
+    const loans = await request(app).get("/api/v1/bank/loans").set("Authorization", `Bearer ${bankToken}`);
+    expect(loans.status).toBe(200);
+    const submitted = loans.body.find((l: { status: string }) => l.status === "submitted");
+    if (!submitted) return;
+
+    const updated = await request(app)
+      .patch(`/api/v1/bank/loans/${submitted.id}`)
+      .set("Authorization", `Bearer ${bankToken}`)
+      .send({ status: "approved", reviewer_notes: "Meets credit criteria" });
+    expect(updated.status).toBe(200);
+    expect(updated.body.status).toBe("approved");
+  });
+
+  it("HTML report requires authentication", async () => {
+    const assess = await request(app).post("/api/v1/msme/assess/quick").set("Authorization", `Bearer ${msmeToken}`);
+    const assessmentId = assess.body.assessment_id;
+
+    const unauth = await request(app).get(`/api/v1/reports/${assessmentId}/html`);
+    expect(unauth.status).toBe(401);
+
+    const authed = await request(app)
+      .get(`/api/v1/reports/${assessmentId}/html`)
+      .set("Authorization", `Bearer ${msmeToken}`);
+    expect(authed.status).toBe(200);
+    expect(authed.text).toContain("<!DOCTYPE html>");
+  }, 60000);
+
+  it("dashboard stats reflect loan data", async () => {
+    const msmeDash = await request(app).get("/api/v1/msme/dashboard").set("Authorization", `Bearer ${msmeToken}`);
+    expect(msmeDash.status).toBe(200);
+    expect(typeof msmeDash.body.open_loan_applications).toBe("number");
+
+    const bankDash = await request(app).get("/api/v1/bank/dashboard").set("Authorization", `Bearer ${bankToken}`);
+    expect(bankDash.status).toBe(200);
+    expect(typeof bankDash.body.approved_loans_inr).toBe("number");
+  });
 });

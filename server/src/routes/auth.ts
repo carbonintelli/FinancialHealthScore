@@ -25,6 +25,9 @@ authRouter.post("/login", (req, res) => {
   if (!user || !verifyPassword(password, user.password_hash)) {
     return res.status(401).json({ detail: "Invalid email or password" });
   }
+  if (!user.is_active) {
+    return res.status(403).json({ detail: "Account is inactive" });
+  }
   const org = getDb().prepare("SELECT * FROM organizations WHERE id = ?").get(user.organization_id) as OrgRow;
   res.json({
     access_token: createToken(user),

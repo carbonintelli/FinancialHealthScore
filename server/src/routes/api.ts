@@ -19,6 +19,16 @@ import { orchestrateAssessment, getArchitecture } from "../services/agents/orche
 import { getOrchestrationRun, listAgentRuns } from "../services/agents/logger.js";
 import { pullBureauReport, verifyTax } from "../services/integrations/mock-clients.js";
 import { getApplicablePolicies, toPolicyResponse } from "../data/government-policies.js";
+import {
+  listLoansForMsme,
+  listLoansForBank,
+  openLoanCountForMsme,
+  pendingLoanCountForBank,
+  approvedLoansTotalInr,
+  assessmentsThisMonth,
+  unreadNotificationCount,
+  updateLoanStatus,
+} from "../services/loans.js";
 import { getDb } from "../db/index.js";
 import { v4 as uuidv4 } from "uuid";
 
@@ -156,9 +166,15 @@ apiRouter.post("/agents/orchestrate/:assessmentId", requireAuth, async (req: Aut
   }
 });
 
-apiRouter.get("/agents/orchestration/:orchestrationId", requireAuth, (req, res) => {
+apiRouter.get("/agents/orchestration/:orchestrationId", requireAuth, (req: AuthRequest, res) => {
   const run = getOrchestrationRun(String(req.params.orchestrationId));
   if (!run) return res.status(404).json({ detail: "Orchestration not found" });
+  if (run.assessment_id) {
+    const record = getAssessment(run.assessment_id);
+    if (!record || !canAccess(req.user!, record.msme_id)) {
+      return res.status(403).json({ detail: "Access denied" });
+    }
+  }
   res.json(JSON.parse(run.output_json));
 });
 
@@ -187,16 +203,13 @@ apiRouter.get("/bank/dashboard", ...bankAuth, (req: AuthRequest, res) => {
   const portfolio = getPortfolio(req.user!.organization_id);
   const scores = portfolio.filter((p) => p.latest_score != null).map((p) => p.latest_score!);
   const avg = scores.length ? scores.reduce((a, b) => a + b, 0) / scores.length : null;
-  const pending = getDb()
-    .prepare("SELECT COUNT(*) as c FROM loan_applications WHERE bank_org_id = ? AND status IN ('submitted','under_review')")
-    .get(req.user!.organization_id) as { c: number };
   res.json({
     portfolio_count: portfolio.length,
-    assessments_this_month: listAssessmentsForBank(msmeIds).length,
+    assessments_this_month: assessmentsThisMonth(msmeIds),
     average_score: avg ? Math.round(avg * 10) / 10 : null,
     high_risk_count: portfolio.filter((p) => ["elevated", "high", "critical"].includes(p.latest_risk_level ?? "")).length,
-    pending_loans: pending.c,
-    approved_loans_inr: 0,
+    pending_loans: pendingLoanCountForBank(req.user!.organization_id),
+    approved_loans_inr: approvedLoansTotalInr(req.user!.organization_id),
   });
 });
 
@@ -231,15 +244,16 @@ const msmeAuth = [requireAuth, requireRoles(...MSME_ROLES)];
 apiRouter.get("/msme/dashboard", ...msmeAuth, (req: AuthRequest, res) => {
   const org = getDb().prepare("SELECT name FROM organizations WHERE id = ?").get(req.user!.organization_id) as { name: string };
   const latest = listAssessmentsForMsme(req.user!.msme_id ?? "", 1)[0];
+  const msmeId = req.user!.msme_id ?? "";
   res.json({
-    msme_id: req.user!.msme_id,
+    msme_id: msmeId,
     business_name: org?.name ?? "MSME",
     latest_score: latest?.overall_score ?? null,
     latest_grade: latest?.grade ?? null,
     latest_risk_level: latest?.overall_risk_level ?? null,
     last_assessed_at: latest?.created_at ?? null,
-    open_loan_applications: 0,
-    unread_notifications: 0,
+    open_loan_applications: msmeId ? openLoanCountForMsme(msmeId) : 0,
+    unread_notifications: unreadNotificationCount(req.user!.id),
     improvement_count: latest ? JSON.parse(latest.result_json).recommended_improvements?.length ?? 0 : 0,
   });
 });
@@ -307,13 +321,24 @@ apiRouter.get("/govt/scheme-applications", ...govtAuth, (_req, res) => {
 const regAuth = [requireAuth, requireRoles(...REG_ROLES)];
 
 apiRouter.get("/regulatory/dashboard", ...regAuth, (_req, res) => {
-  const submissions = getDb().prepare("SELECT * FROM regulatory_submissions ORDER BY created_at DESC LIMIT 50").all();
+  const submissions = getDb().prepare("SELECT * FROM regulatory_submissions ORDER BY created_at DESC LIMIT 50").all() as {
+    status: string;
+    msme_id: string;
+  }[];
   const flagged = getDb()
     .prepare(
       `SELECT * FROM assessment_records WHERE overall_risk_level IN ('elevated','high','critical') ORDER BY created_at DESC LIMIT 20`
     )
-    .all();
-  res.json({ submissions, high_risk_assessments: flagged, pending_reviews: (submissions as { status: string }[]).filter((s) => s.status === "pending").length });
+    .all() as { msme_id: string }[];
+  const reviewedMsmeIds = new Set(
+    submissions.filter((s) => s.status === "reviewed").map((s) => s.msme_id)
+  );
+  const pendingReviews = flagged.filter((a) => !reviewedMsmeIds.has(a.msme_id)).length;
+  res.json({
+    submissions,
+    high_risk_assessments: flagged,
+    pending_reviews: pendingReviews,
+  });
 });
 
 apiRouter.post("/regulatory/review/:msmeId", ...regAuth, async (req: AuthRequest, res) => {
@@ -334,9 +359,15 @@ apiRouter.post("/regulatory/review/:msmeId", ...regAuth, async (req: AuthRequest
   getDb()
     .prepare(
       `INSERT INTO regulatory_submissions (submission_ref, msme_id, business_name, submitted_by_user_id, regulator_type, submission_type, status, payload_json, agent_review_json)
-       VALUES (?, ?, ?, ?, ?, 'compliance_review', 'reviewed', ?, ?)`
+       VALUES (?, ?, ?, ?, ?, 'compliance_review', 'pending', ?, NULL)`
     )
-    .run(ref, msmeId, record.business_name, req.user!.id, regulator, JSON.stringify(result), JSON.stringify(agent));
+    .run(ref, msmeId, record.business_name, req.user!.id, regulator, JSON.stringify(result));
+
+  getDb()
+    .prepare(
+      `UPDATE regulatory_submissions SET status = 'reviewed', agent_review_json = ? WHERE submission_ref = ?`
+    )
+    .run(JSON.stringify(agent), ref);
 
   res.json({ submission_ref: ref, agent_review: agent });
 });
@@ -363,23 +394,52 @@ apiRouter.get("/reports/:assessmentId/html", requireAuth, (req: AuthRequest, res
   res.type("html").send(renderHtmlReport(result, report));
 });
 
-// Loans (simplified)
+// Loans
 apiRouter.post("/msme/loans", ...msmeAuth, (req: AuthRequest, res) => {
   if (req.user!.role === "msme_viewer") return res.status(403).json({ detail: "Viewers cannot submit loans" });
   const org = getDb().prepare("SELECT name FROM organizations WHERE id = ?").get(req.user!.organization_id) as { name: string };
   const idbi = getDb().prepare("SELECT id FROM organizations WHERE registration_id = 'BANK-IDBI-001'").get() as { id: number };
   const ref = `LN-${Date.now()}-${uuidv4().slice(0, 6).toUpperCase()}`;
-  getDb()
+  const result = getDb()
     .prepare(
       `INSERT INTO loan_applications (application_ref, msme_id, business_name, bank_org_id, submitted_by_user_id, assessment_id, loan_type, amount_inr, tenure_months, purpose)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
     )
-    .run(ref, req.user!.msme_id, org.name, idbi.id, req.user!.id, req.body.assessment_id ?? null, req.body.loan_type ?? "working_capital", req.body.amount_inr, req.body.tenure_months ?? 36, req.body.purpose ?? null);
-  res.status(201).json({ application_ref: ref, status: "submitted" });
+    .run(
+      ref,
+      req.user!.msme_id,
+      org.name,
+      idbi.id,
+      req.user!.id,
+      req.body.assessment_id ?? null,
+      req.body.loan_type ?? "working_capital",
+      req.body.amount_inr,
+      req.body.tenure_months ?? 36,
+      req.body.purpose ?? null
+    );
+  const loan = getDb().prepare("SELECT * FROM loan_applications WHERE id = ?").get(result.lastInsertRowid);
+  res.status(201).json(loan);
+});
+
+apiRouter.get("/msme/loans", ...msmeAuth, (req: AuthRequest, res) => {
+  const msmeId = req.user!.msme_id;
+  if (!msmeId) return res.json([]);
+  res.json(listLoansForMsme(msmeId));
 });
 
 apiRouter.get("/bank/loans", ...bankAuth, (req: AuthRequest, res) => {
-  res.json(getDb().prepare("SELECT * FROM loan_applications WHERE bank_org_id = ? ORDER BY created_at DESC").all(req.user!.organization_id));
+  res.json(listLoansForBank(req.user!.organization_id));
+});
+
+apiRouter.patch("/bank/loans/:loanId", ...bankAuth, (req: AuthRequest, res) => {
+  const loanId = Number(req.params.loanId);
+  const { status, reviewer_notes } = req.body as { status?: string; reviewer_notes?: string };
+  if (!status) return res.status(400).json({ detail: "status required" });
+  const allowed = ["under_review", "approved", "rejected", "disbursed"];
+  if (!allowed.includes(status)) return res.status(400).json({ detail: `status must be one of: ${allowed.join(", ")}` });
+  const updated = updateLoanStatus(loanId, req.user!.organization_id, status, reviewer_notes ?? null);
+  if (!updated) return res.status(404).json({ detail: "Loan not found" });
+  res.json(updated);
 });
 
 function toSummary(r: { assessment_id: string; msme_id: string; business_name: string; overall_score: number; grade: string; overall_risk_level: string; audience: string; created_at: string }) {
