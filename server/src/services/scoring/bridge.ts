@@ -14,6 +14,19 @@ function useNodeScoring(): boolean {
   return config.scoringEngine !== "python";
 }
 
+/** Returns true when the legacy Python scoring bridge can run (pydantic + app package). */
+export function isPythonBridgeAvailable(): Promise<boolean> {
+  return new Promise((resolve) => {
+    const proc = spawn(
+      config.pythonPath,
+      ["-c", "import pydantic; from app.data.sample_msme import build_demo_request"],
+      { cwd: config.rootPath, stdio: "ignore" },
+    );
+    proc.on("close", (code) => resolve(code === 0));
+    proc.on("error", () => resolve(false));
+  });
+}
+
 export function runPythonScoring(payload: Record<string, unknown>): Promise<AssessmentResult> {
   return new Promise((resolve, reject) => {
     const proc = spawn(config.pythonPath, [config.scoringBridgePath], {
