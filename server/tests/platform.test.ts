@@ -315,3 +315,75 @@ describe("MSME Registration & Data Feed", () => {
     expect(feeds.body.feeds.length).toBeGreaterThanOrEqual(1);
   }, 60000);
 });
+
+describe("Alternate Data & Ecosystem Integration", () => {
+  it("integrations status includes AA, UPI, EPFO and ecosystem flags", async () => {
+    const res = await request(app).get("/api/v1/integrations/status");
+    expect(res.status).toBe(200);
+    expect(res.body.integrations.account_aggregator).toBeDefined();
+    expect(res.body.integrations.upi_analytics).toBeDefined();
+    expect(res.body.integrations.epfo_compliance).toBeDefined();
+    expect(res.body.ecosystem.ocen).toBe(true);
+    expect(res.body.thin_file_scoring).toBe(true);
+  });
+
+  it("ecosystem catalog lists OCEN, ULI, and alternate data rails", async () => {
+    const res = await request(app).get("/api/v1/ecosystem/catalog");
+    expect(res.status).toBe(200);
+    expect(res.body.protocols).toContain("OCEN");
+    expect(res.body.protocols).toContain("ULI");
+    expect(res.body.alternate_data_rails).toContain("GST");
+    expect(res.body.alternate_data_rails).toContain("UPI");
+  });
+
+  it("AA consent initiate creates session for MSME", async () => {
+    const res = await request(app)
+      .post("/api/v1/ecosystem/aa/consent/initiate")
+      .set("Authorization", `Bearer ${msmeToken}`)
+      .send({ msme_id: "msme-demo-001" });
+    expect(res.status).toBe(201);
+    expect(res.body.session_id).toBeDefined();
+    expect(res.body.consent_handle).toBeDefined();
+  });
+
+  it("OCEN credit assessment returns protocol response with borrower segment", async () => {
+    const res = await request(app).post("/api/v1/ecosystem/ocen/credit-assessment").send({
+      borrower: {
+        msme_id: "msme-demo-001",
+        business_name: "Shree Ganesh Auto Components Pvt Ltd",
+        gstin: "27AABCS1234F1Z5",
+      },
+      assessment_options: { thin_file_mode: true, include_alternate_data: true },
+    });
+    expect(res.status).toBe(200);
+    expect(res.body.protocol).toBe("OCEN");
+    expect(res.body.credit_decision.financial_health_score).toBeGreaterThan(0);
+    expect(res.body.borrower_segment).toBeDefined();
+  });
+
+  it("alternate-data webhook triggers reassessment", async () => {
+    const res = await request(app).post("/api/v1/webhooks/alternate-data").send({
+      event_type: "upi.analytics.refresh",
+      msme_id: "msme-demo-001",
+      source: "upi",
+    });
+    expect([200, 202]).toContain(res.status);
+    expect(res.body.event_id).toBeDefined();
+    expect(["processed", "skipped", "failed"]).toContain(res.body.status);
+  });
+
+  it("MSME alternate-data assessment runs with thin-file metadata", async () => {
+    const res = await request(app)
+      .post("/api/v1/msme/assess/alternate-data")
+      .set("Authorization", `Bearer ${msmeToken}`)
+      .send({
+        include_aa: false,
+        include_upi: true,
+        include_epfo: true,
+        borrower_segment: "NTC_NTB",
+      });
+    expect(res.status).toBe(200);
+    expect(res.body.overall_score).toBeGreaterThan(0);
+    expect(res.body.metadata?.borrower_segment?.segment).toBe("NTC_NTB");
+  }, 60000);
+});

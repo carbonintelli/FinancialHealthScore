@@ -1205,6 +1205,24 @@
         "status": "skipped",
         "mock": true,
         "message": "Document OCR"
+      },
+      {
+        "source": "account_aggregator",
+        "status": "skipped",
+        "mock": true,
+        "message": "Account Aggregator (RBI AA)"
+      },
+      {
+        "source": "upi_analytics",
+        "status": "skipped",
+        "mock": true,
+        "message": "UPI Merchant Analytics"
+      },
+      {
+        "source": "epfo_compliance",
+        "status": "skipped",
+        "mock": true,
+        "message": "EPFO Establishment Compliance"
       }
     ],
     "peer_percentile_overall": 60,
@@ -1234,13 +1252,29 @@
       "income_tax_department",
       "sector_benchmarks"
     ],
+    "alternate_data_sources": [],
     "data_gap_count": 0,
     "high_priority_gaps": 0,
     "governance_score_bonus": 1.1,
     "dimension_count": 20,
     "enrichment_applied": [],
+    "borrower_segment": {
+      "segment": "standard",
+      "is_thin_file": false,
+      "bureau_history_available": true,
+      "bank_relationship_established": true,
+      "alternate_data_coverage": [
+        "gst",
+        "cash_flows",
+        "bank_statements"
+      ],
+      "weight_adjustments_applied": false,
+      "scoring_mode": "standard"
+    },
+    "thin_file_scoring": false,
     "scoring_engine": "nodejs",
     "scoring_agents_run": 20,
-    "scoring_orchestration_id": "<UUID>"
+    "scoring_orchestration_id": "<UUID>",
+    "weight_adjustments": {}
   }
 }

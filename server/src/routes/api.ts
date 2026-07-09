@@ -18,6 +18,25 @@ import { runPolicyAgent, runRegulatoryAgent } from "../services/agents/legacy-ag
 import { orchestrateAssessment, getArchitecture } from "../services/agents/orchestrator.js";
 import { getOrchestrationRun, listAgentRuns } from "../services/agents/logger.js";
 import { pullBureauReport, verifyTax } from "../services/integrations/mock-clients.js";
+import { listAlternateDataConnectors, fetchUpiAnalytics, fetchEpfoCompliance } from "../services/integrations/alternate-data.js";
+import { enrichFinancialData } from "../services/integrations/enrichment.js";
+import { runEnrichedAssessment } from "../services/enriched-assess.js";
+import {
+  buildOcenCreditAssessmentResponse,
+  buildUliLoanEligibilityResponse,
+  getEcosystemCatalog,
+} from "../services/ecosystem/ocen-uli.js";
+import {
+  createAaConsentSession,
+  fetchAndMarkAaSession,
+  getAaConsentSession,
+  listAaSessionsForMsme,
+} from "../services/ecosystem/aa-consent.js";
+import {
+  listWebhookEvents,
+  processAlternateDataWebhook,
+  type AlternateDataWebhookPayload,
+} from "../services/realtime/reassessment.js";
 import { getApplicablePolicies, toPolicyResponse } from "../data/government-policies.js";
 import { listConnectors, importFromTally, importFromZoho } from "../services/integrations/connectors.js";
 import {
@@ -66,10 +85,7 @@ apiRouter.get("/", (_req, res) => {
 // Public assessment
 apiRouter.post("/assess", async (req, res) => {
   try {
-    const carbon = req.body.include_carbon_intelligence !== false
-      ? getMockCarbonData(req.body.financial_data?.profile?.msme_id ?? "unknown")
-      : undefined;
-    const result = await assessRequest(req.body, carbon);
+    const { result } = await runEnrichedAssessment(req.body);
     res.json(result);
   } catch (e) {
     res.status(500).json({ detail: String(e) });
@@ -96,6 +112,9 @@ apiRouter.get("/integrations/status", (_req, res) => {
       legal_search: { configured: false, source: "e-Courts/MCA" },
       document_intelligence: { configured: false, source: "OCR" },
       carbon_intelligence: { configured: !!config.carbonApiKey, source: "ci.sustainow.in", mock: !config.carbonApiKey },
+      account_aggregator: { configured: !!config.aaApiKey, source: "RBI Account Aggregator", mock: !config.aaApiKey },
+      upi_analytics: { configured: !!config.upiAnalyticsApiKey, source: "UPI Merchant Analytics", mock: !config.upiAnalyticsApiKey },
+      epfo_compliance: { configured: !!config.epfoApiKey, source: "EPFO Establishment", mock: !config.epfoApiKey },
       tally: { configured: !!(config.tallyApiKey && config.tallyApiUrl), source: "Tally ERP / TallyPrime", mock: !config.tallyApiKey },
       zoho_books: {
         configured: !!(config.zohoRefreshToken && config.zohoClientId && config.zohoOrganizationId),
@@ -103,6 +122,14 @@ apiRouter.get("/integrations/status", (_req, res) => {
         mock: !config.zohoRefreshToken,
       },
     },
+    ecosystem: {
+      ocen: true,
+      uli: true,
+      aa_framework: true,
+      catalog: "/api/v1/ecosystem/catalog",
+    },
+    thin_file_scoring: true,
+    real_time_webhooks: true,
     ai_agents: {
       orchestration: "multi-phase",
       dimension_agents: 20,
@@ -147,6 +174,194 @@ apiRouter.post("/integrations/tax/verify", (req, res) => {
     res.json(verifyTax(gstin, pan));
   } catch (e) {
     res.status(503).json({ detail: String(e) });
+  }
+});
+
+apiRouter.get("/integrations/alternate-data/connectors", (_req, res) => {
+  res.json({ connectors: listAlternateDataConnectors() });
+});
+
+apiRouter.post("/integrations/upi/analytics", requireAuth, (req: AuthRequest, res) => {
+  const msmeId = (req.body?.msme_id as string) || req.user!.msme_id;
+  if (!msmeId) return res.status(400).json({ detail: "msme_id required" });
+  try {
+    res.json(fetchUpiAnalytics(msmeId, req.body?.vpa as string | undefined));
+  } catch (e) {
+    res.status(503).json({ detail: String(e) });
+  }
+});
+
+apiRouter.post("/integrations/epfo/verify", requireAuth, (req: AuthRequest, res) => {
+  const msmeId = (req.body?.msme_id as string) || req.user!.msme_id;
+  if (!msmeId) return res.status(400).json({ detail: "msme_id required" });
+  try {
+    res.json(fetchEpfoCompliance(msmeId, req.body?.establishment_id as string | undefined));
+  } catch (e) {
+    res.status(503).json({ detail: String(e) });
+  }
+});
+
+// OCEN / ULI / AA ecosystem
+apiRouter.get("/ecosystem/catalog", (_req, res) => {
+  res.json(getEcosystemCatalog());
+});
+
+apiRouter.post("/ecosystem/aa/consent/initiate", requireAuth, (req: AuthRequest, res) => {
+  const msmeId = (req.body?.msme_id as string) || req.user!.msme_id;
+  if (!msmeId) return res.status(400).json({ detail: "msme_id required" });
+  const org = getDb().prepare("SELECT name FROM organizations WHERE id = ?").get(req.user!.organization_id) as { name: string };
+  try {
+    const session = createAaConsentSession({
+      msme_id: msmeId,
+      business_name: req.body?.business_name ?? org?.name ?? "MSME",
+      mobile: req.body?.mobile,
+      pan: req.body?.pan,
+      fi_types: req.body?.fi_types,
+    });
+    res.status(201).json(session);
+  } catch (e) {
+    res.status(503).json({ detail: String(e) });
+  }
+});
+
+apiRouter.post("/ecosystem/aa/consent/fetch", requireAuth, async (req: AuthRequest, res) => {
+  const sessionId = req.body?.session_id as string;
+  const msmeId = (req.body?.msme_id as string) || req.user!.msme_id;
+  if (!sessionId || !msmeId) return res.status(400).json({ detail: "session_id and msme_id required" });
+
+  const stored = getAaConsentSession(sessionId);
+  if (!stored) return res.status(404).json({ detail: "AA consent session not found" });
+  if (stored.msme_id !== msmeId && !BANK_ROLES.has(req.user!.role)) {
+    return res.status(403).json({ detail: "Access denied for this consent session" });
+  }
+
+  try {
+    const aaData = fetchAndMarkAaSession(sessionId, msmeId);
+    const profile = getMsmeProfile(msmeId);
+    const fd = {
+      profile: {
+        msme_id: msmeId,
+        business_name: profile?.business_name ?? "MSME",
+        gstin: profile?.gstin,
+        pan: profile?.pan,
+      },
+      accounting: profile?.financial_data?.accounting ?? {},
+      ...(profile?.financial_data ?? {}),
+    };
+    const { financial_data, enrichment_log } = await enrichFinancialData(fd as import("../services/scoring/types.js").FinancialDataInput, {
+      msme_id: msmeId,
+      include_aa: true,
+      aa_session_id: sessionId,
+      include_upi: req.body?.include_upi === true,
+      include_epfo: req.body?.include_epfo === true,
+      include_bureau: false,
+      include_tax: true,
+    });
+    res.json({ aa_data: aaData, enrichment_log, financial_data_preview: financial_data });
+  } catch (e) {
+    res.status(503).json({ detail: String(e) });
+  }
+});
+
+apiRouter.get("/ecosystem/aa/consent/sessions", requireAuth, (req: AuthRequest, res) => {
+  const msmeId = (req.query.msme_id as string) || req.user!.msme_id;
+  if (!msmeId) return res.status(400).json({ detail: "msme_id required" });
+  res.json({ sessions: listAaSessionsForMsme(msmeId) });
+});
+
+apiRouter.post("/ecosystem/ocen/credit-assessment", async (req, res) => {
+  try {
+    const body = req.body ?? {};
+    const borrower = body.borrower ?? {};
+    const msmeId = borrower.msme_id ?? "unknown";
+    const alt = body.consent_refs ?? {};
+    const opts = body.assessment_options ?? {};
+
+    const { result } = await runEnrichedAssessment(
+      {
+        financial_data: body.financial_data ?? {
+          profile: {
+            msme_id: msmeId,
+            business_name: borrower.business_name ?? "MSME",
+            gstin: borrower.gstin,
+            pan: borrower.pan,
+            udyam_number: borrower.udyam_number,
+            borrower_segment: opts.thin_file_mode ? "NTC_NTB" : undefined,
+          },
+          accounting: body.accounting ?? {},
+        },
+        auto_enrich: true,
+        thin_file_mode: opts.thin_file_mode,
+        alternate_data: {
+          include_aa: !!alt.aa_session_id,
+          include_upi: opts.include_alternate_data !== false,
+          include_epfo: opts.include_alternate_data !== false,
+          aa_session_id: alt.aa_session_id,
+        },
+        audience: opts.audience ?? "credit_team",
+      },
+      msmeId,
+    );
+
+    const thinFile = result.metadata?.borrower_segment as import("../services/scoring/thin-file.js").ThinFileProfile;
+    res.json(buildOcenCreditAssessmentResponse(result, thinFile, body));
+  } catch (e) {
+    res.status(500).json({ detail: String(e) });
+  }
+});
+
+apiRouter.post("/ecosystem/uli/loan-eligibility", async (req, res) => {
+  try {
+    const body = req.body ?? {};
+    const msmeId = body.msme_id as string;
+    if (!msmeId) return res.status(400).json({ detail: "msme_id required" });
+
+    const { result } = await runEnrichedAssessment(
+      {
+        financial_data: body.financial_data ?? {
+          profile: { msme_id: msmeId, business_name: body.business_name ?? "MSME" },
+          accounting: body.accounting ?? {},
+        },
+        auto_enrich: body.auto_enrich !== false,
+        alternate_data: { include_upi: true, include_epfo: true, include_aa: !!body.aa_session_id, aa_session_id: body.aa_session_id },
+      },
+      msmeId,
+    );
+
+    const thinFile = result.metadata?.borrower_segment as import("../services/scoring/thin-file.js").ThinFileProfile;
+    res.json(
+      buildUliLoanEligibilityResponse(result, thinFile, {
+        msme_id: msmeId,
+        loan_amount_inr: Number(body.loan_amount_inr ?? 0),
+        tenure_months: body.tenure_months,
+        loan_type: body.loan_type,
+        assessment_id: result.assessment_id,
+      }),
+    );
+  } catch (e) {
+    res.status(500).json({ detail: String(e) });
+  }
+});
+
+// Near-real-time alternate-data webhooks
+apiRouter.post("/webhooks/alternate-data", async (req, res) => {
+  if (config.webhookSecret) {
+    const token = req.headers["x-webhook-secret"];
+    if (token !== config.webhookSecret) {
+      return res.status(401).json({ detail: "Invalid webhook secret" });
+    }
+  }
+
+  const payload = req.body as AlternateDataWebhookPayload;
+  if (!payload?.msme_id || !payload?.event_type || !payload?.source) {
+    return res.status(400).json({ detail: "msme_id, event_type, and source are required" });
+  }
+
+  try {
+    const result = await processAlternateDataWebhook(payload);
+    res.status(result.status === "processed" ? 200 : 202).json(result);
+  } catch (e) {
+    res.status(500).json({ detail: String(e) });
   }
 });
 
@@ -430,6 +645,54 @@ apiRouter.post("/msme/assess/quick", ...msmeAuth, async (req: AuthRequest, res) 
     }
     const result = await assessDemo("credit_team", getMockCarbonData(msmeId));
     const stored = await assessAndStore(req.user!.id, result, "credit_team");
+    res.json({ ...stored.result, agent_insights: stored.agent_insights });
+  } catch (e) {
+    res.status(500).json({ detail: String(e) });
+  }
+});
+
+apiRouter.get("/msme/reassessment-events", ...msmeAuth, (req: AuthRequest, res) => {
+  const msmeId = req.user!.msme_id;
+  if (!msmeId) return res.status(400).json({ detail: "MSME profile not linked" });
+  res.json({ events: listWebhookEvents(msmeId) });
+});
+
+apiRouter.post("/msme/assess/alternate-data", ...msmeAuth, async (req: AuthRequest, res) => {
+  if (req.user!.role === "msme_viewer") return res.status(403).json({ detail: "Read-only access" });
+  const msmeId = req.user!.msme_id;
+  if (!msmeId) return res.status(400).json({ detail: "MSME profile not linked" });
+
+  try {
+    const org = getDb().prepare("SELECT name FROM organizations WHERE id = ?").get(req.user!.organization_id) as { name: string };
+    const profile = getMsmeProfile(msmeId);
+    const { result } = await runEnrichedAssessment(
+      {
+        financial_data: {
+          profile: {
+            msme_id: msmeId,
+            business_name: profile?.business_name ?? org?.name ?? "MSME",
+            gstin: profile?.gstin,
+            pan: profile?.pan,
+            borrower_segment: req.body?.borrower_segment,
+          },
+          accounting: profile?.financial_data?.accounting ?? {},
+          ...(profile?.financial_data ?? {}),
+        },
+        auto_enrich: true,
+        thin_file_mode: req.body?.thin_file_mode,
+        alternate_data: {
+          include_aa: req.body?.include_aa !== false,
+          include_upi: req.body?.include_upi !== false,
+          include_epfo: req.body?.include_epfo !== false,
+          aa_session_id: req.body?.aa_session_id,
+          upi_vpa: req.body?.upi_vpa,
+          epfo_establishment_id: req.body?.epfo_establishment_id,
+        },
+        audience: req.body?.audience ?? "credit_team",
+      },
+      msmeId,
+    );
+    const stored = await assessAndStore(req.user!.id, result, req.body?.audience ?? "credit_team");
     res.json({ ...stored.result, agent_insights: stored.agent_insights });
   } catch (e) {
     res.status(500).json({ detail: String(e) });

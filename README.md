@@ -181,6 +181,12 @@ curl http://localhost:8080/api/v1/assess/demo?audience=credit_team
 |---|---|---|
 | CIBIL/CRISIL Bureau | `POST /api/v1/integrations/bureau/pull` | Mock + live API |
 | GSTN/ITR Tax | `POST /api/v1/integrations/tax/verify` | Mock + live API |
+| Account Aggregator (RBI AA) | `POST /api/v1/ecosystem/aa/consent/initiate` | Mock + live API |
+| UPI Merchant Analytics | `POST /api/v1/integrations/upi/analytics` | Mock + live API |
+| EPFO Establishment | `POST /api/v1/integrations/epfo/verify` | Mock + live API |
+| OCEN Credit Assessment | `POST /api/v1/ecosystem/ocen/credit-assessment` | Protocol adapter |
+| ULI Loan Eligibility | `POST /api/v1/ecosystem/uli/loan-eligibility` | Protocol adapter |
+| Real-time Reassessment | `POST /api/v1/webhooks/alternate-data` | Webhook pipeline |
 | e-Courts/MCA Legal | `POST /api/v1/integrations/legal/search` | Mock + live API |
 | Document OCR | Auto via `documents[]` in assessment | Mock + live API |
 | Carbon Intelligence | ci.sustainow.in | Mock + live API |

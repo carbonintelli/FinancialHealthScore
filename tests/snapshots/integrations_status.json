@@ -23,6 +23,21 @@
       "source": "ci.sustainow.in",
       "mock": true
     },
+    "account_aggregator": {
+      "configured": false,
+      "source": "RBI Account Aggregator",
+      "mock": true
+    },
+    "upi_analytics": {
+      "configured": false,
+      "source": "UPI Merchant Analytics",
+      "mock": true
+    },
+    "epfo_compliance": {
+      "configured": false,
+      "source": "EPFO Establishment",
+      "mock": true
+    },
     "tally": {
       "configured": false,
       "source": "Tally ERP / TallyPrime",
@@ -34,6 +49,14 @@
       "mock": true
     }
   },
+  "ecosystem": {
+    "ocen": true,
+    "uli": true,
+    "aa_framework": true,
+    "catalog": "/api/v1/ecosystem/catalog"
+  },
+  "thin_file_scoring": true,
+  "real_time_webhooks": true,
   "ai_agents": {
     "orchestration": "multi-phase",
     "dimension_agents": 20,

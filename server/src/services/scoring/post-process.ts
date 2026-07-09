@@ -1,3 +1,4 @@
+import type { ThinFileProfile } from "./thin-file.js";
 import { crisilRatingToScore } from "./data/credit-ratings.js";
 import { buildGovernmentPolicyAssessment } from "./policy-assessment.js";
 import type {
@@ -61,7 +62,11 @@ export function governanceOverallBonus(
   return Math.min(bonus, GOVERNANCE_SCORE_BONUS_CAP);
 }
 
-export function identifyDataGaps(fd: FinancialDataInput, carbonData?: Record<string, unknown> | null): DataGap[] {
+export function identifyDataGaps(
+  fd: FinancialDataInput,
+  carbonData?: Record<string, unknown> | null,
+  thinFile?: ThinFileProfile | null,
+): DataGap[] {
   const gaps: DataGap[] = [];
   const profile = rec(fd.profile);
   const add = (field: string, category: string, severity: string, message: string, recommendation: string, impacts: string[]) => {
@@ -72,6 +77,21 @@ export function identifyDataGaps(fd: FinancialDataInput, carbonData?: Record<str
     add("credit_bureau", "credit_data", "high", "No CRISIL rating or debt repayment history provided.",
       "Obtain commercial credit report with CRISIL/ICRA rating and loan repayment track record.",
       ["credit_history_debt_servicing", "financial_resilience"]);
+  }
+  if (thinFile?.is_thin_file && !rec(fd.account_aggregator).session_id && !rec(fd.account_aggregator).avg_monthly_balance_inr) {
+    add("account_aggregator", "alternate_data", "high", "NTC/NTB borrower — Account Aggregator bank statement consent not linked.",
+      "Initiate AA consent flow to fetch consented bank statements for thin-file credit assessment.",
+      ["alternative_data_signals", "cash_flow_health", "payment_behaviour"]);
+  }
+  if (thinFile?.is_thin_file && !rec(fd.upi_analytics).monthly_transaction_volume_inr) {
+    add("upi_analytics", "alternate_data", "medium", "UPI merchant analytics not available for alternate-data scoring.",
+      "Link business UPI VPA for payment velocity and revenue trend signals.",
+      ["alternative_data_signals", "cash_flow_health"]);
+  }
+  if (thinFile?.is_thin_file && !rec(fd.epfo_compliance).registered) {
+    add("epfo_compliance", "alternate_data", "medium", "EPFO establishment data not verified — employment stability unknown.",
+      "Verify EPFO registration and contribution history for workforce stability signals.",
+      ["operational_stability", "alternative_data_signals"]);
   }
   if (!fd.founder) {
     add("founder", "management", "medium", "Founder profile not provided for key-person risk assessment.",
@@ -300,6 +320,9 @@ export function buildAdvancedIntelligenceSummary(
     ["tax_verification", "GSTN/ITR Verification"],
     ["legal_search", "e-Courts/MCA Litigation"],
     ["document_intelligence", "Document OCR"],
+    ["account_aggregator", "Account Aggregator (RBI AA)"],
+    ["upi_analytics", "UPI Merchant Analytics"],
+    ["epfo_compliance", "EPFO Establishment Compliance"],
   ] as const;
   const applied = (enrichmentLog?.applied as string[]) ?? [];
   const mock = enrichmentLog?.mock_mode !== false;
@@ -361,6 +384,11 @@ export function dataSources(fd: FinancialDataInput, carbonData?: Record<string, 
   if (fd.utility_bills?.length) sources.push("utility_bills");
   if (fd.payment_records?.length) sources.push("payment_records");
   if (fd.bank_statement_summary) sources.push("bank_statements");
+  if (rec(fd.account_aggregator).session_id || rec(fd.account_aggregator).avg_monthly_balance_inr) {
+    sources.push("account_aggregator");
+  }
+  if (rec(fd.upi_analytics).monthly_transaction_volume_inr) sources.push("upi");
+  if (rec(fd.epfo_compliance).registered) sources.push("epfo");
   if (carbonData) sources.push("ci.sustainow.in");
   if (fd.founder) sources.push("founder_profile");
   if (fd.market_sentiment) sources.push("sentiment_analysis", "public_reviews", "gst_portal");
@@ -378,11 +406,12 @@ export function assemblePostProcess(
   carbonData: Record<string, unknown> | null | undefined,
   enrichmentLog: Record<string, unknown> | null | undefined,
   governanceBonus: number,
+  thinFile?: ThinFileProfile | null,
 ) {
   const fd = request.financial_data;
   const profile = rec(fd.profile);
+  const dataGaps = identifyDataGaps(fd, carbonData, thinFile);
   const acct = rec(fd.accounting);
-  const dataGaps = identifyDataGaps(fd, carbonData);
   const riskIndicators = buildRiskIndicators(dimensions, acct, carbonData, fd);
   const keyInsights = buildKeyInsights(dimensions, riskIndicators);
   const greenOpportunities = identifyGreenFinanceOpportunities(dimensions, carbonData);
@@ -407,11 +436,16 @@ export function assemblePostProcess(
       sector: str(profile.sector, "general"),
       audience,
       data_sources: dataSources(fd, carbonData),
+      alternate_data_sources: (enrichmentLog?.alternate_data_sources as string[]) ?? dataSources(fd, carbonData).filter((s) =>
+        ["account_aggregator", "upi", "epfo", "gst"].includes(s),
+      ),
       data_gap_count: dataGaps.length,
       high_priority_gaps: dataGaps.filter((g) => g.severity === "high").length,
       governance_score_bonus: round1(governanceBonus),
       dimension_count: dimensions.length,
       enrichment_applied: (enrichmentLog?.applied as string[]) ?? [],
+      borrower_segment: thinFile?.segment ?? "standard",
+      thin_file_scoring: thinFile?.is_thin_file ?? false,
     },
   };
 }

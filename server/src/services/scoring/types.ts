@@ -110,6 +110,15 @@ export interface AssessmentRequest {
   include_carbon_intelligence?: boolean;
   audience?: AudienceRole;
   auto_enrich?: boolean;
+  thin_file_mode?: boolean;
+  alternate_data?: {
+    include_aa?: boolean;
+    include_upi?: boolean;
+    include_epfo?: boolean;
+    aa_session_id?: string;
+    upi_vpa?: string;
+    epfo_establishment_id?: string;
+  };
 }
 
 export interface FinancialDataInput {
@@ -119,6 +128,9 @@ export interface FinancialDataInput {
   utility_bills?: Record<string, unknown>[];
   payment_records?: Record<string, unknown>[];
   bank_statement_summary?: Record<string, unknown>;
+  account_aggregator?: Record<string, unknown>;
+  upi_analytics?: Record<string, unknown>;
+  epfo_compliance?: Record<string, unknown>;
   founder?: Record<string, unknown>;
   market_sentiment?: Record<string, unknown>;
   product_market?: Record<string, unknown>;
@@ -141,6 +153,7 @@ export interface ScoringContext {
   carbonData?: Record<string, unknown> | null;
   enrichmentLog?: Record<string, unknown> | null;
   audience?: AudienceRole;
+  thinFileProfile?: import("./thin-file.js").ThinFileProfile | null;
 }
 
 export type DimensionScorer = (ctx: ScoringContext) => DimensionScore;
