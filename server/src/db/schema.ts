@@ -154,4 +154,30 @@ CREATE TABLE IF NOT EXISTS msme_data_feeds (
   created_at TEXT DEFAULT (datetime('now')),
   FOREIGN KEY (submitted_by_user_id) REFERENCES users(id)
 );
+
+CREATE TABLE IF NOT EXISTS aa_consent_sessions (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  session_id TEXT UNIQUE NOT NULL,
+  msme_id TEXT NOT NULL,
+  consent_handle TEXT NOT NULL,
+  status TEXT DEFAULT 'pending',
+  fi_types TEXT,
+  redirect_url TEXT,
+  created_at TEXT DEFAULT (datetime('now')),
+  expires_at TEXT,
+  fetched_at TEXT
+);
+
+CREATE TABLE IF NOT EXISTS webhook_events (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  event_id TEXT UNIQUE NOT NULL,
+  msme_id TEXT NOT NULL,
+  source TEXT NOT NULL,
+  event_type TEXT NOT NULL,
+  payload_json TEXT NOT NULL,
+  status TEXT DEFAULT 'received',
+  assessment_id TEXT,
+  created_at TEXT DEFAULT (datetime('now')),
+  processed_at TEXT
+);
 `;

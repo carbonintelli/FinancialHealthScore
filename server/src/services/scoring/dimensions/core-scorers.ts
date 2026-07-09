@@ -516,6 +516,68 @@ export function scoreAlternativeDataSignals(ctx: ScoringContext): DimensionScore
     }
   }
 
+  const aa = rec(fd.account_aggregator);
+  if (Object.keys(aa).length) {
+    const volatility = num(aa.cash_flow_volatility_pct, 20);
+    const vintage = num(aa.account_vintage_months, 12);
+    const aaScore = clamp(85 - Math.max(0, volatility - 15) * 1.2 + Math.min(10, vintage / 3));
+    scores.push(aaScore);
+    insights.push(
+      insight({
+        indicator: "AA Cash-Flow Stability",
+        category: "alternate_data",
+        value: `${volatility.toFixed(1)}% volatility`,
+        benchmark: "15%",
+        impact: volatility <= 18 ? "positive" : "negative",
+        narrative: `Account Aggregator data shows ${num(aa.months_of_statements, 12)} months of statements with ${vintage} month account vintage.`,
+        confidence: "high",
+        data_source: "account_aggregator",
+      }),
+    );
+    confidence = "high";
+  }
+
+  const upi = rec(fd.upi_analytics);
+  if (Object.keys(upi).length) {
+    const successRate = num(upi.payment_success_rate_pct, 95);
+    const growth = num(upi.revenue_growth_mom_pct, 0);
+    const upiScore = clamp(successRate * 0.6 + 40 + Math.min(15, growth * 2));
+    scores.push(upiScore);
+    insights.push(
+      insight({
+        indicator: "UPI Merchant Velocity",
+        category: "alternate_data",
+        value: `₹${(num(upi.monthly_transaction_volume_inr) / 100_000).toFixed(1)}L/mo`,
+        benchmark: null,
+        impact: growth >= 3 ? "positive" : "neutral",
+        narrative: `UPI analytics: ${num(upi.merchant_payment_count_90d)} payments in 90d, ${successRate.toFixed(1)}% success rate, ${growth.toFixed(1)}% MoM growth.`,
+        confidence: "high",
+        data_source: "upi",
+      }),
+    );
+    confidence = "high";
+  }
+
+  const epfo = rec(fd.epfo_compliance);
+  if (Object.keys(epfo).length && epfo.registered) {
+    const compliance = num(epfo.contribution_compliance_pct, 80);
+    const epfoScore = clamp(compliance + Math.min(8, num(epfo.months_contributed_12m, 10)));
+    scores.push(epfoScore);
+    insights.push(
+      insight({
+        indicator: "EPFO Contribution Compliance",
+        category: "employment_stability",
+        value: `${compliance.toFixed(0)}%`,
+        benchmark: "90%",
+        impact: compliance >= 90 ? "positive" : compliance < 75 ? "negative" : "neutral",
+        narrative: `EPFO: ${num(epfo.employee_count_reported)} employees, ${num(epfo.months_contributed_12m)}/12 months contributed.`,
+        confidence: "high",
+        data_source: "epfo",
+      }),
+    );
+    confidence = "high";
+  }
+
   return dimScore("alternative_data_signals", avg(scores, 55), confidence, insights);
 }
 

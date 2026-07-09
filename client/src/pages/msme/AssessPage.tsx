@@ -10,6 +10,9 @@ interface QuickAssessResult {
   overall_score: number;
   grade: string;
   overall_risk_level: string;
+  metadata?: {
+    borrower_segment?: { segment?: string; is_thin_file?: boolean };
+  };
 }
 
 interface LoanSubmitResult {
@@ -21,6 +24,7 @@ export function MsmeAssessPage() {
   const isViewer = user?.role === "msme_viewer";
 
   const [assessing, setAssessing] = useState(false);
+  const [altAssessing, setAltAssessing] = useState(false);
   const [result, setResult] = useState<QuickAssessResult | null>(null);
   const [assessError, setAssessError] = useState("");
   const [lastAssessmentId, setLastAssessmentId] = useState<string | null>(null);
@@ -44,6 +48,30 @@ export function MsmeAssessPage() {
       setAssessError(err instanceof Error ? err.message : "Credit assessment failed");
     } finally {
       setAssessing(false);
+    }
+  }
+
+  async function handleAlternateDataAssess() {
+    setAltAssessing(true);
+    setAssessError("");
+    setResult(null);
+    try {
+      const r = await api<QuickAssessResult>("/api/v1/msme/assess/alternate-data", {
+        method: "POST",
+        body: JSON.stringify({
+          include_aa: true,
+          include_upi: true,
+          include_epfo: true,
+          thin_file_mode: true,
+          borrower_segment: "NTC_NTB",
+        }),
+      });
+      setResult(r);
+      setLastAssessmentId(r.assessment_id);
+    } catch (err) {
+      setAssessError(err instanceof Error ? err.message : "Alternate-data assessment failed");
+    } finally {
+      setAltAssessing(false);
     }
   }
 
@@ -88,17 +116,27 @@ export function MsmeAssessPage() {
           <h3>Credit Assessment</h3>
         </div>
         <p className="card-desc">
-          Initiate a 20-dimension Financial Health Score assessment with Carbon Intelligence enrichment and
-          AI-assisted credit analytics.
+          Initiate a 20-dimension Financial Health Score assessment with Carbon Intelligence enrichment,
+          alternate data (GST, UPI, AA, EPFO), and AI-assisted credit analytics.
         </p>
-        <button
-          type="button"
-          className="btn btn-accent btn-lg"
-          onClick={handleQuickAssess}
-          disabled={assessing || isViewer}
-        >
-          {assessing ? "Initiating credit assessment…" : "Initiate Credit Assessment"}
-        </button>
+        <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap" }}>
+          <button
+            type="button"
+            className="btn btn-accent btn-lg"
+            onClick={handleQuickAssess}
+            disabled={assessing || altAssessing || isViewer}
+          >
+            {assessing ? "Initiating credit assessment…" : "Initiate Credit Assessment"}
+          </button>
+          <button
+            type="button"
+            className="btn btn-primary btn-lg"
+            onClick={handleAlternateDataAssess}
+            disabled={assessing || altAssessing || isViewer}
+          >
+            {altAssessing ? "Aggregating alternate data…" : "NTC/NTB Alternate-Data Assessment"}
+          </button>
+        </div>
         {isViewer && (
           <p className="card-desc" style={{ marginTop: ".75rem" }}>
             Read-only access: credit assessment initiation is not permitted for Enterprise Viewer accounts.
@@ -108,6 +146,11 @@ export function MsmeAssessPage() {
           {assessing && (
             <div className="alert alert-info">
               Initiating 20-dimension credit assessment with AI orchestration…
+            </div>
+          )}
+          {altAssessing && (
+            <div className="alert alert-info">
+              Aggregating GST, UPI, Account Aggregator, and EPFO data for thin-file scoring…
             </div>
           )}
           {assessError && <div className="alert alert-error">{assessError}</div>}
@@ -126,6 +169,13 @@ export function MsmeAssessPage() {
               </ScoreHero>
               <div className="alert alert-success" style={{ marginTop: "1rem" }}>
                 Assessment Reference: <code>{result.assessment_id}</code>
+                {result.metadata?.borrower_segment?.segment && (
+                  <>
+                    {" "}
+                    · Borrower segment: <strong>{result.metadata.borrower_segment.segment}</strong>
+                    {result.metadata.borrower_segment.is_thin_file ? " (thin-file scoring)" : ""}
+                  </>
+                )}
               </div>
             </>
           )}
