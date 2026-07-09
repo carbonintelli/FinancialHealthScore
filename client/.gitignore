@@ -1,4 +1,4 @@
 node_modules
 dist
 *.local
-client/tsconfig.tsbuildinfo
+tsconfig.tsbuildinfo
