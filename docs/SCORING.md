@@ -16,7 +16,7 @@ Display labels for dimensions and risk ratings: [TERMINOLOGY.md](./TERMINOLOGY.m
 | 6 | Operational Stability | 6% | Opex ratio, energy exposure, tenure |
 | 7 | Legal Compliance | 6% | Company/founder lawsuits, criminal cases |
 | 8 | Carbon Transition Risk | 5% | CI carbon summary, energy exposure |
-| 9 | Alternative Credit Signals | 5% | Supplier/customer concentration |
+| 9 | Alternative Credit Signals | 5% | AA/UPI/EPFO signals, supplier/customer concentration, bank statements |
 | 10 | Market Sentiment | 5% | NPS, reviews, media, retention |
 | 11 | Tax Compliance | 4% | ITR, income tax paid, advance tax, TDS |
 | 12 | Operational Certifications | 4% | ISO, IATF, ZED, quality audits |
@@ -47,6 +47,23 @@ Display labels for dimensions and risk ratings: [TERMINOLOGY.md](./TERMINOLOGY.m
 ## Governance Bonus
 
 Women-led MSMEs receive up to **+2.5 points** on the overall score.
+
+## Thin-File / NTC / NTB Scoring
+
+For **New-to-Credit (NTC)** and **New-to-Bank (NTB)** enterprises lacking traditional bureau history, the platform applies **thin-file scoring mode**:
+
+| Segment | Trigger |
+|---|---|
+| `NTC` | No credit bureau history (CRISIL/CIBIL) |
+| `NTB` | No established bank relationship |
+| `NTC_NTB` | Both conditions apply |
+| `standard` | Full bureau + bank data available |
+
+When thin-file mode is active, dimension weights are rebalanced to up-weight alternate data sources (GST, UPI, AA, EPFO) and down-weight bureau-dependent dimensions. Weights are renormalized to 100%.
+
+Force a segment via `profile.borrower_segment` in the assessment request, or set `thin_file_mode: true`.
+
+See [ECOSYSTEM.md](./ECOSYSTEM.md) for weight adjustment tables and API examples.
 
 ## Demo MSME Snapshot
 

@@ -56,7 +56,10 @@ server/
 │   ├── services/
 │   │   ├── agents/           # 27-agent orchestration (6 phases)
 │   │   ├── scoring/          # Node.js 20-dimension scoring engine (default)
-│   │   ├── integrations/     # Bureau, tax, Tally, Zoho, carbon clients
+│   │   ├── integrations/     # Bureau, tax, Tally, Zoho, carbon, AA, UPI, EPFO
+│   │   ├── ecosystem/        # OCEN/ULI adapters, AA consent sessions
+│   │   ├── realtime/         # Webhook reassessment pipeline
+│   │   ├── enriched-assess.ts # Unified enrichment + scoring entry point
 │   │   ├── store.ts          # Assessment persistence + orchestration
 │   │   └── reports/          # HTML + JSON reports
 │   ├── data/
@@ -76,7 +79,7 @@ server/
 
 | Agent | Phase | Purpose |
 |---|---|---|
-| `data_enrichment` | 1 | Bureau/tax/legal/document pull summary |
+| `data_enrichment` | 1 | Bureau/tax/legal/document + AA/UPI/EPFO alternate data summary |
 | 20 × `dimension_agent` | 2 | Per-dimension risk analysis (parallel) |
 | `risk_synthesis` | 3 | Composite risk profile |
 | `health_score_synthesis` | 4 | Agent-validated score + governance bonus |
@@ -128,6 +131,7 @@ server/src/services/scoring/
 ├── scoring-agents.ts      # runScoringAgents() — 20 parallel dimension agents
 ├── dimensions/            # One scorer per dimension (ported from Python)
 ├── post-process.ts        # Risk indicators, data gaps, recommendations
+├── thin-file.ts           # NTC/NTB segmentation and weight adjustment
 ├── policy-assessment.ts   # Government scheme alignment
 └── bridge.ts              # Routes to Node (default) or Python fallback
 ```
@@ -146,6 +150,10 @@ DATABASE_URL=data/financial_health_node.db
 USE_MOCK_INTEGRATIONS=true
 OPENAI_API_KEY=              # Optional — LLM agent narratives
 CARBON_INTELLIGENCE_API_KEY= # Optional — live CI data
+ACCOUNT_AGGREGATOR_API_KEY=  # Optional — RBI AA framework
+UPI_ANALYTICS_API_KEY=       # Optional — UPI merchant analytics
+EPFO_API_KEY=                # Optional — EPFO establishment compliance
+WEBHOOK_SECRET=              # Optional — webhook authentication
 SCORING_ENGINE=node          # node (default) | python (legacy bridge)
 PYTHON_PATH=python3          # Only needed when SCORING_ENGINE=python
 ```
@@ -153,7 +161,8 @@ PYTHON_PATH=python3          # Only needed when SCORING_ENGINE=python
 ## Tests & Snapshots
 
 ```bash
-cd server && npm test              # 35 tests (platform + snapshots + scoring parity)
+cd server && npm test              # 41 tests (platform + snapshots + scoring parity)
+npm run test:all                   # From repo root — includes Python deps
 npm run generate:snapshots         # Regenerate tests/snapshots/*.json
 ```
 

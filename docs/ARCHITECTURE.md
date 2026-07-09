@@ -33,7 +33,11 @@ flowchart TB
         CI[ci.sustainow.in Carbon Intelligence]
         BU[CIBIL / CRISIL Bureau]
         TX[GSTN / ITR Tax]
+        AA[RBI Account Aggregator]
+        UPI[UPI Merchant Analytics]
+        EPFO[EPFO Establishment]
         LG[e-Courts / MCA Legal]
+        OCEN[OCEN / ULI Ecosystem]
         OAI[OpenAI — optional]
     end
 
@@ -42,7 +46,8 @@ flowchart TB
     WEB --> AGENTS
     WEB --> SE
     AGENTS --> OAI
-    WEB --> BU & TX & LG & CI
+    WEB --> BU & TX & AA & UPI & EPFO & LG & CI
+    WEB --> OCEN
     WEB --> STORE
 ```
 
@@ -57,13 +62,32 @@ sequenceDiagram
     participant CI as Carbon Intelligence
     participant DB as SQLite Store
 
-    Client->>API: POST /api/v1/msme/assess/quick (JWT)
-    API->>Score: assess() — 20 parallel dimension agents
-    Score-->>API: FinancialHealthScoreResult (20 dims)
+    Client->>API: POST /api/v1/msme/assess/alternate-data (JWT)
+    API->>API: enrichFinancialData (GST, AA, UPI, EPFO)
+    API->>Score: assess() — thin-file weight adjustment if NTC/NTB
+    Score-->>API: FinancialHealthScoreResult (20 dims + borrower_segment)
     API->>Orch: orchestrateAssessment (27 agents, 6 phases)
     Orch-->>API: agent_insights
     API->>DB: persist assessment + agent_insights
     API-->>Client: score + agent_insights JSON
+```
+
+## Request Flow — Webhook Reassessment
+
+```mermaid
+sequenceDiagram
+    participant Source as Alternate Data Source
+    participant WH as Webhook Handler
+    participant ENR as Enrichment Pipeline
+    participant Score as Scoring Engine
+    participant DB as SQLite Store
+
+    Source->>WH: POST /api/v1/webhooks/alternate-data
+    WH->>ENR: enrichFinancialData (event-specific sources)
+    ENR->>Score: assess() with thin-file mode
+    Score-->>WH: updated FHS
+    WH->>DB: persist assessment + webhook event
+    WH-->>Source: assessment_id + score
 ```
 
 ## Component Map
@@ -76,7 +100,11 @@ sequenceDiagram
 | **Agents** | `server/src/services/agents/` | 27-agent orchestration pipeline |
 | **Scoring** | `server/src/services/scoring/` | Node.js 20-dimension FHS engine (default) |
 | **Scoring (legacy)** | `server/scoring_bridge.py` → `app/services/scoring_engine.py` | Python fallback (`SCORING_ENGINE=python`) |
-| **Integrations** | `server/src/services/integrations/` | Bureau, tax, Tally, Zoho, carbon clients |
+| **Integrations** | `server/src/services/integrations/` | Bureau, tax, Tally, Zoho, carbon, AA, UPI, EPFO clients |
+| **Enrichment** | `server/src/services/integrations/enrichment.ts` | Unified alternate-data enrichment pipeline |
+| **Ecosystem** | `server/src/services/ecosystem/` | OCEN/ULI adapters, AA consent sessions |
+| **Realtime** | `server/src/services/realtime/` | Webhook-triggered reassessment |
+| **Thin-file** | `server/src/services/scoring/thin-file.ts` | NTC/NTB segmentation and weight adjustment |
 | **MSME** | `server/src/services/msme-*.ts` | Enterprise registration, profile, data feeds |
 | **Policies** | `server/src/data/government-policies.ts` | Scheme catalog by sector |
 | **Store** | `server/src/services/store.ts` | Assessment persistence |
@@ -90,7 +118,7 @@ sequenceDiagram
 
 Every stored assessment (bank assess, MSME quick assess) triggers **27 AI agents** across **6 phases**:
 
-1. **Enrichment** — bureau/tax/legal/document summary
+1. **Enrichment** — bureau/tax/legal/document + AA/UPI/EPFO alternate data summary
 2. **Dimension analysis** — 20 parallel dimension agents (one per scoring dimension)
 3. **Risk synthesis** — composite risk profile
 4. **Health score validation** — agent-validated score + governance bonus
@@ -160,7 +188,12 @@ flowchart LR
 | Carbon Intelligence | No `CARBON_INTELLIGENCE_API_KEY` | `ci_live_*` key set |
 | Credit Bureau | `USE_MOCK_INTEGRATIONS=true` (default) | `CREDIT_BUREAU_API_KEY` set |
 | Tax Verification | `USE_MOCK_INTEGRATIONS=true` (default) | `TAX_API_KEY` set |
+| Account Aggregator | `USE_MOCK_INTEGRATIONS=true` (default) | `ACCOUNT_AGGREGATOR_API_KEY` set |
+| UPI Analytics | `USE_MOCK_INTEGRATIONS=true` (default) | `UPI_ANALYTICS_API_KEY` set |
+| EPFO Compliance | `USE_MOCK_INTEGRATIONS=true` (default) | `EPFO_API_KEY` set |
 | AI Agents | No `OPENAI_API_KEY` | `sk-*` key set (LLM narratives) |
+
+See [ECOSYSTEM.md](./ECOSYSTEM.md) for OCEN/ULI adapters and webhook reassessment.
 
 ## Response Structure
 
@@ -176,14 +209,14 @@ Every assessment returns:
 | `key_insights` | Top narrative insights |
 | `data_gaps` | Missing inputs with severity |
 | `recommended_improvements` | Actionable recommendations |
-| `advanced_intelligence` | Integration status, peer percentile |
+| `advanced_intelligence` | Integration status, peer percentile, alternate-data sources |
+| `metadata.borrower_segment` | NTC/NTB segmentation and thin-file scoring flags |
 | `agent_insights` | Full orchestration output (stored assessments) |
 
 ## Deployment
 
 ```bash
-cd server && npm install
-pip install -r requirements.txt
+npm run install:all   # Node + client + Python deps
 cp .env.example .env
 npm run dev          # Development (port 8080)
 npm run build && npm start   # Production
@@ -199,7 +232,7 @@ Legacy Python server: `python run.py` (FastAPI with `/docs` OpenAPI UI).
 
 | Suite | Command | Coverage |
 |---|---|---|
-| Node platform + agents | `cd server && npm test` | 35 Vitest tests (platform + snapshots + scoring) |
+| Node platform + agents | `cd server && npm test` | 41 Vitest tests (platform + snapshots + scoring) |
 | Python scoring unit | `pytest tests/test_scoring.py -v` | Dimension scorers, engine |
 | Python advanced | `pytest tests/test_advanced.py -v` | ESG, peer, geo, supply chain |
 | Python integrations | `pytest tests/test_integrations.py -v` | Bureau, tax, legal clients |
