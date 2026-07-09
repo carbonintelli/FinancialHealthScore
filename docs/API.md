@@ -14,7 +14,7 @@ Interactive OpenAPI docs are available on the **legacy Python server** only (`py
 |---|---|---|---|
 | `GET` | `/api` | — | Service metadata, version, stakeholders |
 | `GET` | `/api/v1/health` | — | Health check, agentic orchestration flags |
-| `GET` | `/api/v1/integrations/status` | — | Bureau, tax, legal, OCR, carbon, AI agent status |
+| `GET` | `/api/v1/integrations/status` | — | Bureau, tax, AA, UPI, EPFO, carbon, ecosystem, AI agent status |
 | `GET` | `/api/v1/auth/demo-credentials` | — | Demo logins for all stakeholder portals |
 
 ## Authentication
@@ -37,10 +37,12 @@ curl -X POST http://localhost:8080/api/v1/auth/login \
 
 | Method | Path | Auth | Description |
 |---|---|---|---|
-| `POST` | `/api/v1/assess` | — | Full MSME assessment (JSON body) |
+| `POST` | `/api/v1/assess` | — | Full MSME assessment with optional auto-enrich + thin-file mode |
 | `GET` | `/api/v1/assess/demo` | — | Demo with sample MSME (`?audience=credit_team`) |
 | `POST` | `/api/v1/bank/assess/{msme_id}` | Bank JWT | Assess portfolio MSME + agent orchestration |
 | `POST` | `/api/v1/msme/assess/quick` | MSME JWT | Quick self-assessment + agent orchestration |
+| `POST` | `/api/v1/msme/assess/alternate-data` | MSME JWT | NTC/NTB assessment with GST/UPI/AA/EPFO enrichment |
+| `POST` | `/api/v1/ecosystem/ocen/credit-assessment` | — | OCEN-format Financial Health Card (public) |
 
 ### POST /api/v1/assess
 
@@ -50,7 +52,15 @@ curl -X POST http://localhost:8080/api/v1/auth/login \
 {
   "financial_data": { ... },
   "include_carbon_intelligence": true,
-  "audience": "credit_team"
+  "audience": "credit_team",
+  "auto_enrich": true,
+  "thin_file_mode": true,
+  "alternate_data": {
+    "include_aa": true,
+    "include_upi": true,
+    "include_epfo": true,
+    "aa_session_id": "aa-msme-demo-001-abc123"
+  }
 }
 ```
 
@@ -68,8 +78,13 @@ curl -X POST http://localhost:8080/api/v1/auth/login \
   "data_gaps": [ ... ],
   "recommended_improvements": [ ... ],
   "advanced_intelligence": {
-    "enrichment_applied": ["credit_bureau", "tax_verification"],
+    "enrichment_applied": ["credit_bureau", "tax_verification", "upi_analytics", "epfo_compliance"],
     "peer_percentile_overall": 72.5
+  },
+  "metadata": {
+    "borrower_segment": "NTC_NTB",
+    "thin_file_scoring": true,
+    "alternate_data_sources": ["gst", "upi", "account_aggregator", "epfo"]
   }
 }
 ```
@@ -117,6 +132,8 @@ Enterprise-facing endpoints for registration, financial data submission, credit 
 | `POST` | `/api/v1/msme/data-feed` | MSME JWT | Submit financial data + optional FHS recalculation |
 | `POST` | `/api/v1/msme/assess` | MSME JWT | Credit assessment from stored profile data |
 | `POST` | `/api/v1/msme/assess/quick` | MSME JWT | Initiate credit assessment (uses profile if available) |
+| `POST` | `/api/v1/msme/assess/alternate-data` | MSME JWT | NTC/NTB assessment with GST/UPI/AA/EPFO enrichment |
+| `GET` | `/api/v1/msme/reassessment-events` | MSME JWT | Webhook-triggered reassessment event log |
 | `POST` | `/api/v1/msme/assess/import` | MSME JWT | ERP import + credit assessment (Tally / Zoho) |
 | `POST` | `/api/v1/msme/assess/import/preview` | MSME JWT | Preview ERP import without persisting assessment |
 | `GET` | `/api/v1/msme/assessments` | MSME JWT | Credit assessment history |
@@ -169,14 +186,63 @@ Enterprise-facing endpoints for registration, financial data submission, credit 
 
 See [DATA_CONNECTORS.md](./DATA_CONNECTORS.md) for connector setup and the import-to-score pipeline.
 
+## Alternate Data & Ecosystem (OCEN / ULI / AA)
+
+See [ECOSYSTEM.md](./ECOSYSTEM.md) for full workflow documentation.
+
+| Method | Path | Auth | Description |
+|---|---|---|---|
+| `GET` | `/api/v1/integrations/alternate-data/connectors` | — | List GST, UPI, AA, EPFO connectors |
+| `POST` | `/api/v1/integrations/upi/analytics` | JWT | UPI merchant payment analytics |
+| `POST` | `/api/v1/integrations/epfo/verify` | JWT | EPFO establishment compliance |
+| `GET` | `/api/v1/ecosystem/catalog` | — | OCEN/ULI product catalog |
+| `POST` | `/api/v1/ecosystem/aa/consent/initiate` | JWT | Start AA consent session |
+| `POST` | `/api/v1/ecosystem/aa/consent/fetch` | JWT | Fetch consented AA bank data |
+| `GET` | `/api/v1/ecosystem/aa/consent/sessions` | JWT | List AA consent sessions |
+| `POST` | `/api/v1/ecosystem/ocen/credit-assessment` | — | OCEN-format Financial Health Card |
+| `POST` | `/api/v1/ecosystem/uli/loan-eligibility` | — | ULI loan eligibility adapter |
+| `POST` | `/api/v1/webhooks/alternate-data` | Webhook secret | Near-real-time reassessment trigger |
+
+### POST /api/v1/ecosystem/ocen/credit-assessment
+
+```json
+{
+  "borrower": {
+    "msme_id": "msme-demo-001",
+    "business_name": "Shree Ganesh Auto Components Pvt Ltd",
+    "gstin": "27AABCS1234F1Z5"
+  },
+  "consent_refs": { "aa_session_id": "aa-msme-demo-001-abc123" },
+  "assessment_options": {
+    "thin_file_mode": true,
+    "include_alternate_data": true
+  }
+}
+```
+
+### POST /api/v1/webhooks/alternate-data
+
+```json
+{
+  "event_type": "upi.analytics.refresh",
+  "msme_id": "msme-demo-001",
+  "source": "upi"
+}
+```
+
+Supported `event_type` values: `gst.filing.updated`, `aa.statement.received`, `upi.analytics.refresh`, `epfo.contribution.posted`.
+
 Mock mode is the default (`USE_MOCK_INTEGRATIONS=true`). Set API keys in `.env` for live integrations.
 
 ## Input Data Blocks
 
 | Block | Key Fields |
 |---|---|
-| `profile` | `business_name`, `gstin`, `pan`, `udyam_number`, `sector`, `state` |
+| `profile` | `business_name`, `gstin`, `pan`, `udyam_number`, `sector`, `state`, `borrower_segment` |
 | `accounting` | `revenue_inr`, `current_assets_inr`, `total_debt_inr`, etc. |
+| `account_aggregator` | `session_id`, `avg_monthly_balance_inr`, `cash_flow_volatility_pct`, `months_of_statements` |
+| `upi_analytics` | `monthly_transaction_volume_inr`, `payment_success_rate_pct`, `revenue_growth_mom_pct` |
+| `epfo_compliance` | `registered`, `employee_count_reported`, `contribution_compliance_pct` |
 | `founder` | `cibil_score`, `years_industry_experience`, `is_female` |
 | `credit_bureau` | `crisil_rating`, `past_debts[]`, `repayment_history[]` |
 | `legal_compliance` | `company_lawsuits[]`, `founder_lawsuits[]` |

@@ -2,11 +2,13 @@
 
 **AI-Powered Alternative Data Intelligence for MSME Credit Decisions**
 
-Developed for **IDBI Innovate 2026** — **20-dimension** AI-powered alternative data intelligence for MSME credit decisions.
+Developed for **IDBI Innovate 2026** — **20-dimension** AI-powered alternative data intelligence for MSME credit decisions, aligned with the **MSME Financial Health Card** framework (GST, UPI, AA, EPFO aggregation, OCEN/ULI ecosystem, NTC/NTB thin-file scoring).
 
 ## Overview
 
-Financial Health Score analyses consented MSME data—including transactions, utility bills, fuel invoices, accounting records, and business documents—and enriches it with [Sustainow Carbon Intelligence](https://ci.sustainow.in) to produce an explainable **Financial Health Score** with evidence-linked insights and confidence levels.
+Financial Health Score analyses consented MSME data—including **GST returns, UPI merchant analytics, Account Aggregator bank statements, EPFO compliance**, transactions, utility bills, accounting records, and business documents—and enriches it with [Sustainow Carbon Intelligence](https://ci.sustainow.in) to produce an explainable **Financial Health Score** with evidence-linked insights and confidence levels.
+
+**New-to-Credit (NTC)** and **New-to-Bank (NTB)** enterprises are supported via thin-file scoring that up-weights alternate data when traditional bureau history is absent.
 
 ### Core Capabilities
 
@@ -56,6 +58,7 @@ React platform UI (production): **http://localhost:8080/app/**
 - **Health Check**: http://localhost:8080/api/v1/health
 - **Agent Architecture**: http://localhost:8080/api/v1/agents/architecture
 - **Integrations Status**: http://localhost:8080/api/v1/integrations/status
+- **Ecosystem Catalog**: http://localhost:8080/api/v1/ecosystem/catalog
 
 ### Demo Logins
 
@@ -83,7 +86,8 @@ See [docs/NODE_PLATFORM.md](docs/NODE_PLATFORM.md) and [docs/PLATFORM.md](docs/P
 | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | System context, request flow, component map, testing strategy |
 | [docs/API.md](docs/API.md) | REST endpoint reference |
 | [docs/SCORING.md](docs/SCORING.md) | 20-dimension scoring model and grade bands |
-| [docs/DATA_CONNECTORS.md](docs/DATA_CONNECTORS.md) | Tally, Zoho Books & ci.sustainow.in import pipeline |
+| [docs/DATA_CONNECTORS.md](docs/DATA_CONNECTORS.md) | Tally, Zoho Books, GST/UPI/AA/EPFO & ci.sustainow.in import pipeline |
+| [docs/ECOSYSTEM.md](docs/ECOSYSTEM.md) | OCEN/ULI adapters, AA consent, thin-file NTC/NTB scoring, webhooks |
 
 ## Carbon Intelligence Integration
 
@@ -225,6 +229,8 @@ Women-led MSMEs receive a **governance score bonus** (up to +2.5 points on overa
 │   │   ├── routes/          # Auth + API routes
 │   │   ├── services/scoring/ # Node.js 20-dimension scoring engine (default)
 │   │   ├── services/agents/ # 27-agent orchestration
+│   │   ├── services/ecosystem/ # OCEN/ULI adapters, AA consent
+│   │   ├── services/realtime/  # Webhook reassessment pipeline
 │   │   ├── db/              # SQLite + seed data
 │   │   └── data/            # Government policy catalog
 │   ├── scripts/
@@ -249,8 +255,11 @@ Women-led MSMEs receive a **governance score bonus** (up to +2.5 points on overa
 ## Running Tests
 
 ```bash
-# Node.js platform + snapshot regression (35 tests)
+# Node.js platform + snapshot regression (41 tests)
 cd server && npm test
+
+# Full test run including Python scoring bridge parity
+npm run test:all
 
 # Regenerate golden-file snapshots after API changes
 cd server && npm run generate:snapshots && npm test

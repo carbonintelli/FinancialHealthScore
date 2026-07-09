@@ -131,6 +131,8 @@ flowchart LR
 | `POST` | `/data-feed` | Submit financial data + optional FHS recalculation |
 | `GET` | `/assessments` | Credit assessment history |
 | `POST` | `/assess/quick` | Initiate credit assessment + 27-agent orchestration |
+| `POST` | `/assess/alternate-data` | NTC/NTB assessment with GST/UPI/AA/EPFO enrichment |
+| `GET` | `/reassessment-events` | Webhook-triggered reassessment event log |
 | `POST` | `/assess/import` | ERP data integration + credit assessment |
 | `POST` | `/loans` | Submit credit facility application |
 
@@ -191,7 +193,7 @@ Access via portal **Credit Assessment Report** view, or API endpoints above.
 
 SQLite database at `data/financial_health_node.db` (configurable via `DATABASE_URL`).
 
-Tables: `organizations`, `users`, `msme_profiles`, `msme_data_feeds`, `portfolio_links`, `assessment_records`, `loan_applications`, `scheme_applications`, `regulatory_submissions`, `agent_runs`, `notifications`.
+Tables: `organizations`, `users`, `msme_profiles`, `msme_data_feeds`, `portfolio_links`, `assessment_records`, `loan_applications`, `scheme_applications`, `regulatory_submissions`, `agent_runs`, `notifications`, `aa_consent_sessions`, `webhook_events`.
 
 Seeded on startup with IDBI bank, portfolio MSMEs, and demo users across all four stakeholder types.
 

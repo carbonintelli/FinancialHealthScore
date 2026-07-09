@@ -34,6 +34,13 @@ The canonical label registry lives in `client/src/lib/terminology.ts` (React SPA
 | **Credit Application** | MSME request for a credit facility (working capital, term loan, etc.) |
 | **Financial Data Submission** | Enterprise submission of accounting/financial statements |
 | **ERP Data Integration** | Import of financial data from Tally ERP or Zoho Books |
+| **MSME Financial Health Card** | Unified alternate-data credit assessment product (GST, UPI, AA, EPFO) |
+| **Alternate Data Assessment** | NTC/NTB credit evaluation using non-bureau data sources |
+| **Thin-File Scoring** | Weight rebalancing for borrowers without traditional credit history |
+| **Borrower Segment** | Classification: `standard`, `NTC`, `NTB`, or `NTC_NTB` |
+| **Account Aggregator (AA)** | RBI-regulated consent-based financial data sharing framework |
+| **OCEN** | Open Credit Enablement Network — interoperable credit product protocol |
+| **ULI** | Unified Lending Interface — loan eligibility and origination adapter |
 
 ## Navigation Labels (Enterprise Portal)
 
@@ -42,7 +49,7 @@ The canonical label registry lives in `client/src/lib/terminology.ts` (React SPA
 | `/app/msme/dashboard.html` | Enterprise Dashboard |
 | `/app/msme/profile.html` | Financial Data Submission |
 | `/app/msme/import.html` | ERP Data Integration |
-| `/app/msme/assess.html` | Credit Assessment |
+| `/app/msme/assess` | Credit Assessment (standard + NTC/NTB alternate-data) |
 | `/app/msme/report.html` | Credit Assessment Report |
 | `/app/msme/loans.html` | Credit Applications |
 | `/app/msme/register.html` | MSME Enterprise Registration |
