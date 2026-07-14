@@ -2,12 +2,12 @@
 
 from __future__ import annotations
 
-from datetime import datetime
 from pathlib import Path
 from typing import Any
 
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 
+from app.db.models import utc_now
 from app.models.schemas import FinancialHealthScoreResult
 
 TEMPLATE_DIR = Path(__file__).resolve().parent.parent / "templates"
@@ -99,7 +99,7 @@ def render_html_report(result: FinancialHealthScoreResult) -> str:
     return template.render(
         report=report,
         result=result,
-        generated_display=datetime.utcnow().strftime("%d %B %Y, %H:%M UTC"),
+        generated_display=utc_now().strftime("%d %B %Y, %H:%M UTC"),
         dimension_scores=result.dimension_scores,
         risk_indicators=result.risk_indicators,
         data_gaps=result.data_gaps,

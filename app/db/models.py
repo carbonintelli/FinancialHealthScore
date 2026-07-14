@@ -3,12 +3,17 @@
 from __future__ import annotations
 
 import enum
-from datetime import datetime
+from datetime import datetime, timezone
 
 from sqlalchemy import JSON, Boolean, DateTime, Enum, Float, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.session import Base
+
+
+def utc_now() -> datetime:
+    """Naive UTC timestamp for SQLite DateTime columns (avoids deprecated utcnow())."""
+    return datetime.now(timezone.utc).replace(tzinfo=None)
 
 
 class OrganizationType(str, enum.Enum):
@@ -41,7 +46,7 @@ class Organization(Base):
     name: Mapped[str] = mapped_column(String(255), nullable=False)
     org_type: Mapped[OrganizationType] = mapped_column(Enum(OrganizationType), nullable=False)
     registration_id: Mapped[str | None] = mapped_column(String(64), unique=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utc_now)
 
     users: Mapped[list["User"]] = relationship(back_populates="organization")
     portfolio_links: Mapped[list["PortfolioLink"]] = relationship(back_populates="bank_org")
@@ -58,7 +63,7 @@ class User(Base):
     organization_id: Mapped[int] = mapped_column(ForeignKey("organizations.id"), nullable=False)
     msme_id: Mapped[str | None] = mapped_column(String(64), index=True)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utc_now)
 
     organization: Mapped["Organization"] = relationship(back_populates="users")
 
@@ -76,7 +81,7 @@ class PortfolioLink(Base):
     gstin: Mapped[str | None] = mapped_column(String(20))
     relationship_manager: Mapped[str | None] = mapped_column(String(255))
     credit_limit_inr: Mapped[float | None] = mapped_column(Float)
-    onboarded_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    onboarded_at: Mapped[datetime] = mapped_column(DateTime, default=utc_now)
 
     bank_org: Mapped["Organization"] = relationship(back_populates="portfolio_links")
 
@@ -94,7 +99,7 @@ class AssessmentRecord(Base):
     grade: Mapped[str] = mapped_column(String(8), nullable=False)
     overall_risk_level: Mapped[str] = mapped_column(String(16), nullable=False)
     result_json: Mapped[dict] = mapped_column(JSON, nullable=False)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, index=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utc_now, index=True)
 
 
 class LoanApplication(Base):
@@ -113,8 +118,8 @@ class LoanApplication(Base):
     purpose: Mapped[str | None] = mapped_column(Text)
     status: Mapped[LoanStatus] = mapped_column(Enum(LoanStatus), default=LoanStatus.SUBMITTED)
     reviewer_notes: Mapped[str | None] = mapped_column(Text)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
-    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utc_now)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=utc_now, onupdate=utc_now)
 
 
 class Notification(Base):
@@ -126,4 +131,4 @@ class Notification(Base):
     message: Mapped[str] = mapped_column(Text, nullable=False)
     category: Mapped[str] = mapped_column(String(32), default="info")
     is_read: Mapped[bool] = mapped_column(Boolean, default=False)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utc_now)
