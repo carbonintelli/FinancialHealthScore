@@ -1,4 +1,4 @@
-import { assessRequest } from "./scoring/bridge.js";
+import { assessRequest } from "./scoring/index.js";
 import { getMockCarbonData } from "./scoring/index.js";
 import { detectBorrowerSegment } from "./scoring/thin-file.js";
 import { enrichFinancialData } from "./integrations/enrichment.js";

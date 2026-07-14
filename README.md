@@ -34,7 +34,7 @@ Each dimension produces a score (0–100), risk level, confidence, and evidence-
 - **Government & SIDBI** — Scheme eligibility advisory and national MSME registry oversight
 - **Regulatory Supervisors** — RBI, GSTN, MCA compliance review workflows
 
-## Quick Start (Node.js — recommended)
+## Quick Start
 
 ```bash
 # Install server + React client dependencies
@@ -47,8 +47,6 @@ npm run dev
 # Production build + start
 npm run build && npm start
 ```
-
-Legacy Python-only server: `python run.py`
 
 Server API starts at **http://localhost:8080**  
 React platform UI (dev): **http://localhost:5173/app/**  
@@ -139,7 +137,7 @@ Without an API key, the service runs in **demo mode** with realistic mock carbon
 | `POST` | `/api/v1/integrations/tax/verify` | GSTN/ITR tax verification |
 | `GET` | `/api/v1/policies/catalog` | Government policy catalog by sector |
 
-Full reference: [docs/API.md](docs/API.md). Legacy Python server adds `/docs` OpenAPI UI and additional carbon/legal endpoints.
+Full reference: [docs/API.md](docs/API.md).
 
 ### Example: Full Assessment
 
@@ -228,7 +226,7 @@ Women-led MSMEs receive a **governance score bonus** (up to +2.5 points on overa
 │   │   ├── index.ts         # Express entry
 │   │   ├── app.ts           # App factory (tests + snapshots)
 │   │   ├── routes/          # Auth + API routes
-│   │   ├── services/scoring/ # Node.js 20-dimension scoring engine (default)
+│   │   ├── services/scoring/ # Node.js 20-dimension scoring engine
 │   │   ├── services/agents/ # 27-agent orchestration
 │   │   ├── services/ecosystem/ # OCEN/ULI adapters, AA consent
 │   │   ├── services/realtime/  # Webhook reassessment pipeline
@@ -236,37 +234,22 @@ Women-led MSMEs receive a **governance score bonus** (up to +2.5 points on overa
 │   │   └── data/            # Government policy catalog
 │   ├── scripts/
 │   │   └── generate-snapshots.ts
-│   ├── scoring_bridge.py    # Python scoring bridge
-│   └── tests/               # Vitest (platform + snapshots)
+│   └── tests/               # Vitest (platform + snapshots + scoring)
 ├── frontend/                # Legacy static HTML (fallback only)
-├── app/                     # Python scoring engine + legacy FastAPI
-│   ├── services/scoring_engine.py
-│   ├── services/integrations.py
-│   └── api/routes.py
 ├── docs/                    # Architecture, API, scoring, snapshots
 ├── tests/
-│   ├── snapshots/           # Golden-file API responses (Node.js)
-│   ├── test_scoring.py      # Python scoring unit tests
-│   └── test_api_assess.py   # Legacy FastAPI tests
-├── examples/
-├── requirements.txt
-└── run.py                   # Legacy Python server
+│   └── snapshots/           # Golden-file API responses
+└── examples/
 ```
 
 ## Running Tests
 
 ```bash
-# Node.js platform + snapshot regression (41 tests)
+# Node.js platform + scoring + snapshot regression
 cd server && npm test
-
-# Full test run including Python scoring bridge parity
-npm run test:all
 
 # Regenerate golden-file snapshots after API changes
 cd server && npm run generate:snapshots && npm test
-
-# Python scoring engine unit tests
-pytest tests/test_scoring.py tests/test_advanced.py -v
 ```
 
 ## License

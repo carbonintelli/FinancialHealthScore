@@ -4,7 +4,7 @@
 
 import { v4 as uuidv4 } from "uuid";
 import { getDb } from "../../db/index.js";
-import { assessRequest } from "../scoring/bridge.js";
+import { assessRequest } from "../scoring/index.js";
 import { detectBorrowerSegment } from "../scoring/thin-file.js";
 import { enrichFinancialData } from "../integrations/enrichment.js";
 import { getMockCarbonData } from "../scoring/index.js";

@@ -1,6 +1,6 @@
 import { randomUUID } from "crypto";
 import { getDb } from "../db/index.js";
-import { assessRequest, getMockCarbonData } from "./scoring/bridge.js";
+import { assessRequest, getMockCarbonData } from "./scoring/index.js";
 import { assessAndStore } from "./store.js";
 import { fetchFullIntelligence } from "./integrations/carbon-intelligence.js";
 import {
