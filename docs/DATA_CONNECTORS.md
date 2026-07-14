@@ -137,8 +137,6 @@ API equivalent: `POST /api/v1/msme/assess/alternate-data`
 
 Imported data is passed to the **Node.js scoring engine** (`server/src/services/scoring/`) together with Carbon Intelligence payloads — the same path as manual assessments and financial data submissions.
 
-Set `SCORING_ENGINE=python` to use the legacy Python bridge instead. See [NODE_PLATFORM.md](./NODE_PLATFORM.md).
-
 ## Environment
 
 ```env

@@ -2,7 +2,7 @@
 
 Financial Health Score (FHS) is a **Node.js Express** platform (v2.1) that ingests consented MSME financial, operational, and alternative data, enriches it via external integrations and AI agents, and produces an explainable **20-dimension Financial Health Score** for lending institutions, enterprises, government bodies, and regulators.
 
-The **Node.js scoring engine** (`server/src/services/scoring/`) is the default runtime (`SCORING_ENGINE=node`). A legacy **Python** bridge (`server/scoring_bridge.py` → `app/services/scoring_engine.py`) remains available for comparison. A legacy **FastAPI** server (`python run.py`) is also available for Python-only deployments.
+The **Node.js scoring engine** (`server/src/services/scoring/`) is the sole runtime for Financial Health Score assessment.
 
 Developed for **IDBI Innovate 2026** by SUSTAINOW TECHNOLOGIES.
 
@@ -25,10 +25,6 @@ flowchart TB
         FE[Static Frontend /app/]
     end
 
-    subgraph Python[Python Scoring — optional fallback]
-        SE[scoring_engine.py]
-    end
-
     subgraph External
         CI[ci.sustainow.in Carbon Intelligence]
         BU[CIBIL / CRISIL Bureau]
@@ -43,8 +39,8 @@ flowchart TB
 
     BANK & MSME & GOVT & REG --> FE
     FE --> WEB
+    WEB --> SCORE
     WEB --> AGENTS
-    WEB --> SE
     AGENTS --> OAI
     WEB --> BU & TX & AA & UPI & EPFO & LG & CI
     WEB --> OCEN
@@ -99,7 +95,6 @@ sequenceDiagram
 | **App** | `server/src/app.ts` | Express factory (tests + snapshots) |
 | **Agents** | `server/src/services/agents/` | 27-agent orchestration pipeline |
 | **Scoring** | `server/src/services/scoring/` | Node.js 20-dimension FHS engine (default) |
-| **Scoring (legacy)** | `server/scoring_bridge.py` → `app/services/scoring_engine.py` | Python fallback (`SCORING_ENGINE=python`) |
 | **Integrations** | `server/src/services/integrations/` | Bureau, tax, Tally, Zoho, carbon, AA, UPI, EPFO clients |
 | **Enrichment** | `server/src/services/integrations/enrichment.ts` | Unified alternate-data enrichment pipeline |
 | **Ecosystem** | `server/src/services/ecosystem/` | OCEN/ULI adapters, AA consent sessions |
@@ -112,7 +107,6 @@ sequenceDiagram
 | **DB** | `server/src/db/` | SQLite schema + seed data |
 | **Frontend** | `client/` | React TypeScript SPA (Vite) |
 | **Frontend (legacy)** | `frontend/` | Static HTML fallback |
-| **Legacy API** | `app/api/routes.py` | FastAPI endpoints (optional) |
 
 ## Agentic Orchestration
 
@@ -216,7 +210,7 @@ Every assessment returns:
 ## Deployment
 
 ```bash
-npm run install:all   # Node + client + Python deps
+npm run install:all   # Node + client deps
 cp .env.example .env
 npm run dev          # Development (port 8080)
 npm run build && npm start   # Production
@@ -226,17 +220,11 @@ npm run build && npm start   # Production
 - **API root**: `GET /api`
 - **Health check**: `GET /api/v1/health`
 
-Legacy Python server: `python run.py` (FastAPI with `/docs` OpenAPI UI).
-
 ## Testing Strategy
 
 | Suite | Command | Coverage |
 |---|---|---|
 | Node platform + agents | `cd server && npm test` | 41 Vitest tests (platform + snapshots + scoring) |
-| Python scoring unit | `pytest tests/test_scoring.py -v` | Dimension scorers, engine |
-| Python advanced | `pytest tests/test_advanced.py -v` | ESG, peer, geo, supply chain |
-| Python integrations | `pytest tests/test_integrations.py -v` | Bureau, tax, legal clients |
-| Python API | `pytest tests/test_api_assess.py -v` | Legacy FastAPI assessment |
 
 **Regenerate API snapshots** (Node.js golden files):
 
