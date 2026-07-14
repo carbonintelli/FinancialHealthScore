@@ -3,17 +3,15 @@
 from __future__ import annotations
 
 import secrets
-from datetime import datetime
-
 from sqlalchemy import desc, func, select
 from sqlalchemy.orm import Session
 
-from app.db.models import LoanApplication, LoanStatus, Notification, User
+from app.db.models import LoanApplication, LoanStatus, Notification, User, utc_now
 from app.models.platform_schemas import LoanApplicationCreate
 
 
 def _ref() -> str:
-    return f"LN-{datetime.utcnow().strftime('%Y%m%d')}-{secrets.token_hex(3).upper()}"
+    return f"LN-{utc_now().strftime('%Y%m%d')}-{secrets.token_hex(3).upper()}"
 
 
 def create_loan_application(
@@ -71,7 +69,7 @@ def update_loan_status(
         raise ValueError("Loan not found")
     loan.status = status
     loan.reviewer_notes = reviewer_notes
-    loan.updated_at = datetime.utcnow()
+    loan.updated_at = utc_now()
     db.add(
         Notification(
             user_id=notify_user_id,

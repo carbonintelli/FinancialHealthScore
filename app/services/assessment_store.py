@@ -70,9 +70,9 @@ def bank_dashboard_metrics(db: Session, msme_ids: list[str]) -> dict:
     if not msme_ids:
         return {"assessments_this_month": 0, "average_score": None, "high_risk_count": 0}
 
-    from datetime import datetime, timedelta
+    from app.db.models import utc_now
 
-    month_start = datetime.utcnow().replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+    month_start = utc_now().replace(day=1, hour=0, minute=0, second=0, microsecond=0)
     recent = list(
         db.scalars(
             select(AssessmentRecord).where(
