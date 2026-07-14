@@ -1,12 +1,11 @@
 # API Reference
 
 Base URL: `http://localhost:8080`  
-Platform: **Node.js Express v2.1** (primary)
+Platform: **Node.js Express v2.1**
 
 Display labels for statuses, risk ratings, and portal terminology: [TERMINOLOGY.md](./TERMINOLOGY.md).
 
 API root metadata: `GET /api`  
-Interactive OpenAPI docs are available on the **legacy Python server** only (`python run.py` → `/docs`).
 
 ## System
 
@@ -269,21 +268,6 @@ Mock mode is the default (`USE_MOCK_INTEGRATIONS=true`). Set API keys in `.env` 
 | `503` | Integration unavailable (live mode without API key) |
 
 User-facing error messages use formal banking terminology. See [TERMINOLOGY.md](./TERMINOLOGY.md#api-error-messages).
-
-## Legacy Python Endpoints
-
-The FastAPI server (`python run.py`) additionally exposes:
-
-| Method | Path | Description |
-|---|---|---|
-| `GET` | `/` | Service metadata (v1.2) |
-| `GET` | `/docs` | OpenAPI interactive docs |
-| `POST` | `/api/v1/integrations/legal/search` | e-Courts/MCA litigation search |
-| `GET` | `/api/v1/msme/{id}/carbon` | Carbon Intelligence data |
-| `GET` | `/api/v1/msme/{id}/score` | Score from CI ID only |
-| `GET` | `/api/v1/carbon/catalog` | CI integration catalog |
-
-These are not mounted on the Node.js server.
 
 ## Snapshots
 

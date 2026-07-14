@@ -7,7 +7,7 @@ import {
   type CarbonFullIntelligence,
   type SustainabilityReport,
 } from "./carbon-intelligence.js";
-import { assessRequest } from "../scoring/bridge.js";
+import { assessRequest } from "../scoring/index.js";
 import { assessAndStore } from "../store.js";
 
 export interface MsmeProfileContext {

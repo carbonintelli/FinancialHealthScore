@@ -1,6 +1,6 @@
 # Node.js Platform Server
 
-Primary runtime for Financial Health Score (FHS) **v2.1** — Node.js **Express API** + **React TypeScript SPA**.
+Sole runtime for Financial Health Score (FHS) **v2.1** — Node.js **Express API** + **React TypeScript SPA**.
 
 ## Quick Start
 
@@ -69,9 +69,9 @@ server/
 │       └── snapshot-normalize.ts
 ├── scripts/
 │   └── generate-snapshots.ts # Regenerate tests/snapshots/*.json
-├── scoring_bridge.py         # Invokes Python scoring engine
 └── tests/
     ├── platform.test.ts      # Platform + agent integration tests
+    ├── scoring.test.ts       # Node scoring engine tests
     └── snapshots.test.ts     # Golden-file API regression tests
 ```
 
@@ -114,14 +114,12 @@ Retrieve all credentials: `GET /api/v1/auth/demo-credentials`
 
 ## Scoring Engine
 
-The **Node.js scoring engine** (`server/src/services/scoring/`) is the default runtime. It uses **20 parallel dimension scoring agents** (Phase 0 of agentic assessment) before the existing 27-agent orchestration pipeline interprets results.
+The **Node.js scoring engine** (`server/src/services/scoring/`) uses **20 parallel dimension scoring agents** (Phase 0 of agentic assessment) before the existing 27-agent orchestration pipeline interprets results.
 
 ```
 Phase 0: dimension_scoring   → 20 parallel scoring agents (deterministic math)
 Phase 1–6: orchestrator     → enrichment, dimension analysis, synthesis, reporting
 ```
-
-Set `SCORING_ENGINE=python` to fall back to the legacy Python bridge (`server/scoring_bridge.py`) for comparison or migration.
 
 ### Architecture
 
@@ -129,16 +127,13 @@ Set `SCORING_ENGINE=python` to fall back to the legacy Python bridge (`server/sc
 server/src/services/scoring/
 ├── engine.ts              # assess() — orchestrates scoring agents + post-process
 ├── scoring-agents.ts      # runScoringAgents() — 20 parallel dimension agents
-├── dimensions/            # One scorer per dimension (ported from Python)
+├── dimensions/            # One scorer per FHS dimension
 ├── post-process.ts        # Risk indicators, data gaps, recommendations
 ├── thin-file.ts           # NTC/NTB segmentation and weight adjustment
-├── policy-assessment.ts   # Government scheme alignment
-└── bridge.ts              # Routes to Node (default) or Python fallback
+└── policy-assessment.ts   # Government scheme alignment
 ```
 
 Demo MSME baseline: **78.1 / B+** (Shree Ganesh Auto Components Pvt Ltd).
-
-Parity with Python is verified in `tests/scoring.test.ts`.
 
 ## Configuration
 
@@ -154,15 +149,12 @@ ACCOUNT_AGGREGATOR_API_KEY=  # Optional — RBI AA framework
 UPI_ANALYTICS_API_KEY=       # Optional — UPI merchant analytics
 EPFO_API_KEY=                # Optional — EPFO establishment compliance
 WEBHOOK_SECRET=              # Optional — webhook authentication
-SCORING_ENGINE=node          # node (default) | python (legacy bridge)
-PYTHON_PATH=python3          # Only needed when SCORING_ENGINE=python
 ```
 
 ## Tests & Snapshots
 
 ```bash
-cd server && npm test              # 41 tests (platform + snapshots + scoring parity)
-npm run test:all                   # From repo root — includes Python deps
+cd server && npm test              # Vitest suite (platform + snapshots + scoring)
 npm run generate:snapshots         # Regenerate tests/snapshots/*.json
 ```
 
@@ -170,10 +162,8 @@ npm run generate:snapshots         # Regenerate tests/snapshots/*.json
 |---|---|
 | `tests/platform.test.ts` | Auth, agents, bank/MSME/govt/regulatory flows |
 | `tests/snapshots.test.ts` | Golden-file API response regression |
-| `tests/scoring.test.ts` | Node scoring engine parity with Python |
+| `tests/scoring.test.ts` | Node scoring engine |
 
 Snapshot catalog: [PRODUCT_SNAPSHOTS.md](./PRODUCT_SNAPSHOTS.md)
 
 Terminology reference: [TERMINOLOGY.md](./TERMINOLOGY.md)
-
-Python unit tests (`pytest`) still cover the scoring engine independently.

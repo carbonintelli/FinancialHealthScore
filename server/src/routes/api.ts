@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { config } from "../config.js";
-import { assessDemo, assessRequest, getMockCarbonData } from "../services/scoring/bridge.js";
+import { assessDemo, assessRequest, getMockCarbonData } from "../services/scoring/index.js";
 import { assessAndStore } from "../services/store.js";
 import { requireAuth, requireRoles, type AuthRequest } from "../middleware/auth.js";
 import { BANK_ROLES, MSME_ROLES, GOVT_ROLES, REG_ROLES } from "../auth/index.js";

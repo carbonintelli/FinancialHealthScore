@@ -1,4 +1,4 @@
-import type { AssessmentResult } from "../scoring/bridge.js";
+import type { AssessmentResult } from "../scoring/index.js";
 import type { OrchestrationResult } from "../agents/types.js";
 
 function isOrchestration(obj: unknown): obj is OrchestrationResult {

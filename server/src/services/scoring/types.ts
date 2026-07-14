@@ -1,4 +1,4 @@
-/** Financial Health Score types — mirrors Python app/models/schemas.py output shapes */
+/** Financial Health Score types — assessment result shapes returned by the Node scoring engine */
 
 export type RiskLevel = "low" | "moderate" | "elevated" | "high" | "critical";
 export type ConfidenceLevel = "high" | "medium" | "low";

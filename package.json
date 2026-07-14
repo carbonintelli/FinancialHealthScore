@@ -8,9 +8,8 @@
     "dev:server": "cd server && npm run dev",
     "dev:client": "cd client && npm run dev",
     "build": "cd client && npm run build && cd ../server && npm run build",
-    "install:all": "cd server && npm install && cd ../client && npm install && pip install -r requirements.txt",
-    "test": "cd server && npm test",
-    "test:all": "pip install -r requirements.txt && cd server && npm test"
+    "install:all": "cd server && npm install && cd ../client && npm install",
+    "test": "cd server && npm test"
   },
   "devDependencies": {
     "concurrently": "^9.1.2"

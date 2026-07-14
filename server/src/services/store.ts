@@ -1,5 +1,5 @@
 import { getDb } from "../db/index.js";
-import type { AssessmentResult } from "./scoring/bridge.js";
+import type { AssessmentResult } from "./scoring/index.js";
 import { orchestrateAssessment } from "./agents/orchestrator.js";
 import type { OrchestrationResult } from "./agents/types.js";
 

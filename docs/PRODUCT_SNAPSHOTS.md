@@ -21,8 +21,6 @@ npm run collect:app-snapshots   # Application catalogue → docs/APPLICATION_SNA
 npm test
 ```
 
-Legacy Python snapshot generation (`python scripts/generate_snapshots.py`) is deprecated — snapshots now reflect the Node.js Express server.
-
 ## Demo Assessment — Credit Team
 
 **Endpoint:** `GET /api/v1/assess/demo?audience=credit_team`
