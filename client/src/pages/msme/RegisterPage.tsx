@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { setAuth } from "../../api/client";
+import { FhsLogo } from "../../components/FhsLogo";
 
 const STEP_LABELS = ["Account Credentials", "Enterprise Profile", "Financial Statements"];
 
@@ -94,7 +95,7 @@ export function RegisterPage() {
       <div className="login-brand-panel">
         <div className="login-brand-content">
           <div className="login-logo-wrap">
-            <img src="/app/assets/logo.svg" alt="" width={72} height={72} />
+            <FhsLogo size={72} title="" />
             <div>
               <div className="login-brand-title">MSME Enterprise Registration</div>
               <p className="login-brand-tagline">

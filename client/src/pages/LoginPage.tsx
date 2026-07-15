@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { api, getToken } from "../api/client";
 import { useAuth } from "../hooks/useAuth";
 import { homePathForUser } from "../api/client";
+import { FhsLogo } from "../components/FhsLogo";
 
 type Stakeholder = "bank" | "msme" | "government" | "regulatory";
 
@@ -73,7 +74,7 @@ export function LoginPage() {
       <div className="login-brand-panel">
         <div className="login-brand-content">
           <div className="login-logo-wrap">
-            <img src="/app/assets/logo.svg" alt="Financial Health Score" width={72} height={72} />
+            <FhsLogo size={72} />
             <div>
               <div className="login-brand-title">Financial Health Score</div>
               <p className="login-brand-tagline">
@@ -88,7 +89,7 @@ export function LoginPage() {
       <div className="login-form-panel">
         <div className="login-card">
           <div className="login-card-header">
-            <img src="/app/assets/logo.svg" alt="" width={52} height={52} className="login-mobile-logo" />
+            <FhsLogo size={52} className="login-mobile-logo" title="" />
             <h1>Secure Sign In</h1>
             <p className="tagline">Access your authorised stakeholder portal</p>
           </div>
