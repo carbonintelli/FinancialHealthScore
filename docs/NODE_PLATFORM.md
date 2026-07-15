@@ -16,8 +16,10 @@ Production:
 npm run build && npm start
 ```
 
-Platform UI: http://localhost:8080/app/  
-API health: http://localhost:8080/api/v1/health
+Platform UI: https://fhs.sustainow.in/app/  
+API health: https://fhs.sustainow.in/api/v1/health
+
+Local development: http://localhost:8080/app/ · http://localhost:8080/api/v1/health
 
 ## Frontend (React SPA)
 

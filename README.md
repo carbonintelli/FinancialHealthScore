@@ -36,6 +36,8 @@ Each dimension produces a score (0–100), risk level, confidence, and evidence-
 
 ## Quick Start
 
+**Live app:** [https://fhs.sustainow.in](https://fhs.sustainow.in) · UI: [https://fhs.sustainow.in/app/](https://fhs.sustainow.in/app/)
+
 ```bash
 # Install server + React client dependencies
 npm run install:all
@@ -48,15 +50,26 @@ npm run dev
 npm run build && npm start
 ```
 
-Server API starts at **http://localhost:8080**  
-React platform UI (dev): **http://localhost:5173/app/**  
-React platform UI (production): **http://localhost:8080/app/**
-- **API Root**: http://localhost:8080/api
-- **Demo Assessment**: http://localhost:8080/api/v1/assess/demo
-- **Health Check**: http://localhost:8080/api/v1/health
-- **Agent Architecture**: http://localhost:8080/api/v1/agents/architecture
-- **Integrations Status**: http://localhost:8080/api/v1/integrations/status
-- **Ecosystem Catalog**: http://localhost:8080/api/v1/ecosystem/catalog
+### Local development URLs
+
+| | |
+|---|---|
+| API | http://localhost:8080 |
+| React UI (Vite) | http://localhost:5173/app/ |
+| React UI (built, via Express) | http://localhost:8080/app/ |
+
+### Production URLs
+
+| | |
+|---|---|
+| App | https://fhs.sustainow.in |
+| Platform UI | https://fhs.sustainow.in/app/ |
+| API root | https://fhs.sustainow.in/api |
+| Demo assessment | https://fhs.sustainow.in/api/v1/assess/demo |
+| Health | https://fhs.sustainow.in/api/v1/health |
+| Agent architecture | https://fhs.sustainow.in/api/v1/agents/architecture |
+| Integrations status | https://fhs.sustainow.in/api/v1/integrations/status |
+| Ecosystem catalog | https://fhs.sustainow.in/api/v1/ecosystem/catalog |
 
 ### Demo Logins
 

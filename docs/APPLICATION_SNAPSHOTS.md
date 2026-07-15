@@ -7,8 +7,8 @@ Live snapshot catalogue of the **Financial Health Score (FHS)** platform — Rea
 | **Generated** | 2026-07-08T12:22:58.280Z |
 | **Platform** | Financial Health Score v2.1.0 |
 | **Stack** | Node.js Express API + React TypeScript SPA |
-| **UI base** | `/app/` |
-| **API base** | `http://localhost:8080` |
+| **UI base** | `/app/` · https://fhs.sustainow.in/app/ |
+| **API base** | `https://fhs.sustainow.in` (local: `http://localhost:8080`) |
 
 Machine-readable export: [snapshots/application-snapshots.json](./snapshots/application-snapshots.json)
 

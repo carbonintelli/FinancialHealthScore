@@ -394,7 +394,7 @@ async function main() {
       generated_at: new Date().toISOString(),
       platform: "Financial Health Score v2.1.0",
       stack: "Node.js Express API + React TypeScript SPA",
-      base_url: "http://localhost:8080",
+      base_url: process.env.FRONTEND_URL || "https://fhs.sustainow.in",
       ui_base: "/app/",
     },
     public: {
