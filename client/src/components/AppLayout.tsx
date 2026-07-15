@@ -3,6 +3,7 @@ import { useAuth } from "../hooks/useAuth";
 import { formatRole, LABELS, PORTALS } from "../lib/terminology";
 import { initials } from "../lib/format";
 import { PORTAL_CONFIG, iconSvg, type PortalKey } from "../lib/portals";
+import { FhsLogo } from "./FhsLogo";
 
 interface AppLayoutProps {
   portal: PortalKey;
@@ -18,7 +19,7 @@ export function AppLayout({ portal, children }: AppLayoutProps) {
     <div className={`layout ${config.theme}`}>
       <aside className="sidebar">
         <div className="sidebar-brand">
-          <img src="/app/assets/logo.svg" alt="Financial Health Score" className="logo-img" width={44} height={44} />
+          <FhsLogo size={44} className="logo-img" />
           <div>
             <div className="brand-title">{LABELS.fhsShort}</div>
             <div className="brand-sub">{meta.portalSub}</div>

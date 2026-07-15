@@ -85,6 +85,7 @@ a:hover { color: var(--primary); }
   border-radius: 12px;
   box-shadow: 0 8px 20px rgba(0,0,0,.25);
   flex-shrink: 0;
+  display: block;
 }
 .brand-title {
   font-family: var(--font-display);
@@ -280,9 +281,11 @@ a:hover { color: var(--primary); }
   letter-spacing: .06em;
   opacity: .95;
 }
-.welcome-banner-badge img {
+.welcome-banner-badge img,
+.welcome-banner-badge svg {
   border-radius: 14px;
-  box-shadow: 0 8px 24px rgba(0,0,0,.2);
+  box-shadow: 0 8px 24px rgba(0,0,0,.25);
+  display: block;
 }
 
 /* ─── Cards ─── */
@@ -601,9 +604,12 @@ td strong { color: var(--text); }
   gap: 1rem;
   margin-bottom: 2rem;
 }
-.login-logo-wrap img {
+.login-logo-wrap img,
+.login-logo-wrap svg {
   border-radius: 18px;
   box-shadow: 0 16px 40px rgba(0,0,0,.3);
+  display: block;
+  flex-shrink: 0;
 }
 .login-brand-title {
   font-family: var(--font-display);

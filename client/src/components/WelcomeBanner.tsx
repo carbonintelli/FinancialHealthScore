@@ -1,5 +1,6 @@
 import { WELCOME } from "../lib/terminology";
 import type { PortalKey } from "../lib/portals";
+import { FhsLogo } from "./FhsLogo";
 
 export function WelcomeBanner({ portal }: { portal: PortalKey }) {
   const m = WELCOME[portal];
@@ -11,7 +12,7 @@ export function WelcomeBanner({ portal }: { portal: PortalKey }) {
         <p>{m.text}</p>
       </div>
       <div className="welcome-banner-badge">
-        <img src="/app/assets/logo.svg" alt="" width={56} height={56} />
+        <FhsLogo size={56} title="" />
         <span>IDBI Innovate 2026</span>
       </div>
     </div>
