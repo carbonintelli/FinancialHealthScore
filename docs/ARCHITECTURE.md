@@ -216,7 +216,8 @@ npm run dev          # Development (port 8080)
 npm run build && npm start   # Production
 ```
 
-- **Platform login**: http://localhost:8080/app/index.html
+- **Live app**: https://fhs.sustainow.in
+- **Platform login**: https://fhs.sustainow.in/app/
 - **API root**: `GET /api`
 - **Health check**: `GET /api/v1/health`
 

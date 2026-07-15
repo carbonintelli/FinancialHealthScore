@@ -8,13 +8,15 @@ UI copy uses formal banking and MSME terminology. See [TERMINOLOGY.md](./TERMINO
 
 ## Access
 
-| Portal | URL (production) | URL (dev via Vite) |
+**Live app:** [https://fhs.sustainow.in](https://fhs.sustainow.in)
+
+| Portal | URL (production) | URL (local / Vite) |
 |---|---|---|
-| **Sign In** | http://localhost:8080/app/ | http://localhost:5173/app/ |
-| **Lending Institution** | http://localhost:8080/app/bank/dashboard | Executive dashboard, lending portfolio, credit applications |
-| **Enterprise (MSME)** | http://localhost:8080/app/msme/dashboard | Enterprise dashboard, credit assessment, registration |
-| **Government** | http://localhost:8080/app/govt/dashboard | National MSME registry & scheme advisory |
-| **Regulatory** | http://localhost:8080/app/regulatory/dashboard | Supervisory dashboard & compliance review |
+| **Sign In** | https://fhs.sustainow.in/app/ | http://localhost:5173/app/ |
+| **Lending Institution** | https://fhs.sustainow.in/app/bank/dashboard | Executive dashboard, lending portfolio, credit applications |
+| **Enterprise (MSME)** | https://fhs.sustainow.in/app/msme/dashboard | Enterprise dashboard, credit assessment, registration |
+| **Government** | https://fhs.sustainow.in/app/govt/dashboard | National MSME registry & scheme advisory |
+| **Regulatory** | https://fhs.sustainow.in/app/regulatory/dashboard | Supervisory dashboard & compliance review |
 | **API Reference** | [API.md](./API.md) | REST endpoint reference |
 
 ## Demo Login Credentials

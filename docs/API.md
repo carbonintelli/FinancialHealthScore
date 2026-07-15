@@ -1,11 +1,12 @@
 # API Reference
 
-Base URL: `http://localhost:8080`  
+Base URL (production): `https://fhs.sustainow.in`  
+Local development: `http://localhost:8080`  
 Platform: **Node.js Express v2.1**
 
 Display labels for statuses, risk ratings, and portal terminology: [TERMINOLOGY.md](./TERMINOLOGY.md).
 
-API root metadata: `GET /api`  
+API root metadata: `GET /api`
 
 ## System
 
